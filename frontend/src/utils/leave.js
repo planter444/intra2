@@ -14,22 +14,30 @@ export const getAvailableBalanceDays = (balance, requests, excludeRequestId = nu
   return Math.max(Number(balance.balanceDays || 0) - getReservedPendingDays(requests, balance.code, excludeRequestId), 0);
 };
 
+export const isLeaveRequestActionableByUser = (request, user) => {
+  if (!request || !user) {
+    return false;
+  }
+
+  if (user.role === 'supervisor') {
+    return request.status === 'pending_supervisor' && String(request.supervisorApproverId) === String(user.id);
+  }
+
+  if (user.role === 'admin') {
+    return request.status === 'pending_hr';
+  }
+
+  if (user.role === 'ceo') {
+    return request.status === 'pending_hr' || request.status === 'pending_ceo';
+  }
+
+  return false;
+};
+
 export const getPendingReviewCount = (requests, user) => {
   if (!user) {
     return 0;
   }
 
-  if (user.role === 'supervisor') {
-    return requests.filter((request) => request.status === 'pending_supervisor' && String(request.supervisorApproverId) === String(user.id)).length;
-  }
-
-  if (user.role === 'admin') {
-    return requests.filter((request) => request.status === 'pending_hr').length;
-  }
-
-  if (user.role === 'ceo') {
-    return requests.filter((request) => request.status === 'pending_hr' || request.status === 'pending_ceo').length;
-  }
-
-  return 0;
+  return requests.filter((request) => isLeaveRequestActionableByUser(request, user)).length;
 };
