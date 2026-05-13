@@ -639,18 +639,28 @@ const decideRequest = async (req, res, next) => {
       return res.status(400).json({ message: 'Decision must be approve or reject.' });
     }
 
+    const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
+
     if (request.status === 'pending_supervisor') {
       if (String(request.supervisorApproverId) !== String(req.user.id)) {
         return res.status(403).json({ message: 'Only the assigned supervisor can action this request.' });
       }
 
-      const nextStatus = decision === 'approve' ? 'pending_hr' : 'rejected';
+      const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
       const updatedRequest = await leaveModel.updateRequestStatus({
         id,
         status: nextStatus,
         supervisorApproverId: req.user.id,
-        supervisorComment: comment || null
+        supervisorComment: normalizedComment || null
       });
+
+      if (nextStatus === 'approved') {
+        await leaveModel.applyApprovedDaysToBalance({
+          userId: request.userId,
+          leaveTypeId: request.leaveTypeId,
+          daysRequested: request.daysRequested
+        });
+      }
 
       await logAction({
         actorUserId: req.user.id,
@@ -659,36 +669,30 @@ const decideRequest = async (req, res, next) => {
         entityType: 'leave_request',
         entityId: String(id),
         description: `${req.user.fullName} ${decision}d leave request ${id} as supervisor.`,
-        metadata: { comment },
+        metadata: { comment: normalizedComment },
         ipAddress: req.ip
       });
 
-      if (nextStatus === 'rejected') {
-        sendLeaveDecisionNotification({
-          request: updatedRequest,
-          status: nextStatus,
-          reviewerName: req.user.fullName,
-          comment
-        }).catch((error) => console.error('Unable to send leave decision email.', error.message));
-      } else {
-        sendLeaveApplicationNotification(updatedRequest).catch((error) => console.error('Unable to send leave application email.', error.message));
-      }
+      sendLeaveDecisionNotification({
+        request: updatedRequest,
+        status: nextStatus,
+        reviewerName: req.user.fullName,
+        comment: normalizedComment
+      }).catch((error) => console.error('Unable to send leave decision email.', error.message));
 
       return res.json({ request: updatedRequest });
     }
 
     if ((req.user.role === 'admin' || req.user.role === 'ceo') && request.status === 'pending_hr') {
-      const nextStatus = decision === 'approve'
-        ? (req.user.role === 'admin' && request.requiresCeoApproval ? 'pending_ceo' : 'approved')
-        : 'rejected';
+      const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
 
       const updatedRequest = await leaveModel.updateRequestStatus({
         id,
         status: nextStatus,
         hrApproverId: req.user.role === 'admin' ? req.user.id : request.hrApproverId,
-        hrComment: req.user.role === 'admin' ? comment || null : request.hrComment,
+        hrComment: req.user.role === 'admin' ? normalizedComment || null : request.hrComment,
         ceoApproverId: req.user.role === 'ceo' ? req.user.id : request.ceoApproverId,
-        ceoComment: req.user.role === 'ceo' ? comment || null : request.ceoComment
+        ceoComment: req.user.role === 'ceo' ? normalizedComment || null : request.ceoComment
       });
 
       if (nextStatus === 'approved') {
@@ -706,20 +710,16 @@ const decideRequest = async (req, res, next) => {
         entityType: 'leave_request',
         entityId: String(id),
         description: `${req.user.fullName} ${decision}d leave request ${id} during the operational review stage.`,
-        metadata: { comment },
+        metadata: { comment: normalizedComment },
         ipAddress: req.ip
       });
 
-      if (['approved', 'rejected'].includes(nextStatus)) {
-        sendLeaveDecisionNotification({
-          request: updatedRequest,
-          status: nextStatus,
-          reviewerName: req.user.fullName,
-          comment
-        }).catch((error) => console.error('Unable to send leave decision email.', error.message));
-      } else {
-        sendLeaveApplicationNotification(updatedRequest).catch((error) => console.error('Unable to send leave application email.', error.message));
-      }
+      sendLeaveDecisionNotification({
+        request: updatedRequest,
+        status: nextStatus,
+        reviewerName: req.user.fullName,
+        comment: normalizedComment
+      }).catch((error) => console.error('Unable to send leave decision email.', error.message));
 
       return res.json({ request: updatedRequest });
     }
@@ -745,7 +745,7 @@ const decideRequest = async (req, res, next) => {
         id,
         status: decision === 'approve' ? 'approved' : 'rejected',
         ceoApproverId: req.user.id,
-        ceoComment: comment || null
+        ceoComment: normalizedComment || null
       });
 
       await logAction({
@@ -755,7 +755,7 @@ const decideRequest = async (req, res, next) => {
         entityType: 'leave_request',
         entityId: String(id),
         description: `${req.user.fullName} revised the CEO decision for leave request ${id}.`,
-        metadata: { decision, comment },
+        metadata: { decision, comment: normalizedComment },
         ipAddress: req.ip
       });
 
@@ -763,7 +763,7 @@ const decideRequest = async (req, res, next) => {
         request: updatedRequest,
         status: decision === 'approve' ? 'approved' : 'rejected',
         reviewerName: req.user.fullName,
-        comment
+        comment: normalizedComment
       }).catch((error) => console.error('Unable to send leave decision email.', error.message));
 
       return res.json({ request: updatedRequest });
@@ -778,7 +778,7 @@ const decideRequest = async (req, res, next) => {
         id,
         status: decision === 'approve' ? 'approved' : 'rejected',
         ceoApproverId: req.user.id,
-        ceoComment: comment || null
+        ceoComment: normalizedComment || null
       });
 
       if (decision === 'approve') {
@@ -796,7 +796,7 @@ const decideRequest = async (req, res, next) => {
         entityType: 'leave_request',
         entityId: String(id),
         description: `${req.user.fullName} ${decision}d leave request ${id}.`,
-        metadata: { comment },
+        metadata: { comment: normalizedComment },
         ipAddress: req.ip
       });
 
@@ -804,7 +804,7 @@ const decideRequest = async (req, res, next) => {
         request: updatedRequest,
         status: decision === 'approve' ? 'approved' : 'rejected',
         reviewerName: req.user.fullName,
-        comment
+        comment: normalizedComment
       }).catch((error) => console.error('Unable to send leave decision email.', error.message));
 
       return res.json({ request: updatedRequest });

@@ -80,6 +80,7 @@ export default function LeaveRequestDetailPage() {
   const [form, setForm] = useState({ leaveTypeCode: '', startDate: '', endDate: '', reason: '', supportingDocument: null });
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [decisionModal, setDecisionModal] = useState({ open: false, decision: '', comment: '' });
+  const [decisionSubmitting, setDecisionSubmitting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -268,7 +269,12 @@ export default function LeaveRequestDetailPage() {
   };
 
   const handleDecision = async () => {
+    if (decisionSubmitting) {
+      return;
+    }
+
     try {
+      setDecisionSubmitting(true);
       const updated = await decideLeaveRequest(id, { decision: decisionModal.decision, comment: decisionModal.comment });
       setRequest(updated);
       setDecisionModal({ open: false, decision: '', comment: '' });
@@ -284,6 +290,8 @@ export default function LeaveRequestDetailPage() {
         title: 'Leave decision error',
         description: error.response?.data?.message || 'Unable to complete this leave action.'
       });
+    } finally {
+      setDecisionSubmitting(false);
     }
   };
 
@@ -527,8 +535,8 @@ export default function LeaveRequestDetailPage() {
           <button key="cancel" type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700" onClick={() => setDecisionModal({ open: false, decision: '', comment: '' })}>
             Cancel
           </button>,
-          <button key="confirm" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={handleDecision}>
-            {decisionModal.decision === 'approve' ? 'Confirm approval' : 'Confirm rejection'}
+          <button key="confirm" type="button" disabled={decisionSubmitting} className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70" onClick={handleDecision}>
+            {decisionSubmitting ? 'Saving...' : decisionModal.decision === 'approve' ? 'Confirm approval' : 'Confirm rejection'}
           </button>
         ]}
       >

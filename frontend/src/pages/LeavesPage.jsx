@@ -68,12 +68,24 @@ export default function LeavesPage() {
   const leaveCardsOpacity = Number(settings?.interface?.pageExperience?.leave?.leaveCardsOpacity ?? 1) || 1;
 
   useEffect(() => {
-    Promise.all([fetchLeaveBalances(), fetchLeaveRequests()])
-      .then(([balanceItems, requestItems]) => {
-        setBalances(balanceItems);
-        setRequests(requestItems);
-      })
-      .catch(console.error);
+    const refreshLeaveData = () => {
+      Promise.all([fetchLeaveBalances(), fetchLeaveRequests()])
+        .then(([balanceItems, requestItems]) => {
+          setBalances(balanceItems);
+          setRequests(requestItems);
+        })
+        .catch(console.error);
+    };
+
+    refreshLeaveData();
+    const intervalId = window.setInterval(refreshLeaveData, 15000);
+    window.addEventListener('focus', refreshLeaveData);
+    window.addEventListener('leave-requests-updated', refreshLeaveData);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshLeaveData);
+      window.removeEventListener('leave-requests-updated', refreshLeaveData);
+    };
   }, []);
 
   const myRequests = useMemo(

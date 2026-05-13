@@ -109,8 +109,14 @@ export default function AppLayout({ children }) {
     };
 
     refreshPendingReviewCount();
+    const intervalId = window.setInterval(refreshPendingReviewCount, 15000);
+    window.addEventListener('focus', refreshPendingReviewCount);
     window.addEventListener('leave-requests-updated', refreshPendingReviewCount);
-    return () => window.removeEventListener('leave-requests-updated', refreshPendingReviewCount);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshPendingReviewCount);
+      window.removeEventListener('leave-requests-updated', refreshPendingReviewCount);
+    };
   }, [user]);
 
   useEffect(() => {

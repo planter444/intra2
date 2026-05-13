@@ -21,12 +21,12 @@ export const fetchLeaveTypes = async () => {
 };
 
 export const fetchLeaveBalances = async (params = {}) => {
-  const { data } = await api.get('/leaves/balances', { params });
+  const { data } = await api.get('/leaves/balances', { params: { ...params, _t: Date.now() } });
   return data.balances;
 };
 
 export const fetchLeaveRequests = async (params = {}) => {
-  const { data } = await api.get('/leaves/requests', { params });
+  const { data } = await api.get('/leaves/requests', { params: { ...params, _t: Date.now() } });
   return data.requests;
 };
 
@@ -36,7 +36,7 @@ export const fetchLeaveOverview = async (params = {}) => {
 };
 
 export const fetchLeaveRequest = async (id) => {
-  const { data } = await api.get(`/leaves/requests/${id}`);
+  const { data } = await api.get(`/leaves/requests/${id}`, { params: { _t: Date.now() } });
   return data.request;
 };
 
