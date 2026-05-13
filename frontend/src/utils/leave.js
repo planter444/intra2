@@ -28,7 +28,15 @@ export const isLeaveRequestActionableByUser = (request, user) => {
   }
 
   if (user.role === 'ceo') {
-    return request.status === 'pending_hr' || request.status === 'pending_ceo';
+    return request.status === 'pending_ceo'
+      || request.status === 'pending_hr'
+      || (
+        request.status === 'pending_supervisor'
+        && (
+          String(request.supervisorApproverId) === String(user.id)
+          || String(request.employeeSupervisorId) === String(user.id)
+        )
+      );
   }
 
   return false;

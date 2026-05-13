@@ -161,7 +161,13 @@ export default function LeaveRequestDetailPage() {
     return request.status === 'pending_hr' && !hasSupervisorStage && !request.hrApproverId && !request.ceoApproverId;
   }, [hasSupervisorStage, request, user?.id]);
 
-  const canSupervisorReview = request && !isRequestOwner && String(request.employeeSupervisorId) === String(user?.id) && request.status === 'pending_supervisor';
+  const canSupervisorReview = request
+    && !isRequestOwner
+    && request.status === 'pending_supervisor'
+    && (
+      String(request.supervisorApproverId) === String(user?.id)
+      || String(request.employeeSupervisorId) === String(user?.id)
+    );
   const canOperationalReview = request && !isRequestOwner && (user?.role === 'admin' || user?.role === 'ceo') && request.status === 'pending_hr';
   const canFinalCeoReview = request && !isRequestOwner && user?.role === 'ceo' && request.status === 'pending_ceo';
   const canReviseCeoDecision = request && !isRequestOwner && user?.role === 'ceo' && ['approved', 'rejected'].includes(request.status) && String(request.ceoApproverId) === String(user?.id);
