@@ -29,6 +29,6 @@ router.post('/requests', authorize('employee', 'supervisor', 'admin', 'finance')
 router.put('/requests/:id', authorize('employee', 'supervisor', 'admin', 'finance'), upload.single('supportingDocument'), updateRequest);
 router.patch('/requests/:id/cancel', authorize('employee', 'supervisor', 'admin', 'finance'), cancelRequest);
 router.patch('/requests/:id/decision', authorize('employee', 'supervisor', 'admin', 'ceo'), decideRequest);
-router.delete('/requests/:id', authorize('admin', 'ceo'), deleteRequestPermanently);
+router.delete('/requests/:id', authorize('admin'), deleteRequestPermanently);
 
 module.exports = router;

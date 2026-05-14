@@ -68,8 +68,7 @@ export default function SettingsPage() {
         ['documents', 'Documents Page'],
         ['leave', 'Leave Page'],
         ['kpi', 'KPI Matrix Page'],
-        ['performance', 'Performance Dashboard'],
-        ['leaves_cleanup', 'Delete Leave Requests']
+        ['performance', 'Performance Dashboard']
       ]
     : isFinanceOnly
       ? [
@@ -89,7 +88,8 @@ export default function SettingsPage() {
         ['documents', 'Documents Page'],
         ['leave', 'Leave Page'],
         ['kpi', 'KPI Matrix Page'],
-        ['performance', 'Performance Dashboard']
+        ['performance', 'Performance Dashboard'],
+        ['leaves_cleanup', 'Delete Leave Requests']
       ];
   const [draft, setDraft] = useState(() => clone(settings || {}));
   const [message, setMessage] = useState('');
@@ -129,13 +129,13 @@ export default function SettingsPage() {
   }, [isCeoOnly, isFinanceOnly]);
 
   useEffect(() => {
-    if (!isCeoOnly || activePage !== 'leaves_cleanup') return;
+    if (!isAdmin || activePage !== 'leaves_cleanup') return;
     setCleanupLoading(true);
     fetchLeaveRequests()
-      .then(setCleanupLeaves)
+      .then((items) => setCleanupLeaves(items.filter((entry) => ['approved', 'rejected'].includes(entry.status))))
       .catch(() => setCleanupLeaves([]))
       .finally(() => setCleanupLoading(false));
-  }, [activePage, isCeoOnly]);
+  }, [activePage, isAdmin]);
 
   useEffect(() => {
     fetchUsers()
@@ -1035,9 +1035,9 @@ export default function SettingsPage() {
         </div>
       ) : null}
 
-      {isCeoOnly && activePage === 'leaves_cleanup' ? (
+      {isAdmin && activePage === 'leaves_cleanup' ? (
         <div className="space-y-6">
-          <SectionCard title="Delete Leave Requests" subtitle="As CEO, you can permanently delete any employee's leave request. This action cannot be undone.">
+          <SectionCard title="Delete Leave Requests" subtitle="As IT Officer, you can permanently delete approved or disapproved leave requests. Approved leave days are restored before deletion.">
             {cleanupLoading ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading leave requests…</div>
             ) : cleanupLeaves.length ? (

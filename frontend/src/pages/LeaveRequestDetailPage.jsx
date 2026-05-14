@@ -170,6 +170,11 @@ export default function LeaveRequestDetailPage() {
     );
   const canOperationalReview = request && !isRequestOwner && (user?.role === 'admin' || user?.role === 'ceo') && request.status === 'pending_hr';
   const canFinalCeoReview = request && !isRequestOwner && user?.role === 'ceo' && request.status === 'pending_ceo';
+  const canReviseSupervisorDecision = request
+    && !isRequestOwner
+    && ['pending_ceo', 'rejected'].includes(request.status)
+    && String(request.supervisorApproverId) === String(user?.id)
+    && !request.ceoApproverId;
   const canReviseCeoDecision = request && !isRequestOwner && user?.role === 'ceo' && ['approved', 'rejected'].includes(request.status) && String(request.ceoApproverId) === String(user?.id);
   const timeline = request?.timeline || {
     submitted: { label: 'Applied', time: request?.createdAt, actorName: request?.employeeName },
@@ -344,8 +349,8 @@ export default function LeaveRequestDetailPage() {
                 <span className="inline-flex items-center gap-2"><Trash2 size={16} />Cancel request</span>
               </button>
             ) : null,
-            canReviseCeoDecision ? (
-              <button key="change-decision" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setDecisionModal({ open: true, decision: request.status === 'approved' ? 'reject' : 'approve', comment: request.ceoComment || '' })}>
+            canReviseSupervisorDecision || canReviseCeoDecision ? (
+              <button key="change-decision" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
                 <span className="inline-flex items-center gap-2"><RefreshCcw size={16} />Change Decision</span>
               </button>
             ) : null
@@ -435,11 +440,11 @@ export default function LeaveRequestDetailPage() {
         </SectionCard>
 
         <div className="space-y-6">
-          {(canSupervisorReview || canOperationalReview || canFinalCeoReview || canReviseCeoDecision) ? (
-            <SectionCard title={canReviseCeoDecision ? 'Change Decision' : 'Take Action'} subtitle={canReviseCeoDecision ? 'Override the current decision on this leave request.' : 'Approve or reject this request with an optional comment.'}>
-              {canReviseCeoDecision ? (
-                <button type="button" className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white ${request.status === 'approved' ? 'bg-rose-600' : 'bg-emerald-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'approved' ? 'reject' : 'approve', comment: request.ceoComment || '' })}>
-                  {request.status === 'approved' ? 'Change to Rejected' : 'Change to Approved'}
+          {(canSupervisorReview || canOperationalReview || canFinalCeoReview || canReviseSupervisorDecision || canReviseCeoDecision) ? (
+            <SectionCard title={canReviseSupervisorDecision || canReviseCeoDecision ? 'Change Decision' : 'Take Action'} subtitle={canReviseSupervisorDecision || canReviseCeoDecision ? 'Update your current decision on this leave request.' : 'Approve or reject this request with an optional comment.'}>
+              {canReviseSupervisorDecision || canReviseCeoDecision ? (
+                <button type="button" className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white ${request.status === 'rejected' ? 'bg-emerald-600' : 'bg-rose-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
+                  {request.status === 'rejected' ? 'Change to Approved' : 'Change to Rejected'}
                 </button>
               ) : (
                 <div className="grid gap-3">
@@ -534,7 +539,7 @@ export default function LeaveRequestDetailPage() {
 
       <Modal
         open={decisionModal.open}
-        title={decisionModal.decision === 'approve' ? (canReviseCeoDecision ? 'Change Decision to Approve' : 'Approve Leave Request') : (canReviseCeoDecision ? 'Change Decision to Reject' : 'Reject Leave Request')}
+        title={decisionModal.decision === 'approve' ? (canReviseSupervisorDecision || canReviseCeoDecision ? 'Change Decision to Approve' : 'Approve Leave Request') : (canReviseSupervisorDecision || canReviseCeoDecision ? 'Change Decision to Reject' : 'Reject Leave Request')}
         description="Add an optional comment before confirming this leave action."
         onClose={() => setDecisionModal({ open: false, decision: '', comment: '' })}
         actions={[

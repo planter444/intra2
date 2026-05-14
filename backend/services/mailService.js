@@ -119,8 +119,12 @@ const sendLeaveApplicationEmail = async ({ recipients, request, stageLabel }) =>
 };
 
 const sendLeaveDecisionEmail = async ({ toEmail, toName, leaveTypeLabel, startDate, endDate, daysRequested, status, reviewerName, comment, returnDate }) => {
-  const normalizedStatus = status === 'approved' ? 'Approved' : 'Denied';
-  const accent = status === 'approved' ? '#16a34a' : '#dc2626';
+  const isAwaitingCeo = status === 'pending_ceo';
+  const normalizedStatus = isAwaitingCeo ? 'Awaiting CEO Approval' : status === 'approved' ? 'Approved' : 'Denied';
+  const accent = isAwaitingCeo ? '#2563eb' : status === 'approved' ? '#16a34a' : '#dc2626';
+  const headline = isAwaitingCeo
+    ? `Hello ${toName || 'there'}, your leave has been approved by your supervisor and is awaiting CEO approval.`
+    : `Hello ${toName || 'there'}, your leave has been ${normalizedStatus.toLowerCase()}.`;
 
   await sendBrevoEmail({
     to: [
@@ -129,12 +133,12 @@ const sendLeaveDecisionEmail = async ({ toEmail, toName, leaveTypeLabel, startDa
         name: toName || toEmail
       }
     ],
-    subject: `Your ${leaveTypeLabel || 'leave'} request was ${normalizedStatus.toLowerCase()}`,
+    subject: isAwaitingCeo ? `Your ${leaveTypeLabel || 'leave'} request is awaiting CEO approval` : `Your ${leaveTypeLabel || 'leave'} request was ${normalizedStatus.toLowerCase()}`,
     htmlContent: `
       <div style="margin: 0; background: #f8fafc; padding: 28px; font-family: Arial, sans-serif; color: #0f172a; line-height: 1.55;">
         <div style="margin: 0 auto; max-width: 640px;">
           <p style="margin: 0 0 12px; color: ${accent}; font-weight: 700;">Leave request ${normalizedStatus}</p>
-          <h1 style="margin: 0; font-size: 28px; color: #0f172a;">Hello ${toName || 'there'}, your leave has been ${normalizedStatus.toLowerCase()}.</h1>
+          <h1 style="margin: 0; font-size: 28px; color: #0f172a;">${headline}</h1>
           ${buildLeaveCard({
             leaveTypeLabel,
             startDate,
@@ -151,8 +155,50 @@ const sendLeaveDecisionEmail = async ({ toEmail, toName, leaveTypeLabel, startDa
   });
 };
 
+const sendSupervisorDecisionToCeoEmail = async ({ recipients, request, supervisorName, decision, comment }) => {
+  const to = (recipients || [])
+    .filter((recipient) => recipient?.email)
+    .map((recipient) => ({ email: recipient.email, name: recipient.fullName || recipient.email }));
+
+  if (!to.length) {
+    return;
+  }
+
+  const approved = decision === 'approve';
+  const accent = approved ? '#16a34a' : '#dc2626';
+  const decisionLabel = approved ? 'approved' : 'rejected';
+
+  await sendBrevoEmail({
+    to,
+    subject: `Supervisor ${decisionLabel} leave request from ${request.employeeName}`,
+    htmlContent: `
+      <div style="margin: 0; background: #f8fafc; padding: 28px; font-family: Arial, sans-serif; color: #0f172a; line-height: 1.55;">
+        <div style="margin: 0 auto; max-width: 640px;">
+          <p style="margin: 0 0 12px; color: ${accent}; font-weight: 700;">Supervisor decision recorded</p>
+          <h1 style="margin: 0; font-size: 28px; color: #0f172a;">${supervisorName || 'The supervisor'} has ${decisionLabel} ${request.employeeName}'s leave request.</h1>
+          <p style="margin: 12px 0 0; color: #475569;">${approved ? 'This leave request is now waiting for CEO final approval in KEREA HRMS.' : 'This leave request was disapproved by the supervisor and is shown for CEO visibility.'}</p>
+          ${buildLeaveCard({
+            employeeName: request.employeeName,
+            employeeNo: request.employeeNo,
+            departmentName: request.employeeDepartmentName,
+            leaveTypeLabel: request.leaveTypeLabel,
+            startDate: request.startDate,
+            endDate: request.endDate,
+            daysRequested: request.daysRequested,
+            reason: request.reason,
+            reviewerName: supervisorName,
+            comment
+          })}
+          <p style="margin: 0; color: #475569;">Please log in to HRMS for the latest status details.</p>
+        </div>
+      </div>
+    `
+  });
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendLeaveApplicationEmail,
-  sendLeaveDecisionEmail
+  sendLeaveDecisionEmail,
+  sendSupervisorDecisionToCeoEmail
 };
