@@ -74,11 +74,15 @@ export default function LeavesPage() {
           setBalances(balanceItems);
           setRequests(requestItems);
         })
-        .catch(console.error);
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            console.error(error);
+          }
+        });
     };
 
     refreshLeaveData();
-    const intervalId = window.setInterval(refreshLeaveData, 15000);
+    const intervalId = window.setInterval(refreshLeaveData, 60000);
     window.addEventListener('focus', refreshLeaveData);
     window.addEventListener('leave-requests-updated', refreshLeaveData);
     return () => {

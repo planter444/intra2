@@ -513,6 +513,69 @@ const deleteRequest = async (id) => {
   await query(`DELETE FROM leave_requests WHERE id = $1`, [id]);
 };
 
+const getPendingActionCountForUser = async ({ userId, role }) => {
+  if (role === 'supervisor') {
+    const result = await query(
+      `
+        SELECT COUNT(*)::int AS total
+        FROM leave_requests lr
+        INNER JOIN users u ON u.id = lr.user_id AND u.is_deleted = FALSE
+        WHERE lr.status = 'pending_supervisor'
+          AND (
+            lr.supervisor_approver_id = $1
+            OR u.supervisor_id = $1
+          )
+      `,
+      [userId]
+    );
+    return result.rows[0]?.total || 0;
+  }
+
+  if (role === 'admin') {
+    const result = await query(
+      `
+        SELECT COUNT(*)::int AS total
+        FROM leave_requests lr
+        INNER JOIN users u ON u.id = lr.user_id AND u.is_deleted = FALSE
+        WHERE lr.status = 'pending_hr'
+      `
+    );
+    return result.rows[0]?.total || 0;
+  }
+
+  if (role === 'ceo') {
+    const result = await query(
+      `
+        SELECT COUNT(*)::int AS total
+        FROM leave_requests lr
+        INNER JOIN users u ON u.id = lr.user_id AND u.is_deleted = FALSE
+        WHERE lr.status IN ('pending_ceo', 'pending_hr')
+          OR (
+            lr.status = 'pending_supervisor'
+            AND (
+              lr.supervisor_approver_id = $1
+              OR u.supervisor_id = $1
+            )
+          )
+      `,
+      [userId]
+    );
+    return result.rows[0]?.total || 0;
+  }
+
+  const result = await query(
+    `
+      SELECT COUNT(*)::int AS total
+      FROM leave_requests lr
+      INNER JOIN users u ON u.id = lr.user_id AND u.is_deleted = FALSE
+      WHERE lr.user_id = $1
+        AND lr.status IN ('pending_supervisor', 'pending_hr', 'pending_ceo')
+    `,
+    [userId]
+  );
+  return result.rows[0]?.total || 0;
+};
+
 const getSummaryStats = async () => {
   const [pendingLeaves, approvedLeaves] = await Promise.all([
     query(
@@ -583,6 +646,7 @@ module.exports = {
   updateRequestDetails,
   listRequestsForUserCleanup,
   deleteRequest,
+  getPendingActionCountForUser,
   cancelRequest,
   applyApprovedDaysToBalance,
   revertApprovedDaysToBalance,

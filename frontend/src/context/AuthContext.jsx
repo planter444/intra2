@@ -98,6 +98,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(data.settings));
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user: data.user, settings: data.settings }));
       } catch (restoreError) {
+        if (![401, 403].includes(restoreError.response?.status)) {
+          setError(restoreError.response?.status === 429 ? 'Server is busy. Keeping your saved session and trying again later.' : '');
+          return;
+        }
         localStorage.removeItem(STORAGE_KEY);
         setToken(null);
         setUser(null);

@@ -114,6 +114,24 @@ export const downloadDocument = async (documentId) => {
   setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
 };
 
+export const downloadDataExport = async ({ dataset = 'all', format = 'json' } = {}) => {
+  const response = await api.get(`/exports/${dataset}`, {
+    params: { format },
+    responseType: 'blob'
+  });
+  const disposition = response.headers['content-disposition'] || '';
+  const filenameMatch = disposition.match(/filename="?([^"]+)"?/i);
+  const filename = filenameMatch?.[1] || `kerea-hrms-${dataset}-export.${format === 'excel' ? 'xls' : format}`;
+  const objectUrl = URL.createObjectURL(response.data);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 10_000);
+};
+
 export const deleteDocument = async (documentId) => {
   const { data } = await api.delete(`/documents/${documentId}`);
   notifyDocumentUpdates();

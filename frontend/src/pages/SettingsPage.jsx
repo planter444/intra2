@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -8,7 +8,7 @@ import StatCard from '../components/StatCard';
 import { useAuth } from '../context/AuthContext';
 import useUnsavedChangesGuard from '../hooks/useUnsavedChangesGuard';
 import { restoreSettings, updateSettings } from '../services/settingsService';
-import { uploadDocument } from '../services/documentService';
+import { downloadDataExport, uploadDocument } from '../services/documentService';
 import { fetchLeaveRequests, deleteLeaveRequest } from '../services/leaveService';
 import { fetchUsers } from '../services/userService';
 import { getAverageKpiScore, getNormalizedKpiEntry, getNormalizedPerformanceBands, serializeKpiEntry } from '../utils/kpi';
@@ -25,6 +25,17 @@ const PAGE_PRESENTATION_OPTIONS = [
   ['soft-blur', 'Soft Blur']
 ];
 const PAGE_PRESENTATION_KEYS = ['dashboard', 'login', 'employees', 'profile', 'documents', 'leave', 'kpi', 'performance'];
+const EXPORT_DATASETS = [
+  ['all', 'All Data'],
+  ['documents', 'Documents'],
+  ['leaves', 'Leave Requests'],
+  ['employees', 'Employees']
+];
+const EXPORT_FORMATS = [
+  ['excel', 'Excel'],
+  ['json', 'JSON'],
+  ['pdf', 'PDF']
+];
 const isHexColor = (value) => /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(String(value || '').trim());
 const normalizeKpiScore = (value) => {
   if (value === '') {
@@ -86,6 +97,7 @@ export default function SettingsPage() {
         ['employees', 'Employees Page'],
         ['profile', 'Profile Page'],
         ['documents', 'Documents Page'],
+        ['data_exports', 'Data Exports'],
         ['leave', 'Leave Page'],
         ['kpi', 'KPI Matrix Page'],
         ['performance', 'Performance Dashboard'],
@@ -111,6 +123,7 @@ export default function SettingsPage() {
   const docCategoryRefs = useRef([]);
   const [cleanupLeaves, setCleanupLeaves] = useState([]);
   const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [exportingKey, setExportingKey] = useState('');
   const [users, setUsers] = useState([]);
   const [selectedKpiEmployeeId, setSelectedKpiEmployeeId] = useState('');
 
@@ -886,8 +899,18 @@ export default function SettingsPage() {
 
     const nextSettings = await restoreSettings();
     replaceSettings(nextSettings);
-    setDraft(clone(nextSettings));
-    setMessage('Default settings restored successfully.');
+  };
+
+  const handleDataExport = async (dataset, format) => {
+    const key = `${dataset}-${format}`;
+    setExportingKey(key);
+    try {
+      await downloadDataExport({ dataset, format });
+    } catch (error) {
+      window.alert(error.response?.data?.message || 'Unable to export data.');
+    } finally {
+      setExportingKey('');
+    }
   };
 
   if (!draft?.branding) {
@@ -1032,6 +1055,39 @@ export default function SettingsPage() {
           </SectionCard>
 
           
+        </div>
+      ) : null}
+
+      {isAdmin && activePage === 'data_exports' ? (
+        <div className="space-y-6">
+          <SectionCard title="Data Exports" subtitle="Download HRMS data to your computer as Excel, JSON, or PDF. Exports include employee names, document categories, leave days, approval status, and reviewer details.">
+            <div className="grid gap-4 md:grid-cols-2">
+              {EXPORT_DATASETS.map(([dataset, label]) => (
+                <div key={dataset} className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <div className="mb-4">
+                    <p className="font-semibold text-slate-900">{label}</p>
+                    <p className="text-sm text-slate-500">Export {label.toLowerCase()} records.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {EXPORT_FORMATS.map(([format, formatLabel]) => {
+                      const key = `${dataset}-${format}`;
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          disabled={exportingKey === key}
+                          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => handleDataExport(dataset, format)}
+                        >
+                          <Download size={14} /> {exportingKey === key ? 'Preparing...' : formatLabel}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
         </div>
       ) : null}
 

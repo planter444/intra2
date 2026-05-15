@@ -9,6 +9,7 @@ const getDashboardSummary = async (req, res, next) => {
     const leaveSummary = canViewOrgMetrics
       ? await leaveModel.getSummaryStats()
       : await leaveModel.getSummaryStatsForUser(req.user.id);
+    const pendingActionCount = await leaveModel.getPendingActionCountForUser({ userId: req.user.id, role: req.user.role });
     const leaveBalances = await leaveModel.getBalancesForUser(req.user.id);
     const myDocuments = await documentModel.listForUser(req.user.id);
 
@@ -17,7 +18,7 @@ const getDashboardSummary = async (req, res, next) => {
         currentUserRole: req.user.role,
         headcount: canViewOrgMetrics ? Object.values(roleCounts).reduce((total, value) => total + value, 0) : null,
         roleCounts: canViewOrgMetrics ? roleCounts : null,
-        pendingLeaves: leaveSummary.pendingLeaves,
+        pendingLeaves: pendingActionCount,
         approvedLeaves: leaveSummary.approvedLeaves,
         myLeaveBalanceTypes: leaveBalances.length,
         myDocuments: myDocuments.length

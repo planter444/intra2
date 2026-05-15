@@ -13,11 +13,13 @@ const documentRoutes = require('./routes/documentRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const { bootstrapSystem } = require('./services/settingsService');
 const { hashPassword } = require('./services/authService');
 
 const app = express();
+app.set('trust proxy', 1);
 const isDevelopment = env.nodeEnv === 'development';
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -28,7 +30,7 @@ const authLimiter = rateLimit({
 });
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: isDevelopment ? 5000 : 300,
+  max: isDevelopment ? 5000 : 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: 'Too many requests. Please try again shortly.' }
@@ -65,6 +67,7 @@ const start = async () => {
   app.use('/api/settings', settingsRoutes);
   app.use('/api/audit-logs', auditRoutes);
   app.use('/api/dashboard', dashboardRoutes);
+  app.use('/api/exports', exportRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

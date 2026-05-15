@@ -105,11 +105,15 @@ export default function AppLayout({ children }) {
     const refreshPendingReviewCount = () => {
       fetchLeaveRequests()
         .then((requests) => setPendingReviewCount(getPendingReviewCount(requests, user)))
-        .catch(() => setPendingReviewCount(0));
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            setPendingReviewCount(0);
+          }
+        });
     };
 
     refreshPendingReviewCount();
-    const intervalId = window.setInterval(refreshPendingReviewCount, 15000);
+    const intervalId = window.setInterval(refreshPendingReviewCount, 60000);
     window.addEventListener('focus', refreshPendingReviewCount);
     window.addEventListener('leave-requests-updated', refreshPendingReviewCount);
     return () => {
@@ -136,7 +140,11 @@ export default function AppLayout({ children }) {
               .filter((document) => String(document.uploadedBy) !== String(user?.id) && !seenDocumentIds.has(String(document.id))).length
           );
         })
-        .catch(() => setDocumentNotificationCount(0));
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            setDocumentNotificationCount(0);
+          }
+        });
     };
 
     refreshDocumentNotifications();
