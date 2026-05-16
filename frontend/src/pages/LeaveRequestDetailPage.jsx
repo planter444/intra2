@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Eye, Pencil, RefreshCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Pencil, Trash2 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -58,6 +58,15 @@ const getDecisionLabel = (decision) => {
   return 'Pending';
 };
 
+const accentClasses = [
+  'from-blue-600/15 to-blue-100',
+  'from-emerald-600/15 to-emerald-100',
+  'from-fuchsia-600/15 to-fuchsia-100',
+  'from-amber-500/15 to-amber-100',
+  'from-rose-500/15 to-rose-100',
+  'from-cyan-500/15 to-cyan-100'
+];
+
 const calculateRequestedDays = (startDate, endDate) => {
   if (!startDate || !endDate) {
     return 0;
@@ -71,7 +80,7 @@ const getToday = () => new Date().toISOString().split('T')[0];
 export default function LeaveRequestDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, settings } = useAuth();
+  const { user } = useAuth();
   const [request, setRequest] = useState(null);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [balances, setBalances] = useState([]);
@@ -294,8 +303,8 @@ export default function LeaveRequestDetailPage() {
       setDecisionModal({ open: false, decision: '', comment: '' });
       setNotice({
         open: true,
-        title: decisionModal.decision === 'approve' ? 'Leave request approved' : 'Leave request rejected',
-        description: 'The leave request action has been recorded successfully.'
+        title: decisionModal.decision === 'approve' ? 'Leave approved successfully' : 'Leave rejected successfully',
+        description: decisionModal.decision === 'approve' ? 'The leave request has been approved successfully.' : 'The leave request has been rejected successfully.'
       });
       await loadData();
     } catch (error) {
@@ -332,21 +341,11 @@ export default function LeaveRequestDetailPage() {
         ]}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.55fr),minmax(320px,0.85fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,2fr),minmax(340px,0.75fr)]">
         <SectionCard
           title="Leave information"
           subtitle={editing ? 'Update the leave request before any superior review is completed.' : 'Review the selected leave request details and current status.'}
           actions={[
-            request.supportingDocumentName ? (
-              <button key="preview" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => previewLeaveSupportingDocument(request.id)}>
-                <span className="inline-flex items-center gap-2"><Eye size={16} />Preview attachment</span>
-              </button>
-            ) : null,
-            request.supportingDocumentName ? (
-              <button key="download" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => downloadLeaveSupportingDocument(request.id)}>
-                <span className="inline-flex items-center gap-2"><Download size={16} />Download attachment</span>
-              </button>
-            ) : null,
             canEditOrCancel && !editing ? (
               <button key="edit" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setEditing(true)}>
                 <span className="inline-flex items-center gap-2"><Pencil size={16} />Edit</span>
@@ -357,11 +356,6 @@ export default function LeaveRequestDetailPage() {
                 <span className="inline-flex items-center gap-2"><Trash2 size={16} />Cancel request</span>
               </button>
             ) : null,
-            canReviseSupervisorDecision || canReviseCeoDecision ? (
-              <button key="change-decision" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
-                <span className="inline-flex items-center gap-2"><RefreshCcw size={16} />Change Decision</span>
-              </button>
-            ) : null
           ].filter(Boolean)}
         >
           {editing ? (
@@ -415,18 +409,21 @@ export default function LeaveRequestDetailPage() {
             </form>
           ) : (
             <div className="space-y-5">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-slate-200 p-4">
+              <div className="grid gap-4 lg:grid-cols-3">
+                <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[0]} p-5 shadow-soft`}>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Employee</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{request.employeeName}</p>
                   <p className="text-sm text-slate-500">{request.employeeNo || 'No employee number'}</p>
                   <p className="text-sm text-slate-500">{request.employeePositionTitle || 'No position title'}</p>
                   <p className="text-sm text-slate-500">{request.employeeDepartmentName || 'Not assigned'}</p>
                 </div>
-                <div className="rounded-2xl border border-slate-200 p-4">
+                <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[1]} p-5 shadow-soft`}>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Leave Type</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{request.leaveTypeLabel}</p>
-                  <p className="mt-4 text-xs uppercase tracking-wide text-slate-400">Duration</p>
+                  <p className="mt-1 text-sm text-slate-500">{request.daysRequested} day(s)</p>
+                </div>
+                <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[2]} p-5 shadow-soft`}>
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Duration</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{formatDateRangeDisplay(request.startDate, request.endDate)}</p>
                   <p className="text-sm text-slate-500">{request.daysRequested} day(s)</p>
                 </div>
@@ -454,10 +451,10 @@ export default function LeaveRequestDetailPage() {
 
         <div className="space-y-6">
           {(canSupervisorReview || canOperationalReview || canFinalCeoReview || canReviseSupervisorDecision || canReviseCeoDecision) ? (
-            <SectionCard title={canReviseSupervisorDecision || canReviseCeoDecision ? 'Change Decision' : 'Take Action'} subtitle={canReviseSupervisorDecision || canReviseCeoDecision ? 'Update your current decision on this leave request.' : 'Approve or reject this request with an optional comment.'}>
+            <SectionCard title={canReviseSupervisorDecision || canReviseCeoDecision ? 'Update Decision' : 'Take Action'} subtitle={canReviseSupervisorDecision || canReviseCeoDecision ? 'Switch the recorded decision for this leave request.' : 'Approve or reject this request with an optional comment.'}>
               {canReviseSupervisorDecision || canReviseCeoDecision ? (
                 <button type="button" className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white ${request.status === 'rejected' ? 'bg-emerald-600' : 'bg-rose-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
-                  {request.status === 'rejected' ? 'Change to Approved' : 'Change to Rejected'}
+                  {request.status === 'rejected' ? 'Mark as Approved' : 'Mark as Rejected'}
                 </button>
               ) : (
                 <div className="grid gap-3">
@@ -552,7 +549,7 @@ export default function LeaveRequestDetailPage() {
 
       <Modal
         open={decisionModal.open}
-        title={decisionModal.decision === 'approve' ? (canReviseSupervisorDecision || canReviseCeoDecision ? 'Change Decision to Approve' : 'Approve Leave Request') : (canReviseSupervisorDecision || canReviseCeoDecision ? 'Change Decision to Reject' : 'Reject Leave Request')}
+        title={decisionModal.decision === 'approve' ? 'Approve Leave Request' : 'Reject Leave Request'}
         description="Add an optional comment before confirming this leave action."
         onClose={() => setDecisionModal({ open: false, decision: '', comment: '' })}
         actions={[

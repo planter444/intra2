@@ -10,6 +10,14 @@ import { countKenyaLeaveDays, formatDateOnly, parseDateOnly } from '../utils/lea
 import { usePagePresentation } from '../hooks/usePagePresentation';
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const accentClasses = [
+  'from-blue-600/15 to-blue-100',
+  'from-emerald-600/15 to-emerald-100',
+  'from-fuchsia-600/15 to-fuchsia-100',
+  'from-amber-500/15 to-amber-100',
+  'from-rose-500/15 to-rose-100',
+  'from-cyan-500/15 to-cyan-100'
+];
 
 const getYearBounds = (year, joinedAt) => {
   const today = parseDateOnly(formatDateOnly(new Date()));
@@ -390,13 +398,13 @@ export default function LeaveStatusBoardPage() {
         <StatCard title="Leave Events" value={summary.leaveEvents} helper={`Approved leave periods in ${year}`} accent="from-violet-700 to-fuchsia-500" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(320px,0.95fr),minmax(0,1.35fr)]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(420px,0.9fr),minmax(0,1.6fr)]">
         <SectionCard title="Employees" subtitle="Click an employee to see their current leave details and full year activity." style={{ ...cardStyle, ...animationStyle }}>
           <div className="mb-4">
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name, department, title, or employee number" />
           </div>
 
-          <div className="space-y-3 max-h-[860px] overflow-y-auto pr-1">
+          <div className="grid gap-3 max-h-[860px] overflow-y-auto pr-1 xl:grid-cols-2 2xl:grid-cols-1">
             {loading ? <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">Loading employees…</div> : null}
             {!loading && !filteredEmployees.length ? <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">No employees matched your search.</div> : null}
             {!loading ? filteredEmployees.map((employee) => {
@@ -408,7 +416,7 @@ export default function LeaveStatusBoardPage() {
                   key={employee.id}
                   type="button"
                   onClick={() => setSelectedEmployeeId(employee.id)}
-                  className={`w-full rounded-3xl border p-4 text-left transition ${isSelected ? 'border-emerald-300 bg-emerald-50/60 shadow-lg' : 'border-slate-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/30'}`}
+                  className={`w-full rounded-3xl border p-4 text-left transition ${isSelected ? 'border-emerald-300 bg-emerald-50/70 shadow-lg' : 'border-slate-200 bg-white/90 hover:border-emerald-200 hover:bg-emerald-50/30'}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -449,26 +457,26 @@ export default function LeaveStatusBoardPage() {
             {!selectedEmployee ? <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-sm text-slate-500">Select an employee from the left panel.</div> : (
               <div className="space-y-6">
                 <div className={`grid gap-4 grid-cols-2 ${canViewJoinedCompany ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
-                  <div className="rounded-2xl border border-slate-200 p-4">
+                  <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[0]} p-5 shadow-soft`}>
                     <p className="text-xs uppercase tracking-wide text-slate-400">Current status</p>
                     <p className={`mt-2 text-lg font-semibold ${selectedEmployee.currentStatus === 'At Leave' ? 'text-amber-600' : 'text-emerald-600'}`}>{selectedEmployee.currentStatus}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 p-4">
+                  <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[1]} p-5 shadow-soft`}>
                     <p className="text-xs uppercase tracking-wide text-slate-400">Current leave</p>
                     <p className="mt-2 text-lg font-semibold text-slate-900">{selectedEmployee.currentLeave?.leaveTypeLabel || 'None'}</p>
                     <p className="mt-1 text-sm text-slate-500">{selectedEmployee.currentLeave ? formatDateRangeDisplay(selectedEmployee.currentLeave.startDate, selectedEmployee.currentLeave.endDate) : 'Employee is currently at work.'}</p>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 p-4">
+                  <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[2]} p-5 shadow-soft`}>
                     <p className="text-xs uppercase tracking-wide text-slate-400">Expected return</p>
                     <p className="mt-2 text-lg font-semibold text-slate-900">{selectedEmployee.nextReturnDate ? formatDateDisplay(selectedEmployee.nextReturnDate) : 'Already at work'}</p>
                   </div>
-                  {canViewJoinedCompany ? <div className="rounded-2xl border border-slate-200 p-4">
+                  {canViewJoinedCompany ? <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[3]} p-5 shadow-soft`}>
                     <p className="text-xs uppercase tracking-wide text-slate-400">Joined company</p>
                     <p className="mt-2 text-lg font-semibold text-slate-900">{selectedEmployee.joinedAt ? formatDateDisplay(selectedEmployee.joinedAt) : 'Not set'}</p>
                   </div> : null}
                 </div>
 
-                <div className="rounded-3xl border border-slate-200 p-4">
+                <div className="rounded-3xl border border-slate-200 bg-white/70 p-5 shadow-soft">
                   <div className="flex overflow-hidden rounded-xl bg-slate-50 text-center text-[9px] font-semibold uppercase tracking-wide text-slate-400 sm:text-[11px]">
                     {selectedMonthSegments.map((month) => <div key={month.label} style={{ width: `${month.widthPercent}%` }} className="truncate px-1 py-2">{month.label}</div>)}
                   </div>
@@ -505,7 +513,7 @@ export default function LeaveStatusBoardPage() {
                 ) : selectedBalances.length ? (
                   <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
                     {selectedBalances.map((balance, index) => (
-                      <div key={balance.id || `${balance.code}-${index}`} className="rounded-3xl bg-white p-5 shadow-soft">
+                      <div key={balance.id || `${balance.code}-${index}`} className={`rounded-3xl bg-gradient-to-br ${accentClasses[index % accentClasses.length]} p-5 shadow-soft`}>
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="text-sm font-medium text-slate-700">{balance.label}</p>
