@@ -172,8 +172,10 @@ export default function LeaveRequestDetailPage() {
   const canFinalCeoReview = request && !isRequestOwner && user?.role === 'ceo' && request.status === 'pending_ceo';
   const canReviseSupervisorDecision = request
     && !isRequestOwner
+    && user?.role !== 'ceo'
     && ['pending_ceo', 'rejected'].includes(request.status)
     && String(request.supervisorApproverId) === String(user?.id)
+    && request.supervisorApproverRole !== 'ceo'
     && !request.ceoApproverId;
   const canReviseCeoDecision = request && !isRequestOwner && user?.role === 'ceo' && ['approved', 'rejected'].includes(request.status) && String(request.ceoApproverId) === String(user?.id);
   const timeline = request?.timeline || {

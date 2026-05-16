@@ -296,11 +296,12 @@ const buildLeaveRouting = async (user) => {
   const requesterIsSupervisor = await userModel.hasDirectReports(user.id);
   const supervisor = user.supervisorId ? await userModel.findById(user.supervisorId) : null;
   const shouldStartWithSupervisor = user.role === 'employee' && !requesterIsSupervisor && supervisor && supervisor.isActive && !supervisor.isDeleted;
+  const supervisorIsCeo = shouldStartWithSupervisor && supervisor.role === 'ceo';
 
   return {
-    requiresSupervisorReview: shouldStartWithSupervisor,
-    initialStatus: shouldStartWithSupervisor ? 'pending_supervisor' : 'pending_hr',
-    supervisorApproverId: shouldStartWithSupervisor ? supervisor.id : null
+    requiresSupervisorReview: shouldStartWithSupervisor && !supervisorIsCeo,
+    initialStatus: supervisorIsCeo ? 'pending_ceo' : shouldStartWithSupervisor ? 'pending_supervisor' : 'pending_hr',
+    supervisorApproverId: shouldStartWithSupervisor && !supervisorIsCeo ? supervisor.id : null
   };
 };
 
@@ -746,7 +747,9 @@ const decideRequest = async (req, res, next) => {
     }
 
     if (
-      ['pending_ceo', 'rejected'].includes(request.status)
+      req.user.role !== 'ceo'
+      && request.supervisorApproverRole !== 'ceo'
+      && ['pending_ceo', 'rejected'].includes(request.status)
       && String(request.supervisorApproverId) === String(req.user.id)
       && !request.ceoApproverId
     ) {

@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(Boolean(token));
   const [error, setError] = useState('');
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   useEffect(() => {
     setAuthToken(token);
@@ -83,6 +84,16 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('resize', syncBranding);
     return () => window.removeEventListener('resize', syncBranding);
   }, [settings]);
+
+  useEffect(() => {
+    const handleSessionExpired = (event) => {
+      setSessionExpired(true);
+      setError(event.detail?.message || 'Your session has expired. Please refresh the page or log in again.');
+    };
+
+    window.addEventListener('auth-session-expired', handleSessionExpired);
+    return () => window.removeEventListener('auth-session-expired', handleSessionExpired);
+  }, []);
 
   useEffect(() => {
     if (!token) {
@@ -102,6 +113,8 @@ export const AuthProvider = ({ children }) => {
           setError(restoreError.response?.status === 429 ? 'Server is busy. Keeping your saved session and trying again later.' : '');
           return;
         }
+        setSessionExpired(true);
+        setError('Your session has expired. Please log in again.');
         localStorage.removeItem(STORAGE_KEY);
         setToken(null);
         setUser(null);
@@ -127,6 +140,7 @@ export const AuthProvider = ({ children }) => {
       setToken(data.token);
       setUser(data.user);
       setSettings(data.settings);
+      setSessionExpired(false);
       localStorage.setItem(SETTINGS_CACHE_KEY, JSON.stringify(data.settings));
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: data.token, user: data.user, settings: data.settings }));
       return data.user;
@@ -141,6 +155,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem(STORAGE_KEY);
+    setSessionExpired(false);
     setAuthToken(null);
     setToken(null);
     setUser(null);
@@ -168,12 +183,13 @@ export const AuthProvider = ({ children }) => {
     settings,
     loading,
     error,
+    sessionExpired,
     login,
     logout,
     replaceUser,
     replaceSettings,
     isAuthenticated: Boolean(token && user)
-  }), [token, user, settings, loading, error]);
+  }), [token, user, settings, loading, error, sessionExpired]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

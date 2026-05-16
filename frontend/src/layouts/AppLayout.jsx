@@ -58,7 +58,7 @@ const defaultNavigationByRole = {
 };
 
 export default function AppLayout({ children }) {
-  const { user, settings, logout } = useAuth();
+  const { user, settings, logout, error, sessionExpired } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [documentNotificationCount, setDocumentNotificationCount] = useState(0);
@@ -416,7 +416,24 @@ export default function AppLayout({ children }) {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 md:px-8">{children}</main>
+          <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-6 md:px-8">
+            {sessionExpired ? (
+              <div className="mx-auto max-w-2xl rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center shadow-soft">
+                <h1 className="text-2xl font-semibold text-amber-950">Your session needs attention</h1>
+                <p className="mt-3 text-sm leading-6 text-amber-800">
+                  {error || 'Your login session has expired. Please refresh the page or log in again to continue using KEREA HRMS.'}
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                  <button type="button" className="rounded-2xl border border-amber-300 bg-white px-5 py-3 text-sm font-semibold text-amber-900" onClick={() => window.location.reload()}>
+                    Refresh page
+                  </button>
+                  <button type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={logout}>
+                    Log out and sign in again
+                  </button>
+                </div>
+              </div>
+            ) : children}
+          </main>
         </div>
       </div>
       {mobileOpen ? <div className="fixed inset-0 z-30 bg-slate-950/40 md:hidden" onClick={closeMobile} /> : null}
