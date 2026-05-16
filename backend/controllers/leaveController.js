@@ -188,15 +188,15 @@ const deleteRequestPermanently = async (req, res, next) => {
   }
 };
 
-const sendRemoteDocument = async ({ res, url, mimeType, fileName }) => {
+const sendRemoteDocument = async ({ res, url, mimeType, fileName, disposition = 'attachment' }) => {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Unable to fetch remote supporting document.');
   }
 
   const arrayBuffer = await response.arrayBuffer();
-  res.setHeader('Content-Type', mimeType);
-  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+  res.setHeader('Content-Type', mimeType || response.headers.get('content-type') || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `${disposition}; filename="${fileName || 'supporting-document'}"`);
   res.send(Buffer.from(arrayBuffer));
 };
 
@@ -622,23 +622,27 @@ const downloadSupportingDocument = async (req, res, next) => {
       return res.status(403).json({ message: 'You do not have permission to access this document.' });
     }
 
+    const disposition = req.query.preview === 'true' ? 'inline' : 'attachment';
+
     if (isRemoteStoragePath(request.supportingDocumentPath)) {
       await sendRemoteDocument({
         res,
         url: getRemoteDocumentUrl({
           storedName: request.supportingDocumentStoredName,
           mimeType: request.supportingDocumentMimeType,
-          fileName: request.supportingDocumentName
+          fileName: request.supportingDocumentName,
+          asAttachment: req.query.preview !== 'true'
         }),
         mimeType: request.supportingDocumentMimeType,
-        fileName: request.supportingDocumentName
+        fileName: request.supportingDocumentName,
+        disposition
       });
       return;
     }
 
     const filePath = resolveDocumentPath(request.supportingDocumentPath);
-    res.setHeader('Content-Type', request.supportingDocumentMimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${request.supportingDocumentName}"`);
+    res.setHeader('Content-Type', request.supportingDocumentMimeType || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `${disposition}; filename="${request.supportingDocumentName || 'supporting-document'}"`);
 
     const stream = fs.createReadStream(filePath);
     stream.on('error', next);

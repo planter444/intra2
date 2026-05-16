@@ -49,7 +49,7 @@ const start = async () => {
     crossOriginResourcePolicy: false,
     crossOriginEmbedderPolicy: false
   }));
-  app.use(cors({ origin: env.frontendUrl, credentials: false }));
+  app.use(cors({ origin: env.frontendUrl, credentials: false, exposedHeaders: ['Content-Disposition', 'Content-Type'] }));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan('dev'));

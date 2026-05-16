@@ -1,6 +1,40 @@
 import api from './api';
 
 const notifyLeaveUpdates = () => window.dispatchEvent(new Event('leave-requests-updated'));
+const getCurrentAuthToken = () => {
+  const header = String(api.defaults.headers.common.Authorization || '');
+  const tokenFromHeader = header.replace(/^Bearer\s+/i, '');
+  if (tokenFromHeader) {
+    return tokenFromHeader;
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem('kerea_hrms_auth') || 'null');
+    return saved?.token || '';
+  } catch {
+    return '';
+  }
+};
+
+export const getLeaveSupportingDocumentUrl = (id, preview = true) => {
+  const baseUrl = `${String(api.defaults.baseURL || '').replace(/\/$/, '')}/leaves/requests/${id}/supporting-document`;
+  const params = new URLSearchParams();
+  const token = getCurrentAuthToken();
+
+  if (preview) {
+    params.set('preview', 'true');
+  }
+
+  if (token) {
+    params.set('token', token);
+  }
+
+  const query = params.toString();
+  return query ? `${baseUrl}?${query}` : baseUrl;
+};
+
+export const previewLeaveSupportingDocument = (id) => {
+  window.open(getLeaveSupportingDocumentUrl(id, true), '_blank', 'noopener,noreferrer');
+};
 
 const buildFormData = (payload) => {
   const formData = new FormData();
@@ -63,12 +97,13 @@ export const cancelLeaveRequest = async (id) => {
 export const downloadLeaveSupportingDocument = async (id) => {
   const response = await api.get(`/leaves/requests/${id}/supporting-document`, { responseType: 'blob' });
   const disposition = response.headers['content-disposition'] || '';
-  const filenameMatch = disposition.match(/filename="?([^\"]+)"?/i);
+  const filenameMatch = disposition.match(/filename\*?=(?:UTF-8''|")?([^";]+)"?/i);
   const filename = filenameMatch?.[1] || 'supporting-document';
-  const url = window.URL.createObjectURL(new Blob([response.data]));
+  const blob = new Blob([response.data], { type: response.headers['content-type'] || response.data.type || 'application/octet-stream' });
+  const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = filename;
+  link.download = decodeURIComponent(filename);
   document.body.appendChild(link);
   link.click();
   link.remove();

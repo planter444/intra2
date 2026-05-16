@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Pencil, RefreshCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Pencil, RefreshCcw, Trash2 } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -15,6 +15,7 @@ import {
   fetchLeaveRequest,
   fetchLeaveRequests,
   fetchLeaveTypes,
+  previewLeaveSupportingDocument,
   updateLeaveRequest
 } from '../services/leaveService';
 import { countKenyaLeaveDays } from '../utils/leaveCalendar';
@@ -337,6 +338,11 @@ export default function LeaveRequestDetailPage() {
           subtitle={editing ? 'Update the leave request before any superior review is completed.' : 'Review the selected leave request details and current status.'}
           actions={[
             request.supportingDocumentName ? (
+              <button key="preview" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => previewLeaveSupportingDocument(request.id)}>
+                <span className="inline-flex items-center gap-2"><Eye size={16} />Preview attachment</span>
+              </button>
+            ) : null,
+            request.supportingDocumentName ? (
               <button key="download" type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => downloadLeaveSupportingDocument(request.id)}>
                 <span className="inline-flex items-center gap-2"><Download size={16} />Download attachment</span>
               </button>
@@ -432,9 +438,14 @@ export default function LeaveRequestDetailPage() {
               {request.supportingDocumentName ? (
                 <div>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Supporting document</p>
-                  <button type="button" className="mt-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700" onClick={() => downloadLeaveSupportingDocument(request.id)}>
-                    {request.supportingDocumentName}
-                  </button>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button type="button" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700" onClick={() => previewLeaveSupportingDocument(request.id)}>
+                      <span className="inline-flex items-center gap-2"><Eye size={16} />{request.supportingDocumentName}</span>
+                    </button>
+                    <button type="button" className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700" onClick={() => downloadLeaveSupportingDocument(request.id)}>
+                      <span className="inline-flex items-center gap-2"><Download size={16} />Download</span>
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
