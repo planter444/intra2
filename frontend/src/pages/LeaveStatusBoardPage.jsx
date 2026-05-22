@@ -212,6 +212,7 @@ export default function LeaveStatusBoardPage() {
   const [balancesLoading, setBalancesLoading] = useState(false);
   const { cardStyle, animationStyle } = usePagePresentation();
   const detailsSectionRef = useRef(null);
+  const shouldScrollToDetailsRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -365,10 +366,16 @@ export default function LeaveStatusBoardPage() {
   }, [currentYear, selectedTimelineBounds, year]);
 
   useEffect(() => {
-    if (!selectedEmployee || typeof window === 'undefined' || window.innerWidth >= 1280) {
+    if (!selectedEmployee || typeof window === 'undefined') {
       return;
     }
 
+    const shouldScroll = window.innerWidth < 1280 || shouldScrollToDetailsRef.current;
+    if (!shouldScroll) {
+      return;
+    }
+
+    shouldScrollToDetailsRef.current = false;
     window.requestAnimationFrame(() => {
       detailsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -415,7 +422,10 @@ export default function LeaveStatusBoardPage() {
                 <button
                   key={employee.id}
                   type="button"
-                  onClick={() => setSelectedEmployeeId(employee.id)}
+                  onClick={() => {
+                    shouldScrollToDetailsRef.current = true;
+                    setSelectedEmployeeId(employee.id);
+                  }}
                   className={`w-full rounded-3xl border p-4 text-left transition ${isSelected ? 'border-emerald-300 bg-emerald-50/70 shadow-lg' : 'border-slate-200 bg-white/90 hover:border-emerald-200 hover:bg-emerald-50/30'}`}
                 >
                   <div className="flex items-start justify-between gap-4">

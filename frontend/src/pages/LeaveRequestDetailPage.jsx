@@ -409,7 +409,7 @@ export default function LeaveRequestDetailPage() {
             </form>
           ) : (
             <div className="space-y-5">
-              <div className="grid gap-4 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
                 <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[0]} p-5 shadow-soft`}>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Employee</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{request.employeeName}</p>
@@ -422,7 +422,7 @@ export default function LeaveRequestDetailPage() {
                   <p className="mt-2 text-base font-semibold text-slate-900">{request.leaveTypeLabel}</p>
                   <p className="mt-1 text-sm text-slate-500">{request.daysRequested} day(s)</p>
                 </div>
-                <div className={`rounded-3xl bg-gradient-to-br ${accentClasses[2]} p-5 shadow-soft`}>
+                <div className={`col-span-2 rounded-3xl bg-gradient-to-br ${accentClasses[2]} p-5 shadow-soft lg:col-span-1`}>
                   <p className="text-xs uppercase tracking-wide text-slate-400">Duration</p>
                   <p className="mt-2 text-base font-semibold text-slate-900">{formatDateRangeDisplay(request.startDate, request.endDate)}</p>
                   <p className="text-sm text-slate-500">{request.daysRequested} day(s)</p>
@@ -457,7 +457,7 @@ export default function LeaveRequestDetailPage() {
                   {request.status === 'rejected' ? 'Mark as Approved' : 'Mark as Rejected'}
                 </button>
               ) : (
-                <div className="grid gap-3">
+                <div className="grid gap-3 lg:grid-cols-2">
                   <button type="button" className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setDecisionModal({ open: true, decision: 'approve', comment: '' })}>
                     Approve
                   </button>

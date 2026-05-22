@@ -6,6 +6,50 @@ const AuthContext = createContext(null);
 
 const STORAGE_KEY = 'kerea_hrms_auth';
 const SETTINGS_CACHE_KEY = 'kerea_hrms_settings_cache';
+const SESSION_NOTICE_KEY = 'kerea_hrms_session_notice';
+
+const decodeJwtPayload = (value) => {
+  try {
+    const [, payload] = String(value || '').split('.');
+    if (!payload) {
+      return null;
+    }
+
+    return JSON.parse(window.atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+  } catch {
+    return null;
+  }
+};
+
+const isTokenExpired = (value, graceSeconds = 30) => {
+  const payload = decodeJwtPayload(value);
+  if (!payload?.exp) {
+    return false;
+  }
+
+  return payload.exp <= Math.floor(Date.now() / 1000) + graceSeconds;
+};
+
+const readSavedAuth = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      return null;
+    }
+
+    const parsed = JSON.parse(saved);
+    if (isTokenExpired(parsed?.token)) {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(SESSION_NOTICE_KEY, 'Your previous login session expired. Please log in again to refresh your dashboard data.');
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
 
 const applyBranding = (settings) => {
   const branding = settings?.branding;
@@ -54,25 +98,40 @@ const applyBranding = (settings) => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const savedAuth = useMemo(() => readSavedAuth(), []);
   const [token, setToken] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved).token : null;
+    return savedAuth?.token || null;
   });
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved).user : null;
+    return savedAuth?.user || null;
   });
   const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved).settings;
+    if (savedAuth?.settings) {
+      return savedAuth.settings;
     }
     const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
     return cached ? JSON.parse(cached) : null;
   });
   const [loading, setLoading] = useState(Boolean(token));
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    const notice = localStorage.getItem(SESSION_NOTICE_KEY) || '';
+    localStorage.removeItem(SESSION_NOTICE_KEY);
+    return notice;
+  });
   const [sessionExpired, setSessionExpired] = useState(false);
+
+  const expireSession = (message = 'Your session has expired. Please log in again to refresh your data.') => {
+    localStorage.removeItem(STORAGE_KEY);
+    setAuthToken(null);
+    setToken(null);
+    setUser(null);
+    setSessionExpired(true);
+    setError(message);
+    setSettings(() => {
+      const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
+      return cached ? JSON.parse(cached) : null;
+    });
+  };
 
   useEffect(() => {
     setAuthToken(token);
@@ -87,8 +146,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const handleSessionExpired = (event) => {
-      setSessionExpired(true);
-      setError(event.detail?.message || 'Your session has expired. Please refresh the page or log in again.');
+      expireSession(event.detail?.message || 'Your session has expired. Please log in again to refresh your data.');
     };
 
     window.addEventListener('auth-session-expired', handleSessionExpired);
@@ -97,10 +155,34 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     if (!token) {
+      return undefined;
+    }
+
+    const payload = decodeJwtPayload(token);
+    if (!payload?.exp) {
+      return undefined;
+    }
+
+    const expiresInMs = Math.max(0, (payload.exp * 1000) - Date.now());
+    const timeoutId = window.setTimeout(() => {
+      expireSession('Your login session expired. Please log in again to refresh your dashboard data.');
+    }, expiresInMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
       return;
     }
 
     const restoreSession = async () => {
+      if (isTokenExpired(token)) {
+        expireSession('Your login session expired. Please log in again to refresh your dashboard data.');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         const data = await meRequest();
@@ -113,15 +195,7 @@ export const AuthProvider = ({ children }) => {
           setError(restoreError.response?.status === 429 ? 'Server is busy. Keeping your saved session and trying again later.' : '');
           return;
         }
-        setSessionExpired(true);
-        setError('Your session has expired. Please log in again.');
-        localStorage.removeItem(STORAGE_KEY);
-        setToken(null);
-        setUser(null);
-        setSettings(() => {
-          const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
-          return cached ? JSON.parse(cached) : null;
-        });
+        expireSession('Your session has expired. Please log in again to refresh your data.');
       } finally {
         setLoading(false);
       }

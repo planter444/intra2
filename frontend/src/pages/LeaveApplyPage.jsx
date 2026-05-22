@@ -38,6 +38,7 @@ export default function LeaveApplyPage() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
+  const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
   useEffect(() => {
     Promise.all([fetchLeaveTypes(), fetchLeaveBalances(), fetchLeaveRequests()])
@@ -98,7 +99,7 @@ export default function LeaveApplyPage() {
     [form, pristineForm]
   );
 
-  useUnsavedChangesGuard(hasUnsavedChanges && !submitting);
+  useUnsavedChangesGuard(hasUnsavedChanges && !submitting && !submittedRequestId);
 
   const validate = () => {
     if (user?.role === 'ceo') {
@@ -167,7 +168,12 @@ export default function LeaveApplyPage() {
     try {
       setSubmitting(true);
       const request = await createLeaveRequest(form);
-      navigate(`/leaves/${request.id}`);
+      setSubmittedRequestId(request.id);
+      setNotice({
+        open: true,
+        title: 'Leave successfully applied',
+        description: 'Your leave request has been submitted successfully and sent for approval.'
+      });
     } catch (error) {
       setNotice({
         open: true,
@@ -300,10 +306,22 @@ export default function LeaveApplyPage() {
         open={notice.open}
         title={notice.title}
         description={notice.description}
-        onClose={() => setNotice({ open: false, title: '', description: '' })}
+        onClose={() => {
+          if (submittedRequestId) {
+            navigate(`/leaves/${submittedRequestId}`);
+            return;
+          }
+          setNotice({ open: false, title: '', description: '' });
+        }}
         actions={[
-          <button key="close" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={() => setNotice({ open: false, title: '', description: '' })}>
-            Close
+          <button key="close" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={() => {
+            if (submittedRequestId) {
+              navigate(`/leaves/${submittedRequestId}`);
+              return;
+            }
+            setNotice({ open: false, title: '', description: '' });
+          }}>
+            {submittedRequestId ? 'View request' : 'Close'}
           </button>
         ]}
       />
