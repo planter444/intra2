@@ -83,6 +83,18 @@ const buildLeaveCard = ({ employeeName, employeeNo, departmentName, leaveTypeLab
   </div>
 `;
 
+const buildLeaveRequestUrl = (requestId) => `${String(env.frontendUrl || '').replace(/\/+$/, '')}/leaves/${encodeURIComponent(requestId)}`;
+
+const buildActionLink = ({ url, label }) => `
+  <div style="margin: 24px 0;">
+    <a href="${url}" style="display: inline-block; padding: 13px 22px; background: #166534; color: #ffffff; text-decoration: none; border-radius: 14px; font-weight: 700;">
+      ${label}
+    </a>
+  </div>
+  <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">If the button does not work, copy and paste this link into your browser:</p>
+  <p style="margin: 0 0 18px; word-break: break-all; font-size: 13px;"><a href="${url}" style="color: #166534;">${url}</a></p>
+`;
+
 const sendLeaveApplicationEmail = async ({ recipients, request, stageLabel }) => {
   const to = (recipients || [])
     .filter((recipient) => recipient?.email)
@@ -91,6 +103,8 @@ const sendLeaveApplicationEmail = async ({ recipients, request, stageLabel }) =>
   if (!to.length) {
     return;
   }
+
+  const requestUrl = buildLeaveRequestUrl(request.id);
 
   await sendBrevoEmail({
     to,
@@ -111,6 +125,7 @@ const sendLeaveApplicationEmail = async ({ recipients, request, stageLabel }) =>
             daysRequested: request.daysRequested,
             reason: request.reason
           })}
+          ${buildActionLink({ url: requestUrl, label: 'Open leave request in HRMS' })}
           <p style="margin: 0; color: #475569;">Please log in to HRMS to review and action this application.</p>
         </div>
       </div>
@@ -167,6 +182,7 @@ const sendSupervisorDecisionToCeoEmail = async ({ recipients, request, superviso
   const approved = decision === 'approve';
   const accent = approved ? '#16a34a' : '#dc2626';
   const decisionLabel = approved ? 'approved' : 'rejected';
+  const requestUrl = buildLeaveRequestUrl(request.id);
 
   await sendBrevoEmail({
     to,
@@ -189,6 +205,7 @@ const sendSupervisorDecisionToCeoEmail = async ({ recipients, request, superviso
             reviewerName: supervisorName,
             comment
           })}
+          ${buildActionLink({ url: requestUrl, label: approved ? 'Review leave request in HRMS' : 'View leave request in HRMS' })}
           <p style="margin: 0; color: #475569;">Please log in to HRMS for the latest status details.</p>
         </div>
       </div>
