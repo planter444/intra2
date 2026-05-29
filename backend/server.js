@@ -14,6 +14,7 @@ const settingsRoutes = require('./routes/settingsRoutes');
 const auditRoutes = require('./routes/auditRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const exportRoutes = require('./routes/exportRoutes');
+const payslipRoutes = require('./routes/payslipRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const { bootstrapSystem } = require('./services/settingsService');
 const { hashPassword } = require('./services/authService');
@@ -68,6 +69,7 @@ const start = async () => {
   app.use('/api/audit-logs', auditRoutes);
   app.use('/api/dashboard', dashboardRoutes);
   app.use('/api/exports', exportRoutes);
+  app.use('/api/payslips', payslipRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

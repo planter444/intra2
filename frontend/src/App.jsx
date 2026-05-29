@@ -19,6 +19,7 @@ import KPIMatrixEmployeePage from './pages/KPIMatrixEmployeePage';
 import PerformanceDashboard from './pages/PerformanceDashboard';
 import PerformanceEmployeePage from './pages/PerformanceEmployeePage';
 import LeaveStatusBoardPage from './pages/LeaveStatusBoardPage';
+import PayslipsPage from './pages/PayslipsPage';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { isAuthenticated, loading, user } = useAuth();
@@ -74,6 +75,7 @@ export default function App() {
       <Route path="/performance-dashboard/:employeeId" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><PerformanceEmployeePage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><SettingsPage /></ProtectedRoute>} />
       <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin']}><AuditLogsPage /></ProtectedRoute>} />
+      <Route path="/payslips" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><PayslipsPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

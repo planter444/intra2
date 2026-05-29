@@ -46,7 +46,19 @@ const baseSelect = `
     u.deleted_at,
     u.last_login_at,
     u.created_at,
-    u.updated_at
+    u.updated_at,
+    u.basic_salary,
+    u.housing_allowance,
+    u.transport_allowance,
+    u.medical_allowance,
+    u.other_allowances,
+    u.paye_tax,
+    u.nssf_contribution,
+    u.nhif_contribution,
+    u.other_deductions,
+    u.bank_name,
+    u.bank_account_number,
+    u.bank_branch
   FROM users u
   LEFT JOIN departments d ON d.id = u.department_id
   LEFT JOIN users s ON s.id = u.supervisor_id
@@ -76,7 +88,19 @@ const authSelect = `
     u.last_login_at,
     u.created_at,
     u.updated_at,
-    u.password_hash
+    u.password_hash,
+    u.basic_salary,
+    u.housing_allowance,
+    u.transport_allowance,
+    u.medical_allowance,
+    u.other_allowances,
+    u.paye_tax,
+    u.nssf_contribution,
+    u.nhif_contribution,
+    u.other_deductions,
+    u.bank_name,
+    u.bank_account_number,
+    u.bank_branch
   FROM users u
   LEFT JOIN departments d ON d.id = u.department_id
   LEFT JOIN users s ON s.id = u.supervisor_id
@@ -109,7 +133,19 @@ const mapUser = (row) => {
     deletedAt: row.deleted_at,
     lastLoginAt: row.last_login_at,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    basicSalary: row.basic_salary || 0,
+    housingAllowance: row.housing_allowance || 0,
+    transportAllowance: row.transport_allowance || 0,
+    medicalAllowance: row.medical_allowance || 0,
+    otherAllowances: row.other_allowances || 0,
+    payeTax: row.paye_tax || 0,
+    nssfContribution: row.nssf_contribution || 0,
+    nhifContribution: row.nhif_contribution || 0,
+    otherDeductions: row.other_deductions || 0,
+    bankName: row.bank_name || '',
+    bankAccountNumber: row.bank_account_number || '',
+    bankBranch: row.bank_branch || ''
   };
 };
 

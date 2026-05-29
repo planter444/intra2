@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { BarChart2, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Table, User, Users, X } from 'lucide-react';
+import { BarChart2, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Table, User, Users, X, DollarSign } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
@@ -21,7 +21,8 @@ const routeMap = {
   audit: '/audit-logs',
   kpi: '/kpi-matrix',
   performance: '/performance-dashboard',
-  leave_status: '/leave-status'
+  leave_status: '/leave-status',
+  payslips: '/payslips'
 };
 
 const labelKeyMap = {
@@ -45,16 +46,17 @@ const iconMap = {
   audit: ShieldCheck,
   kpi: Table,
   performance: BarChart2,
-  leave_status: ClipboardList
+  leave_status: ClipboardList,
+  payslips: DollarSign
 };
 
 const defaultNavigationByRole = {
   employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents'],
   supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents'],
   hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit'],
-  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'settings', 'kpi', 'performance'],
-  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings']
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips'],
+  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips'],
+  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips']
 };
 
 export default function AppLayout({ children }) {
