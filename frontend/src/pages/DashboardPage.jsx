@@ -26,7 +26,7 @@ export default function DashboardPage() {
     fetchDashboardSummary().then(setSummary).catch(console.error);
   }, []);
 
-  // Animation styles per card so the icon bubble follows the same page load stylei
+  // Animation styles per card so the icon bubble follows the same page load style
   const iconAnim0 = usePagePresentation({ animationOrder: 0 }).animationStyle;
   const iconAnim1 = usePagePresentation({ animationOrder: 1 }).animationStyle;
   const iconAnim2 = usePagePresentation({ animationOrder: 2 }).animationStyle;
