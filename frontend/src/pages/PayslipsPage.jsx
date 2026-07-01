@@ -3,7 +3,7 @@ import { Download, DollarSign, FileText, Printer } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import { useAuth } from '../context/AuthContext';
-import { fetchEmployees } from '../services/employeeService';
+import { fetchUsers } from '../services/userService';
 import { generatePayslipPdf } from '../services/payslipService';
 
 export default function PayslipsPage() {
@@ -16,7 +16,7 @@ export default function PayslipsPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchEmployees()
+    fetchUsers()
       .then((data) => {
         const activeEmployees = data.filter((emp) => emp.isActive && !emp.isDeleted);
         setEmployees(activeEmployees);
