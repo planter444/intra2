@@ -1,282 +1,451 @@
-import { useEffect, useState } from 'react';
-import { Download, DollarSign, FileText, Printer } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Download, Eye, FileText, Plus, Printer, Save, Settings, Trash2, Users } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import { useAuth } from '../context/AuthContext';
 import { fetchUsers } from '../services/userService';
-import { generatePayslipPdf } from '../services/payslipService';
+import {
+  fetchPayslips,
+  generatePayslips,
+  downloadPayslipBlob,
+  fetchPayrollProfile,
+  savePayrollProfile
+} from '../services/payslipService';
+
+const PRIVILEGED_ROLES = ['admin', 'ceo', 'finance'];
+
+const currentPeriod = () => new Date().toISOString().slice(0, 7);
+
+const emptyProfile = {
+  idNumber: '',
+  kraPin: '',
+  nssfNumber: '',
+  shifNumber: '',
+  paymentMode: 'Bank Transfer',
+  grossSalary: 0,
+  allowances: 0,
+  bonuses: 0,
+  overtime: 0,
+  gratuity: 0,
+  paye: 0,
+  nssf: 0,
+  shif: 0,
+  housingLevy: 0,
+  pension: 0,
+  otherDeductions: 0,
+  personalRelief: 2400,
+  insuranceRelief: 0,
+  otherContributions: []
+};
+
+const numberFields = [
+  ['grossSalary', 'Basic / Gross Salary'],
+  ['allowances', 'Allowances'],
+  ['bonuses', 'Bonuses'],
+  ['overtime', 'Overtime'],
+  ['gratuity', 'Gratuity'],
+  ['paye', 'PAYE'],
+  ['nssf', 'NSSF'],
+  ['shif', 'SHIF'],
+  ['housingLevy', 'Housing Levy'],
+  ['pension', 'Pension'],
+  ['otherDeductions', 'Other Deductions'],
+  ['personalRelief', 'Personal Relief'],
+  ['insuranceRelief', 'Insurance Relief']
+];
+
+const textFields = [
+  ['idNumber', 'ID Number'],
+  ['kraPin', 'KRA PIN'],
+  ['nssfNumber', 'NSSF Number'],
+  ['shifNumber', 'SHIF Number'],
+  ['paymentMode', 'Payment Mode']
+];
+
+const formatMoney = (value) => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 export default function PayslipsPage() {
-  const { user, settings } = useAuth();
+  const { user } = useAuth();
+  const privileged = PRIVILEGED_ROLES.includes(user?.role);
+
+  const [payslips, setPayslips] = useState([]);
+  const [loadingPayslips, setLoadingPayslips] = useState(true);
   const [employees, setEmployees] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState(currentPeriod());
+  const [profile, setProfile] = useState(emptyProfile);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState(null);
+
+  const loadPayslips = () => {
+    setLoadingPayslips(true);
+    fetchPayslips()
+      .then(setPayslips)
+      .catch(() => setPayslips([]))
+      .finally(() => setLoadingPayslips(false));
+  };
 
   useEffect(() => {
-    fetchUsers()
-      .then((data) => {
-        const activeEmployees = data.filter((emp) => emp.isActive && !emp.isDeleted);
-        setEmployees(activeEmployees);
-        if (activeEmployees.length > 0) {
-          setSelectedEmployeeId(activeEmployees[0].id);
-        }
-      })
-      .catch((err) => {
-        setError(err.response?.data?.message || 'Failed to load employees');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
+    loadPayslips();
   }, []);
 
-  const selectedEmployee = employees.find((emp) => String(emp.id) === String(selectedEmployeeId));
-
-  const handleGeneratePayslip = async () => {
-    if (!selectedEmployeeId || !selectedMonth) {
-      setError('Please select an employee and month');
+  useEffect(() => {
+    if (!privileged) {
       return;
     }
+    fetchUsers()
+      .then((data) => {
+        const active = data.filter((emp) => emp.isActive && !emp.isDeleted);
+        setEmployees(active);
+        if (active.length) {
+          setSelectedEmployeeId(String(active[0].id));
+        }
+      })
+      .catch(() => setEmployees([]));
+  }, [privileged]);
 
+  useEffect(() => {
+    if (!privileged || !selectedEmployeeId) {
+      return;
+    }
+    setProfileLoading(true);
+    fetchPayrollProfile(selectedEmployeeId)
+      .then((data) => setProfile(data ? { ...emptyProfile, ...data } : emptyProfile))
+      .catch(() => setProfile(emptyProfile))
+      .finally(() => setProfileLoading(false));
+  }, [privileged, selectedEmployeeId]);
+
+  const selectedEmployee = useMemo(
+    () => employees.find((emp) => String(emp.id) === String(selectedEmployeeId)),
+    [employees, selectedEmployeeId]
+  );
+
+  const totals = useMemo(() => {
+    const earnings = ['grossSalary', 'allowances', 'bonuses', 'overtime', 'gratuity']
+      .reduce((sum, key) => sum + Number(profile[key] || 0), 0);
+    const deductions = ['paye', 'nssf', 'shif', 'housingLevy', 'pension', 'otherDeductions']
+      .reduce((sum, key) => sum + Number(profile[key] || 0), 0);
+    return { earnings, deductions, net: earnings - deductions };
+  }, [profile]);
+
+  const notify = (type, text) => {
+    setMessage({ type, text });
+    window.setTimeout(() => setMessage(null), 6000);
+  };
+
+  const handleSaveProfile = async () => {
     try {
-      setGenerating(true);
-      setError('');
-      const blob = await generatePayslipPdf(selectedEmployeeId, selectedMonth);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `payslip_${selectedEmployee?.employeeNo || selectedEmployeeId}_${selectedMonth}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to generate payslip');
+      setSaving(true);
+      await savePayrollProfile(selectedEmployeeId, profile);
+      notify('success', 'Payroll details saved.');
+    } catch (error) {
+      notify('error', error.response?.data?.message || 'Unable to save payroll details.');
     } finally {
-      setGenerating(false);
+      setSaving(false);
     }
   };
 
-  const handlePrintPayslip = async () => {
-    if (!selectedEmployeeId || !selectedMonth) {
-      setError('Please select an employee and month');
-      return;
-    }
-
+  const handleGenerate = async (all = false) => {
     try {
       setGenerating(true);
-      setError('');
-      const blob = await generatePayslipPdf(selectedEmployeeId, selectedMonth);
-      const url = window.URL.createObjectURL(blob);
-      const printWindow = window.open(url, '_blank');
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-        };
+      const payload = all ? { period, all: true } : { period, userId: selectedEmployeeId };
+      const result = await generatePayslips(payload);
+      const generatedCount = result.generated?.length || 0;
+      const failed = result.failed || [];
+      if (failed.length) {
+        notify('error', `${generatedCount} generated. Skipped: ${failed.map((item) => `${item.name || item.userId} (${item.error})`).join('; ')}`);
+      } else {
+        notify('success', `${generatedCount} payslip${generatedCount === 1 ? '' : 's'} generated for ${period}.`);
       }
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to generate payslip');
+      loadPayslips();
+    } catch (error) {
+      notify('error', error.response?.data?.message || 'Unable to generate payslips.');
     } finally {
       setGenerating(false);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-KE', {
-      style: 'currency',
-      currency: 'KES',
-      minimumFractionDigits: 2
-    }).format(amount || 0);
+  const openPayslip = async (payslip, print = false) => {
+    try {
+      const blob = await downloadPayslipBlob(payslip.id);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const win = window.open(url, '_blank');
+      if (print && win) {
+        win.onload = () => win.print();
+      }
+    } catch (error) {
+      notify('error', 'Unable to open this payslip.');
+    }
   };
 
-  const calculateTotals = (employee) => {
-    if (!employee) return { gross: 0, totalDeductions: 0, net: 0 };
-
-    const gross = (employee.basicSalary || 0) +
-                  (employee.housingAllowance || 0) +
-                  (employee.transportAllowance || 0) +
-                  (employee.medicalAllowance || 0) +
-                  (employee.otherAllowances || 0);
-
-    const totalDeductions = (employee.payeTax || 0) +
-                           (employee.nssfContribution || 0) +
-                           (employee.nhifContribution || 0) +
-                           (employee.otherDeductions || 0);
-
-    const net = gross - totalDeductions;
-
-    return { gross, totalDeductions, net };
+  const downloadPayslip = async (payslip) => {
+    try {
+      const blob = await downloadPayslipBlob(payslip.id);
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `payslip_${payslip.employeeNo || payslip.userId}_${payslip.period}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      notify('error', 'Unable to download this payslip.');
+    }
   };
 
-  const { gross, totalDeductions, net } = calculateTotals(selectedEmployee);
+  const updateContribution = (index, key, value) => {
+    setProfile((current) => {
+      const contributions = [...(current.otherContributions || [])];
+      contributions[index] = { ...contributions[index], [key]: value };
+      return { ...current, otherContributions: contributions };
+    });
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Payslips"
-        subtitle="Generate and download employee payslips in PDF format"
+        subtitle={privileged ? 'Generate official payslips from the uploaded PDF template.' : 'View, download and print your payslips.'}
+        actions={privileged && user?.role === 'admin' ? [
+          <Link
+            key="templates"
+            to="/payslip-templates"
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"
+          >
+            <Settings size={16} />
+            Manage Template
+          </Link>
+        ] : undefined}
       />
 
-      <SectionCard title="Generate Payslip" subtitle="Select an employee and month to generate their payslip">
-        {loading ? (
-          <div className="text-center py-8 text-slate-500">Loading employees...</div>
-        ) : error && !selectedEmployee ? (
-          <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
-        ) : (
+      {message ? (
+        <div className={`rounded-2xl px-4 py-3 text-sm ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
+          {message.text}
+        </div>
+      ) : null}
+
+      {privileged ? (
+        <SectionCard title="Payroll & Generation" subtitle="Set employee payroll values, then generate payslips using the official template.">
           <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Employee</label>
                 <select
                   value={selectedEmployeeId}
-                  onChange={(e) => setSelectedEmployeeId(e.target.value)}
+                  onChange={(event) => setSelectedEmployeeId(event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
                 >
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.fullName} - {emp.employeeNo || 'No ID'} - {emp.departmentName || 'No Department'}
+                      {emp.fullName} {emp.employeeNo ? `(${emp.employeeNo})` : ''} - {emp.departmentName || 'No department'}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Month</label>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Payroll period</label>
                 <input
                   type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  value={period}
+                  onChange={(event) => setPeriod(event.target.value)}
                   className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
                 />
               </div>
             </div>
 
-            {selectedEmployee && (
-              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-6">
-                <h3 className="mb-4 text-lg font-semibold text-slate-900">Payslip Preview</h3>
-                
-                <div className="mb-6 rounded-2xl bg-white p-4 shadow-sm">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-slate-500">Employee Name</p>
-                      <p className="font-medium text-slate-900">{selectedEmployee.fullName}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Employee No</p>
-                      <p className="font-medium text-slate-900">{selectedEmployee.employeeNo || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Department</p>
-                      <p className="font-medium text-slate-900">{selectedEmployee.departmentName || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Position</p>
-                      <p className="font-medium text-slate-900">{selectedEmployee.positionTitle || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Bank</p>
-                      <p className="font-medium text-slate-900">{selectedEmployee.bankName || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-500">Account Number</p>
-                      <p className="font-medium text-slate-900">{selectedEmployee.bankAccountNumber || 'N/A'}</p>
-                    </div>
+            {profileLoading ? (
+              <p className="text-sm text-slate-500">Loading payroll details...</p>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <h4 className="mb-3 text-sm font-semibold text-slate-900">Statutory details</h4>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {textFields.map(([key, label]) => (
+                      <div key={key}>
+                        <label className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
+                        <input
+                          type="text"
+                          value={profile[key] ?? ''}
+                          onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value }))}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl bg-emerald-50 p-4">
-                    <h4 className="mb-3 font-semibold text-emerald-900">Earnings</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Basic Salary</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.basicSalary)}</span>
+                <div>
+                  <h4 className="mb-3 text-sm font-semibold text-slate-900">Earnings, deductions & reliefs (KES)</h4>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    {numberFields.map(([key, label]) => (
+                      <div key={key}>
+                        <label className="mb-1 block text-xs font-medium text-slate-500">{label}</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={profile[key] ?? 0}
+                          onChange={(event) => setProfile((current) => ({ ...current, [key]: event.target.value === '' ? 0 : Number(event.target.value) }))}
+                          className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                        />
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Housing Allowance</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.housingAllowance)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Transport Allowance</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.transportAllowance)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Medical Allowance</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.medicalAllowance)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Other Allowances</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.otherAllowances)}</span>
-                      </div>
-                      <div className="mt-3 flex justify-between border-t border-emerald-200 pt-3 font-semibold">
-                        <span className="text-emerald-900">Gross Pay</span>
-                        <span className="text-emerald-900">{formatCurrency(gross)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl bg-rose-50 p-4">
-                    <h4 className="mb-3 font-semibold text-rose-900">Deductions</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">PAYE Tax</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.payeTax)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">NSSF Contribution</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.nssfContribution)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">NHIF Contribution</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.nhifContribution)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Other Deductions</span>
-                        <span className="font-medium text-slate-900">{formatCurrency(selectedEmployee.otherDeductions)}</span>
-                      </div>
-                      <div className="mt-3 flex justify-between border-t border-rose-200 pt-3 font-semibold">
-                        <span className="text-rose-900">Total Deductions</span>
-                        <span className="text-rose-900">{formatCurrency(totalDeductions)}</span>
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
 
-                <div className="mt-4 rounded-2xl bg-brand-gradient p-4 text-white">
-                  <div className="flex justify-between text-lg font-semibold">
-                    <span>Net Pay</span>
-                    <span>{formatCurrency(net)}</span>
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <h4 className="text-sm font-semibold text-slate-900">Other contributions</h4>
+                    <button
+                      type="button"
+                      onClick={() => setProfile((current) => ({
+                        ...current,
+                        otherContributions: [...(current.otherContributions || []), { label: '', amount: 0 }]
+                      }))}
+                      className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"
+                    >
+                      <Plus size={14} />
+                      Add contribution
+                    </button>
                   </div>
+                  {(profile.otherContributions || []).length === 0 ? (
+                    <p className="text-xs text-slate-500">No contributions configured for this employee.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {(profile.otherContributions || []).map((entry, index) => (
+                        <div key={index} className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Contribution name (e.g. GIZ Contribution)"
+                            value={entry.label || ''}
+                            onChange={(event) => updateContribution(index, 'label', event.target.value)}
+                            className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Amount"
+                            value={entry.amount ?? 0}
+                            onChange={(event) => updateContribution(index, 'amount', event.target.value === '' ? 0 : Number(event.target.value))}
+                            className="w-36 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setProfile((current) => ({
+                              ...current,
+                              otherContributions: (current.otherContributions || []).filter((_, i) => i !== index)
+                            }))}
+                            className="rounded-xl bg-rose-50 p-2 text-rose-600"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid gap-3 rounded-2xl bg-slate-50 p-4 text-sm sm:grid-cols-3">
+                  <div>
+                    <p className="text-slate-500">Gross Earnings</p>
+                    <p className="font-semibold text-slate-900">KES {formatMoney(totals.earnings)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Total Deductions</p>
+                    <p className="font-semibold text-amber-700">KES {formatMoney(totals.deductions)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Net Pay</p>
+                    <p className="font-semibold text-emerald-700">KES {formatMoney(totals.net)}</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={handleSaveProfile}
+                    disabled={saving || !selectedEmployeeId}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm disabled:opacity-50"
+                  >
+                    <Save size={16} />
+                    {saving ? 'Saving...' : 'Save payroll details'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerate(false)}
+                    disabled={generating || !selectedEmployeeId}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50"
+                  >
+                    <FileText size={16} />
+                    {generating ? 'Generating...' : 'Generate payslip'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleGenerate(true)}
+                    disabled={generating}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-emerald-900 px-5 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50"
+                  >
+                    <Users size={16} />
+                    {generating ? 'Generating...' : 'Generate for all employees'}
+                  </button>
                 </div>
               </div>
             )}
+          </div>
+        </SectionCard>
+      ) : null}
 
-            <div className="flex flex-wrap justify-end gap-3">
-              <button
-                type="button"
-                onClick={handlePrintPayslip}
-                disabled={generating || !selectedEmployee}
-                className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm disabled:opacity-50"
-              >
-                <Printer size={16} />
-                {generating ? 'Generating...' : 'Print'}
-              </button>
-              <button
-                type="button"
-                onClick={handleGeneratePayslip}
-                disabled={generating || !selectedEmployee}
-                className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50"
-              >
-                <Download size={16} />
-                {generating ? 'Generating...' : 'Download PDF'}
-              </button>
-            </div>
-
-            {error && (
-              <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
-            )}
+      <SectionCard title="Payslip History" subtitle={privileged ? 'All generated payslips. Regenerating a period replaces the previous version.' : 'Your generated payslips.'}>
+        {loadingPayslips ? (
+          <p className="py-6 text-center text-sm text-slate-500">Loading payslips...</p>
+        ) : payslips.length === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-500">No payslips available yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-xs uppercase text-slate-500">
+                  {privileged ? <th className="px-3 py-2">Employee</th> : null}
+                  <th className="px-3 py-2">Period</th>
+                  <th className="px-3 py-2">Net Pay (KES)</th>
+                  <th className="px-3 py-2">Generated</th>
+                  <th className="px-3 py-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payslips.map((payslip) => (
+                  <tr key={payslip.id} className="border-b border-slate-100">
+                    {privileged ? (
+                      <td className="px-3 py-3 font-medium text-slate-900">
+                        {payslip.employeeName}
+                        {payslip.employeeNo ? <span className="ml-1 text-xs text-slate-500">({payslip.employeeNo})</span> : null}
+                      </td>
+                    ) : null}
+                    <td className="px-3 py-3">{payslip.period}</td>
+                    <td className="px-3 py-3">{payslip.data?.summary ? formatMoney(payslip.data.summary.netPay) : '—'}</td>
+                    <td className="px-3 py-3 text-slate-500">{new Date(payslip.updatedAt || payslip.createdAt).toLocaleDateString()}</td>
+                    <td className="px-3 py-3">
+                      <div className="flex justify-end gap-2">
+                        <button type="button" title="Preview" onClick={() => openPayslip(payslip)} className="rounded-xl bg-slate-100 p-2 text-slate-700">
+                          <Eye size={15} />
+                        </button>
+                        <button type="button" title="Download" onClick={() => downloadPayslip(payslip)} className="rounded-xl bg-emerald-50 p-2 text-emerald-700">
+                          <Download size={15} />
+                        </button>
+                        <button type="button" title="Print" onClick={() => openPayslip(payslip, true)} className="rounded-xl bg-slate-100 p-2 text-slate-700">
+                          <Printer size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </SectionCard>

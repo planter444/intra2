@@ -51,8 +51,8 @@ const iconMap = {
 };
 
 const defaultNavigationByRole = {
-  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents'],
-  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents'],
+  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'payslips'],
+  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'payslips'],
   hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents'],
   admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips'],
   ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips'],

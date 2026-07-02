@@ -1,131 +1,250 @@
-const PDFDocument = require('pdfkit');
 const userModel = require('../models/userModel');
+const payslipModel = require('../models/payslipModel');
+const {
+  DATA_KEYS,
+  listTemplateFields,
+  buildAutoFieldMap,
+  fillTemplate,
+  buildPayslipValues
+} = require('../services/payslipPdfService');
 
-const generatePayslip = async (req, res, next) => {
+const PRIVILEGED_ROLES = ['admin', 'ceo', 'finance'];
+
+const isPrivileged = (user) => PRIVILEGED_ROLES.includes(user.role);
+
+const listTemplates = async (req, res, next) => {
   try {
-    const { id: employeeId } = req.params;
-    const { month } = req.query;
+    const templates = await payslipModel.listTemplates();
+    res.json({ templates });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    if (!month) {
-      return res.status(400).json({ message: 'Month parameter is required (format: YYYY-MM)' });
+const uploadTemplate = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'A PDF template file is required.' });
+    }
+    if (req.file.mimetype !== 'application/pdf') {
+      return res.status(400).json({ message: 'The template must be a PDF file.' });
     }
 
-    const employee = await userModel.findById(employeeId);
-    if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
+    let fields;
+    try {
+      fields = await listTemplateFields(req.file.buffer);
+    } catch (error) {
+      return res.status(400).json({ message: 'Unable to read this PDF. Please upload a valid PDF file.' });
     }
 
-    const gross = (employee.basicSalary || 0) +
-                  (employee.housingAllowance || 0) +
-                  (employee.transportAllowance || 0) +
-                  (employee.medicalAllowance || 0) +
-                  (employee.otherAllowances || 0);
+    if (!fields.length) {
+      return res.status(400).json({
+        message: 'This PDF has no fillable form fields. Please upload the official template with form fields so values can be filled without changing the design.'
+      });
+    }
 
-    const totalDeductions = (employee.payeTax || 0) +
-                           (employee.nssfContribution || 0) +
-                           (employee.nhifContribution || 0) +
-                           (employee.otherDeductions || 0);
-
-    const net = gross - totalDeductions;
-
-    const formatCurrency = (amount) => {
-      return new Intl.NumberFormat('en-KE', {
-        style: 'currency',
-        currency: 'KES',
-        minimumFractionDigits: 2
-      }).format(amount || 0);
-    };
-
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
-    const chunks = [];
-
-    doc.on('data', (chunk) => chunks.push(chunk));
-    doc.on('end', () => {
-      const pdfBuffer = Buffer.concat(chunks);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="payslip_${employee.employeeNo || employeeId}_${month}.pdf"`);
-      res.send(pdfBuffer);
+    const fieldMap = buildAutoFieldMap(fields.map((field) => field.name));
+    const template = await payslipModel.createTemplate({
+      fileName: req.file.originalname,
+      fileData: req.file.buffer,
+      fieldMap,
+      uploadedBy: req.user.id
     });
 
-    const monthDate = new Date(month + '-01');
-    const monthName = monthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    res.status(201).json({ template, fields });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    doc.fontSize(20).font('Helvetica-Bold').text('KEREA HRMS - PAYSLIP', { align: 'center' });
-    doc.moveDown();
-    doc.fontSize(12).font('Helvetica').text(`Pay Period: ${monthName}`, { align: 'center' });
-    doc.moveDown(2);
+const getTemplateFields = async (req, res, next) => {
+  try {
+    const template = await payslipModel.getTemplateById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found.' });
+    }
+    const fields = await listTemplateFields(template.fileData);
+    res.json({ fields, fieldMap: template.fieldMap, dataKeys: DATA_KEYS });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Employee Information');
-    doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica').text(`Name: ${employee.fullName}`);
-    doc.text(`Employee No: ${employee.employeeNo || 'N/A'}`);
-    doc.text(`Department: ${employee.departmentName || 'N/A'}`);
-    doc.text(`Position: ${employee.positionTitle || 'N/A'}`);
-    doc.moveDown();
+const activateTemplate = async (req, res, next) => {
+  try {
+    const template = await payslipModel.activateTemplate(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found.' });
+    }
+    res.json({ template });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Bank Details');
-    doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica').text(`Bank: ${employee.bankName || 'N/A'}`);
-    doc.text(`Account Number: ${employee.bankAccountNumber || 'N/A'}`);
-    doc.text(`Branch: ${employee.bankBranch || 'N/A'}`);
-    doc.moveDown();
+const updateTemplateMapping = async (req, res, next) => {
+  try {
+    const template = await payslipModel.updateTemplateFieldMap(req.params.id, req.body.fieldMap || {});
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found.' });
+    }
+    res.json({ template });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Earnings');
-    doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica');
-    
-    const earnings = [
-      { label: 'Basic Salary', amount: employee.basicSalary },
-      { label: 'Housing Allowance', amount: employee.housingAllowance },
-      { label: 'Transport Allowance', amount: employee.transportAllowance },
-      { label: 'Medical Allowance', amount: employee.medicalAllowance },
-      { label: 'Other Allowances', amount: employee.otherAllowances }
-    ];
+const downloadTemplateFile = async (req, res, next) => {
+  try {
+    const template = await payslipModel.getTemplateById(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found.' });
+    }
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${template.fileName}"`);
+    res.send(template.fileData);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    earnings.forEach((item) => {
-      doc.text(`${item.label}:`, { continued: true });
-      doc.text(formatCurrency(item.amount), { align: 'right' });
-    });
+const getDataKeys = (req, res) => {
+  res.json({ dataKeys: DATA_KEYS });
+};
 
-    doc.moveDown(0.5);
-    doc.font('Helvetica-Bold').text(`Gross Pay:`, { continued: true });
-    doc.text(formatCurrency(gross), { align: 'right' });
-    doc.moveDown();
+const getPayrollProfile = async (req, res, next) => {
+  try {
+    const profile = await payslipModel.getProfileByUserId(req.params.userId);
+    res.json({ profile: profile || null });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    doc.fontSize(14).font('Helvetica-Bold').text('Deductions');
-    doc.moveDown(0.5);
-    doc.fontSize(11).font('Helvetica');
+const savePayrollProfile = async (req, res, next) => {
+  try {
+    const profile = await payslipModel.upsertProfile(req.params.userId, req.body || {});
+    res.json({ profile });
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const deductions = [
-      { label: 'PAYE Tax', amount: employee.payeTax },
-      { label: 'NSSF Contribution', amount: employee.nssfContribution },
-      { label: 'NHIF Contribution', amount: employee.nhifContribution },
-      { label: 'Other Deductions', amount: employee.otherDeductions }
-    ];
+const generateForEmployee = async ({ userId, period, template, generatedBy }) => {
+  const employee = await userModel.findById(userId);
+  if (!employee || employee.isDeleted || !employee.isActive) {
+    return { userId, error: 'Employee not found or inactive.' };
+  }
 
-    deductions.forEach((item) => {
-      doc.text(`${item.label}:`, { continued: true });
-      doc.text(formatCurrency(item.amount), { align: 'right' });
-    });
+  const profile = await payslipModel.getProfileByUserId(userId);
+  if (!profile) {
+    return { userId, name: employee.fullName, error: 'No payroll profile set for this employee.' };
+  }
 
-    doc.moveDown(0.5);
-    doc.font('Helvetica-Bold').text(`Total Deductions:`, { continued: true });
-    doc.text(formatCurrency(totalDeductions), { align: 'right' });
-    doc.moveDown();
+  const values = buildPayslipValues({ employee, profile, period });
+  const { summary, ...fillValues } = values;
+  const pdfData = await fillTemplate(template.fileData, template.fieldMap, fillValues);
 
-    doc.fontSize(16).font('Helvetica-Bold').fillColor('green').text(`Net Pay: ${formatCurrency(net)}`, { align: 'right' });
-    doc.fillColor('black');
+  const payslip = await payslipModel.upsertPayslip({
+    userId,
+    period,
+    templateId: template.id,
+    data: { ...fillValues, summary },
+    pdfData,
+    generatedBy
+  });
 
-    doc.moveDown(3);
-    doc.fontSize(10).font('Helvetica').text('Generated by KEREA HRMS', { align: 'center' });
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, { align: 'center' });
+  return { userId, name: employee.fullName, payslipId: payslip.id };
+};
 
-    doc.end();
+const generatePayslips = async (req, res, next) => {
+  try {
+    const { userId, period, all } = req.body || {};
+    if (!period || !/^\d{4}-\d{2}$/.test(period)) {
+      return res.status(400).json({ message: 'A payroll period is required (format: YYYY-MM).' });
+    }
+
+    const template = await payslipModel.getActiveTemplate();
+    if (!template) {
+      return res.status(400).json({ message: 'No active payslip template. Please upload the official PDF template first.' });
+    }
+    if (!Object.keys(template.fieldMap || {}).length) {
+      return res.status(400).json({ message: 'The active template has no field mapping configured yet.' });
+    }
+
+    let targets = [];
+    if (all) {
+      const users = await userModel.listAll({});
+      targets = users.filter((user) => user.isActive && !user.isDeleted).map((user) => user.id);
+    } else if (userId) {
+      targets = [userId];
+    } else {
+      return res.status(400).json({ message: 'Provide a userId or set all=true.' });
+    }
+
+    const results = [];
+    for (const targetId of targets) {
+      results.push(await generateForEmployee({ userId: targetId, period, template, generatedBy: req.user.id }));
+    }
+
+    const generated = results.filter((result) => result.payslipId);
+    const failed = results.filter((result) => result.error);
+    res.json({ generated, failed });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const listMyOrAllPayslips = async (req, res, next) => {
+  try {
+    const { period, userId } = req.query;
+    const filters = { period: period || undefined };
+
+    if (isPrivileged(req.user)) {
+      if (userId) {
+        filters.userId = userId;
+      }
+    } else {
+      filters.userId = req.user.id;
+    }
+
+    const payslips = await payslipModel.listPayslips(filters);
+    res.json({ payslips });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const downloadPayslipFile = async (req, res, next) => {
+  try {
+    const payslip = await payslipModel.getPayslipById(req.params.id);
+    if (!payslip) {
+      return res.status(404).json({ message: 'Payslip not found.' });
+    }
+
+    if (!isPrivileged(req.user) && String(payslip.userId) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You can only access your own payslips.' });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="payslip_${payslip.employeeNo || payslip.userId}_${payslip.period}.pdf"`);
+    res.send(payslip.pdfData);
   } catch (error) {
     next(error);
   }
 };
 
 module.exports = {
-  generatePayslip
+  listTemplates,
+  uploadTemplate,
+  getTemplateFields,
+  activateTemplate,
+  updateTemplateMapping,
+  downloadTemplateFile,
+  getDataKeys,
+  getPayrollProfile,
+  savePayrollProfile,
+  generatePayslips,
+  listMyOrAllPayslips,
+  downloadPayslipFile
 };
