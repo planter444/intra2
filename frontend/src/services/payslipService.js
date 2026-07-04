@@ -10,6 +10,16 @@ export const generatePayslips = async (payload) => {
   return data;
 };
 
+export const previewPayslipBlob = async (userId, period) => {
+  const response = await api.post('/payslips/preview', { userId, period }, { responseType: 'blob' });
+  return response.data;
+};
+
+export const deletePayslip = async (payslipId) => {
+  const { data } = await api.delete(`/payslips/${payslipId}`);
+  return data;
+};
+
 export const downloadPayslipBlob = async (payslipId) => {
   const response = await api.get(`/payslips/${payslipId}/file`, { responseType: 'blob' });
   return response.data;

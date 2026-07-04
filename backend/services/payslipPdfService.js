@@ -72,7 +72,7 @@ const buildAutoFieldMap = (fieldNames) => {
   return fieldMap;
 };
 
-const fillTemplate = async (fileBytes, fieldMap, values) => {
+const fillTemplate = async (fileBytes, fieldMap, values, { flatten = true } = {}) => {
   const doc = await PDFDocument.load(fileBytes, { updateMetadata: false });
   const form = doc.getForm();
   const fallbackFont = await doc.embedFont(StandardFonts.Helvetica);
@@ -116,10 +116,20 @@ const fillTemplate = async (fileBytes, fieldMap, values) => {
     }
   });
 
-  try {
-    form.flatten();
-  } catch (error) {
-    // If flattening fails (e.g. unsupported field type), keep the filled form as-is.
+  if (flatten) {
+    try {
+      form.flatten();
+    } catch (error) {
+      // If flattening fails, make every field read-only instead so PDF viewers
+      // stop highlighting them with a coloured background.
+      form.getFields().forEach((field) => {
+        try {
+          field.enableReadOnly();
+        } catch (readOnlyError) {
+          // Leave as-is.
+        }
+      });
+    }
   }
 
   return Buffer.from(await doc.save({ updateFieldAppearances: false }));

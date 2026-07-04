@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Eye, Save, Trash2, Upload } from 'lucide-react';
+import { CheckCircle2, Eye, Save, Trash2, Upload, X } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import {
@@ -23,6 +23,8 @@ export default function PayslipTemplatesPage() {
   const [dataKeys, setDataKeys] = useState([]);
   const [fieldMap, setFieldMap] = useState({});
   const [savingMap, setSavingMap] = useState(false);
+  const [popup, setPopup] = useState(null);
+  const [mappingPdfUrl, setMappingPdfUrl] = useState(null);
   const fileInputRef = useRef(null);
 
   const notify = (type, text) => {
@@ -68,8 +70,20 @@ export default function PayslipTemplatesPage() {
       setFields(data.fields);
       setDataKeys(data.dataKeys);
       setFieldMap(data.fieldMap || {});
+      try {
+        const blob = await downloadTemplateBlob(templateId);
+        const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+        setMappingPdfUrl((current) => {
+          if (current) {
+            window.URL.revokeObjectURL(current);
+          }
+          return url;
+        });
+      } catch (pdfError) {
+        setMappingPdfUrl(null);
+      }
     } catch (error) {
-      notify('error', 'Unable to load template fields.');
+      setPopup({ title: 'Unable to load fields', lines: ['Could not read the form fields of this template. Try re-uploading it.'], warning: true });
     }
   };
 
@@ -77,10 +91,14 @@ export default function PayslipTemplatesPage() {
     try {
       setSavingMap(true);
       await saveTemplateMapping(mappingTemplateId, fieldMap);
-      notify('success', 'Field mapping saved.');
+      const mappedCount = Object.values(fieldMap).filter(Boolean).length;
+      setPopup({
+        title: 'Mapping saved successfully',
+        lines: [`${mappedCount} field${mappedCount === 1 ? '' : 's'} mapped. Payslips generated from this template will now use these mappings.`]
+      });
       loadTemplates();
     } catch (error) {
-      notify('error', error.response?.data?.message || 'Unable to save mapping.');
+      setPopup({ title: 'Save failed', lines: [error.response?.data?.message || 'Unable to save the field mapping. Please try again.'], warning: true });
     } finally {
       setSavingMap(false);
     }
@@ -134,6 +152,33 @@ export default function PayslipTemplatesPage() {
 
   return (
     <div className="space-y-6">
+      {popup ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className={`rounded-2xl p-2 ${popup.warning ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                  {popup.warning ? <X size={22} /> : <CheckCircle2 size={22} />}
+                </span>
+                <h3 className="text-lg font-semibold text-slate-900">{popup.title}</h3>
+              </div>
+              <button type="button" onClick={() => setPopup(null)} className="rounded-xl p-1 text-slate-400 hover:text-slate-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-4 space-y-2 text-sm text-slate-600">
+              {popup.lines.map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button type="button" onClick={() => setPopup(null)} className="rounded-2xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white">
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <PageHeader
         title="Payslip Template Management"
         subtitle="Upload the official payslip PDF, map its form fields to payroll data, and manage version history. The design of the PDF is never modified — only the field values are filled."
@@ -235,28 +280,37 @@ export default function PayslipTemplatesPage() {
       {mappingTemplateId ? (
         <SectionCard
           title="Field mapping"
-          subtitle="Link each form field found inside the PDF to a payroll data column. Fields left unmapped keep whatever is in the template."
+          subtitle="The template PDF is shown on the left so you can see exactly where each field sits. Link each form field to a payroll data column on the right. Fields left unmapped keep whatever is in the template."
         >
           {fields.length === 0 ? (
             <p className="text-sm text-slate-500">No form fields found in this PDF.</p>
           ) : (
             <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                {fields.map((field) => (
-                  <div key={field.name} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700" title={field.name}>{field.name}</span>
-                    <select
-                      value={fieldMap[field.name] || ''}
-                      onChange={(event) => setFieldMap((current) => ({ ...current, [field.name]: event.target.value || undefined }))}
-                      className="w-52 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs"
-                    >
-                      <option value="">Not mapped</option>
-                      {dataKeys.map((entry) => (
-                        <option key={entry.key} value={entry.key}>{entry.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                  {mappingPdfUrl ? (
+                    <iframe title="Template preview" src={mappingPdfUrl} className="h-[75vh] w-full" />
+                  ) : (
+                    <p className="p-6 text-center text-sm text-slate-500">Template preview unavailable.</p>
+                  )}
+                </div>
+                <div className="max-h-[75vh] space-y-2 overflow-y-auto pr-1">
+                  {fields.map((field) => (
+                    <div key={field.name} className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700" title={field.name}>{field.name}</span>
+                      <select
+                        value={fieldMap[field.name] || ''}
+                        onChange={(event) => setFieldMap((current) => ({ ...current, [field.name]: event.target.value || undefined }))}
+                        className="w-52 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-xs"
+                      >
+                        <option value="">Not mapped</option>
+                        {dataKeys.map((entry) => (
+                          <option key={entry.key} value={entry.key}>{entry.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="flex justify-end">
                 <button

@@ -15,6 +15,8 @@ const {
   getPayrollProfile,
   savePayrollProfile,
   generatePayslips,
+  previewPayslip,
+  deletePayslip,
   listMyOrAllPayslips,
   downloadPayslipFile
 } = require('../controllers/payslipController');
@@ -37,6 +39,8 @@ router.get('/profile/:userId', authenticate, authorize('admin', 'ceo', 'finance'
 router.put('/profile/:userId', authenticate, authorize('admin', 'ceo', 'finance'), savePayrollProfile);
 
 router.post('/generate', authenticate, authorize('admin', 'ceo', 'finance'), generatePayslips);
+router.post('/preview', authenticate, authorize('admin', 'ceo', 'finance'), previewPayslip);
+router.delete('/:id', authenticate, authorize('admin'), deletePayslip);
 router.get('/', authenticate, listMyOrAllPayslips);
 router.get('/:id/file', authenticate, downloadPayslipFile);
 

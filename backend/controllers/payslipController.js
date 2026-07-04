@@ -219,6 +219,52 @@ const generatePayslips = async (req, res, next) => {
   }
 };
 
+const previewPayslip = async (req, res, next) => {
+  try {
+    const { userId, period } = req.body || {};
+    if (!userId || !period || !/^\d{4}-\d{2}$/.test(period)) {
+      return res.status(400).json({ message: 'A userId and period (YYYY-MM) are required.' });
+    }
+
+    const template = await payslipModel.getActiveTemplate();
+    if (!template) {
+      return res.status(400).json({ message: 'No active payslip template. Please upload the official PDF template first.' });
+    }
+
+    const employee = await userModel.findById(userId);
+    if (!employee) {
+      return res.status(404).json({ message: 'Employee not found.' });
+    }
+
+    const profile = await payslipModel.getProfileByUserId(userId);
+    if (!profile) {
+      return res.status(400).json({ message: 'No payroll profile set for this employee. Save payroll details first.' });
+    }
+
+    const values = buildPayslipValues({ employee, profile, period });
+    const { summary, ...fillValues } = values;
+    const pdfData = await fillTemplate(template.fileData, template.fieldMap, fillValues, { flatten: false });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="payslip_preview_${period}.pdf"`);
+    res.send(pdfData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deletePayslip = async (req, res, next) => {
+  try {
+    const deleted = await payslipModel.deletePayslip(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Payslip not found.' });
+    }
+    res.json({ message: 'Payslip deleted.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const listMyOrAllPayslips = async (req, res, next) => {
   try {
     const { period, userId } = req.query;
@@ -271,6 +317,8 @@ module.exports = {
   getPayrollProfile,
   savePayrollProfile,
   generatePayslips,
+  previewPayslip,
+  deletePayslip,
   listMyOrAllPayslips,
   downloadPayslipFile
 };

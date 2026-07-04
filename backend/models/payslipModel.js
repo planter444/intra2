@@ -174,6 +174,11 @@ const getPayslipById = async (id) => {
   return mapPayslip(result.rows[0], true);
 };
 
+const deletePayslip = async (id) => {
+  const result = await query('DELETE FROM payslips WHERE id = $1 RETURNING id', [id]);
+  return result.rows[0] || null;
+};
+
 const getProfileByUserId = async (userId) => {
   const result = await query('SELECT * FROM payroll_profiles WHERE user_id = $1 LIMIT 1', [userId]);
   return mapProfile(result.rows[0]);
@@ -247,6 +252,7 @@ module.exports = {
   upsertPayslip,
   listPayslips,
   getPayslipById,
+  deletePayslip,
   getProfileByUserId,
   upsertProfile
 };
