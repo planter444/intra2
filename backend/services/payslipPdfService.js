@@ -1,4 +1,4 @@
-const { PDFDocument, StandardFonts } = require('pdf-lib');
+const { PDFDocument, StandardFonts, PDFName, PDFBool } = require('pdf-lib');
 
 const DATA_KEYS = [
   { key: 'employeeNo', label: 'Employee Number' },
@@ -72,10 +72,34 @@ const buildAutoFieldMap = (fieldNames) => {
   return fieldMap;
 };
 
+// Matches the font operator (e.g. "/Arial 9 Tf") inside a field's default appearance,
+// so a repair can keep the template's original font name and size.
+const TF_REGEX = /\/[^\s/]+\s+\d+(?:\.\d+)?\s+Tf/;
+
+const repairDefaultAppearance = (field) => {
+  let tf = null;
+  try {
+    const da = field.acroField.getDefaultAppearance() || '';
+    const match = da.match(TF_REGEX);
+    tf = match ? match[0] : null;
+  } catch (error) {
+    tf = null;
+  }
+  try {
+    // Keep the template's own font name and size; only replace the broken
+    // colour operator with black.
+    field.acroField.setDefaultAppearance(`${tf || '/Helv 9 Tf'} 0 g`);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
 const fillTemplate = async (fileBytes, fieldMap, values, { flatten = true } = {}) => {
   const doc = await PDFDocument.load(fileBytes, { updateMetadata: false });
   const form = doc.getForm();
   const fallbackFont = await doc.embedFont(StandardFonts.Helvetica);
+  const filledFields = [];
 
   Object.entries(fieldMap || {}).forEach(([fieldName, dataKey]) => {
     if (!dataKey) {
@@ -94,42 +118,61 @@ const fillTemplate = async (fileBytes, fieldMap, values, { flatten = true } = {}
     try {
       field.setText(text);
     } catch (error) {
-      // The field has a broken appearance definition (invalid colour / font operators).
-      // Repair it with a safe default appearance, then retry.
+      // Broken appearance definition: repair it (keeping the original font and
+      // size) and retry.
+      if (!repairDefaultAppearance(field)) {
+        return;
+      }
       try {
-        field.acroField.setDefaultAppearance('0 g /Helv 9 Tf');
         field.setText(text);
       } catch (retryError) {
         return;
       }
     }
+    filledFields.push(field);
+  });
 
+  if (!flatten) {
+    // Editable preview: do NOT redraw anything. NeedAppearances tells the PDF
+    // viewer to render every value itself using the template's own font, size
+    // and colour exactly as designed.
+    try {
+      form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
+    } catch (error) {
+      // Viewer will still render values it can.
+    }
+    return Buffer.from(await doc.save({ updateFieldAppearances: false }));
+  }
+
+  // Final payslip: every filled field's appearance must be drawn onto the page
+  // before flattening, otherwise its value disappears from the printed PDF.
+  // pdf-lib takes the font size and colour from the field's own default
+  // appearance; broken definitions are repaired keeping their original size.
+  filledFields.forEach((field) => {
     try {
       field.updateAppearances(fallbackFont);
     } catch (error) {
+      repairDefaultAppearance(field);
       try {
-        field.acroField.setDefaultAppearance('0 g /Helv 9 Tf');
         field.updateAppearances(fallbackFont);
       } catch (retryError) {
-        // Leave the field as-is; the value is still stored in the form data.
+        // Leave the field's previous appearance in place.
       }
     }
   });
 
-  if (flatten) {
-    try {
-      form.flatten();
-    } catch (error) {
-      // If flattening fails, make every field read-only instead so PDF viewers
-      // stop highlighting them with a coloured background.
-      form.getFields().forEach((field) => {
-        try {
-          field.enableReadOnly();
-        } catch (readOnlyError) {
-          // Leave as-is.
-        }
-      });
-    }
+  try {
+    form.flatten({ updateFieldAppearances: false });
+  } catch (error) {
+    // If flattening fails, make every field read-only instead so PDF viewers
+    // stop highlighting them with a coloured background.
+    form.getFields().forEach((field) => {
+      try {
+        field.enableReadOnly();
+      } catch (readOnlyError) {
+        // Leave as-is.
+      }
+    });
   }
 
   return Buffer.from(await doc.save({ updateFieldAppearances: false }));
