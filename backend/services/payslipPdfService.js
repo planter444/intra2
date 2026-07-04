@@ -132,22 +132,11 @@ const fillTemplate = async (fileBytes, fieldMap, values, { flatten = true } = {}
     filledFields.push(field);
   });
 
-  if (!flatten) {
-    // Editable preview: do NOT redraw anything. NeedAppearances tells the PDF
-    // viewer to render every value itself using the template's own font, size
-    // and colour exactly as designed.
-    try {
-      form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
-    } catch (error) {
-      // Viewer will still render values it can.
-    }
-    return Buffer.from(await doc.save({ updateFieldAppearances: false }));
-  }
-
-  // Final payslip: every filled field's appearance must be drawn onto the page
-  // before flattening, otherwise its value disappears from the printed PDF.
-  // pdf-lib takes the font size and colour from the field's own default
-  // appearance; broken definitions are repaired keeping their original size.
+  // Draw an appearance stream for every filled field so its value is ALWAYS
+  // visible - including read-only/calculated fields that viewers refuse to
+  // render themselves, and viewers that ignore NeedAppearances. Font size and
+  // colour come from the field's own definition; broken definitions are
+  // repaired keeping their original font and size.
   filledFields.forEach((field) => {
     try {
       field.updateAppearances(fallbackFont);
@@ -161,11 +150,20 @@ const fillTemplate = async (fileBytes, fieldMap, values, { flatten = true } = {}
     }
   });
 
+  // NeedAppearances asks capable viewers (Chrome, Acrobat) to re-render every
+  // value with the template's OWN font, exactly as designed, instead of the
+  // fallback appearance stream drawn above.
   try {
-    form.flatten({ updateFieldAppearances: false });
+    form.acroForm.dict.set(PDFName.of('NeedAppearances'), PDFBool.True);
   } catch (error) {
-    // If flattening fails, make every field read-only instead so PDF viewers
-    // stop highlighting them with a coloured background.
+    // The fallback appearance streams still guarantee visibility.
+  }
+
+  if (flatten) {
+    // Final payslip: do NOT flatten (flattening would permanently bake in the
+    // fallback font). Instead lock every field: read-only fields cannot be
+    // edited and are not highlighted with the bluish form background, while
+    // NeedAppearances keeps the template's own font on screen and in print.
     form.getFields().forEach((field) => {
       try {
         field.enableReadOnly();
