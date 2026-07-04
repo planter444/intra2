@@ -1,4 +1,4 @@
-const { PDFDocument } = require('pdf-lib');
+const { PDFDocument, StandardFonts } = require('pdf-lib');
 
 const DATA_KEYS = [
   { key: 'employeeNo', label: 'Employee Number' },
@@ -10,7 +10,9 @@ const DATA_KEYS = [
   { key: 'nssfNumber', label: 'NSSF Number' },
   { key: 'shifNumber', label: 'SHIF Number' },
   { key: 'paymentMode', label: 'Payment Mode' },
-  { key: 'payPeriod', label: 'Pay Period' },
+  { key: 'payPeriod', label: 'Pay Period (e.g. December 2025)' },
+  { key: 'payPeriodUpper', label: 'Pay Period - UPPERCASE (e.g. DECEMBER 2025)' },
+  { key: 'headerTitle', label: 'Header Title (EMPLOYEE PAY SLIP \u2014 <PERIOD>)' },
   { key: 'grossSalary', label: 'Basic / Gross Salary' },
   { key: 'allowances', label: 'Allowances' },
   { key: 'bonuses', label: 'Bonuses' },
@@ -73,17 +75,44 @@ const buildAutoFieldMap = (fieldNames) => {
 const fillTemplate = async (fileBytes, fieldMap, values) => {
   const doc = await PDFDocument.load(fileBytes, { updateMetadata: false });
   const form = doc.getForm();
+  const fallbackFont = await doc.embedFont(StandardFonts.Helvetica);
 
   Object.entries(fieldMap || {}).forEach(([fieldName, dataKey]) => {
     if (!dataKey) {
       return;
     }
     const value = values[dataKey];
+    const text = value === undefined || value === null ? '' : String(value);
+
+    let field;
     try {
-      const field = form.getTextField(fieldName);
-      field.setText(value === undefined || value === null ? '' : String(value));
+      field = form.getTextField(fieldName);
     } catch (error) {
-      // Field missing or not a text field - leave the template untouched for it.
+      return; // Field missing or not a text field - leave the template untouched for it.
+    }
+
+    try {
+      field.setText(text);
+    } catch (error) {
+      // The field has a broken appearance definition (invalid colour / font operators).
+      // Repair it with a safe default appearance, then retry.
+      try {
+        field.acroField.setDefaultAppearance('0 g /Helv 9 Tf');
+        field.setText(text);
+      } catch (retryError) {
+        return;
+      }
+    }
+
+    try {
+      field.updateAppearances(fallbackFont);
+    } catch (error) {
+      try {
+        field.acroField.setDefaultAppearance('0 g /Helv 9 Tf');
+        field.updateAppearances(fallbackFont);
+      } catch (retryError) {
+        // Leave the field as-is; the value is still stored in the form data.
+      }
     }
   });
 
@@ -93,7 +122,7 @@ const fillTemplate = async (fileBytes, fieldMap, values) => {
     // If flattening fails (e.g. unsupported field type), keep the filled form as-is.
   }
 
-  return Buffer.from(await doc.save());
+  return Buffer.from(await doc.save({ updateFieldAppearances: false }));
 };
 
 const formatAmount = (value) => {
@@ -128,6 +157,8 @@ const buildPayslipValues = ({ employee, profile, period }) => {
     shifNumber: profile.shifNumber || '\u2014',
     paymentMode: profile.paymentMode || 'Bank Transfer',
     payPeriod: periodLabel,
+    payPeriodUpper: periodLabel.toUpperCase(),
+    headerTitle: `EMPLOYEE PAY SLIP \u2014 ${periodLabel.toUpperCase()}`,
     grossSalary: formatAmount(profile.grossSalary),
     allowances: formatAmount(profile.allowances),
     bonuses: formatAmount(profile.bonuses),

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Eye, FileText, Plus, Printer, Save, Settings, Trash2, Users } from 'lucide-react';
+import { CheckCircle2, Download, Eye, FileText, Plus, Printer, Save, Settings, Trash2, Users, X } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import { useAuth } from '../context/AuthContext';
@@ -79,6 +79,7 @@ export default function PayslipsPage() {
   const [saving, setSaving] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [message, setMessage] = useState(null);
+  const [popup, setPopup] = useState(null);
 
   const loadPayslips = () => {
     setLoadingPayslips(true);
@@ -140,7 +141,10 @@ export default function PayslipsPage() {
     try {
       setSaving(true);
       await savePayrollProfile(selectedEmployeeId, profile);
-      notify('success', 'Payroll details saved.');
+      setPopup({
+        title: 'Payroll details saved',
+        lines: [`Payroll details for ${selectedEmployee?.fullName || 'the employee'} have been saved successfully.`]
+      });
     } catch (error) {
       notify('error', error.response?.data?.message || 'Unable to save payroll details.');
     } finally {
@@ -155,11 +159,15 @@ export default function PayslipsPage() {
       const result = await generatePayslips(payload);
       const generatedCount = result.generated?.length || 0;
       const failed = result.failed || [];
-      if (failed.length) {
-        notify('error', `${generatedCount} generated. Skipped: ${failed.map((item) => `${item.name || item.userId} (${item.error})`).join('; ')}`);
-      } else {
-        notify('success', `${generatedCount} payslip${generatedCount === 1 ? '' : 's'} generated for ${period}.`);
+      const periodLabel = new Date(`${period}-01T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const lines = [`${generatedCount} payslip${generatedCount === 1 ? '' : 's'} generated for ${periodLabel}.`];
+      if (!all && generatedCount === 1) {
+        lines[0] = `Payslip for ${result.generated[0].name} (${periodLabel}) has been generated successfully.`;
       }
+      if (failed.length) {
+        lines.push(`Skipped ${failed.length}: ${failed.map((item) => `${item.name || item.userId} — ${item.error}`).join('; ')}`);
+      }
+      setPopup({ title: failed.length ? 'Generation completed with warnings' : 'Payslips generated', lines, warning: failed.length > 0 });
       loadPayslips();
     } catch (error) {
       notify('error', error.response?.data?.message || 'Unable to generate payslips.');
@@ -207,6 +215,37 @@ export default function PayslipsPage() {
 
   return (
     <div className="space-y-6">
+      {popup ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className={`rounded-2xl p-2 ${popup.warning ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                  <CheckCircle2 size={22} />
+                </span>
+                <h3 className="text-lg font-semibold text-slate-900">{popup.title}</h3>
+              </div>
+              <button type="button" onClick={() => setPopup(null)} className="rounded-xl p-1 text-slate-400 hover:text-slate-600">
+                <X size={18} />
+              </button>
+            </div>
+            <div className="mt-4 space-y-2 text-sm text-slate-600">
+              {popup.lines.map((line, index) => (
+                <p key={index}>{line}</p>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPopup(null)}
+                className="rounded-2xl bg-emerald-700 px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <PageHeader
         title="Payslips"
         subtitle={privileged ? 'Generate official payslips from the uploaded PDF template.' : 'View, download and print your payslips.'}

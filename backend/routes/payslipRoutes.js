@@ -7,6 +7,8 @@ const {
   uploadTemplate,
   getTemplateFields,
   activateTemplate,
+  deactivateTemplate,
+  deleteTemplate,
   updateTemplateMapping,
   downloadTemplateFile,
   getDataKeys,
@@ -26,6 +28,8 @@ router.post('/templates', authenticate, authorize('admin'), upload.single('file'
 router.get('/templates/:id/fields', authenticate, authorize('admin'), getTemplateFields);
 router.get('/templates/:id/file', authenticate, authorize('admin'), downloadTemplateFile);
 router.patch('/templates/:id/activate', authenticate, authorize('admin'), activateTemplate);
+router.patch('/templates/:id/deactivate', authenticate, authorize('admin'), deactivateTemplate);
+router.delete('/templates/:id', authenticate, authorize('admin'), deleteTemplate);
 router.patch('/templates/:id/mapping', authenticate, authorize('admin'), updateTemplateMapping);
 router.get('/data-keys', authenticate, authorize('admin'), getDataKeys);
 

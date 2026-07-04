@@ -103,6 +103,19 @@ const activateTemplate = async (id) => {
   return mapTemplate(result.rows[0]);
 };
 
+const deactivateTemplate = async (id) => {
+  const result = await query(
+    'UPDATE payslip_templates SET is_active = FALSE WHERE id = $1 RETURNING id, version, file_name, field_map, is_active, uploaded_by, created_at',
+    [id]
+  );
+  return mapTemplate(result.rows[0]);
+};
+
+const deleteTemplate = async (id) => {
+  const result = await query('DELETE FROM payslip_templates WHERE id = $1 RETURNING id', [id]);
+  return result.rows[0] || null;
+};
+
 const updateTemplateFieldMap = async (id, fieldMap) => {
   const result = await query(
     'UPDATE payslip_templates SET field_map = $2 WHERE id = $1 RETURNING id, version, file_name, field_map, is_active, uploaded_by, created_at',
@@ -228,6 +241,8 @@ module.exports = {
   getActiveTemplate,
   createTemplate,
   activateTemplate,
+  deactivateTemplate,
+  deleteTemplate,
   updateTemplateFieldMap,
   upsertPayslip,
   listPayslips,

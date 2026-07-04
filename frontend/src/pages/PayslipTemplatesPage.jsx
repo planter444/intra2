@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Eye, Save, Upload } from 'lucide-react';
+import { CheckCircle2, Eye, Save, Trash2, Upload } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import {
@@ -7,6 +7,8 @@ import {
   uploadTemplate,
   fetchTemplateFields,
   activateTemplate,
+  deactivateTemplate,
+  deleteTemplate,
   saveTemplateMapping,
   downloadTemplateBlob
 } from '../services/payslipService';
@@ -94,6 +96,32 @@ export default function PayslipTemplatesPage() {
     }
   };
 
+  const handleDeactivate = async (templateId) => {
+    try {
+      await deactivateTemplate(templateId);
+      notify('success', 'Template deactivated. Payslip generation is paused until a template is activated.');
+      loadTemplates();
+    } catch (error) {
+      notify('error', 'Unable to deactivate template.');
+    }
+  };
+
+  const handleDelete = async (templateId, version) => {
+    if (!window.confirm(`Delete template v${version}? This cannot be undone. Payslips already generated with it are kept.`)) {
+      return;
+    }
+    try {
+      await deleteTemplate(templateId);
+      notify('success', `Template v${version} deleted.`);
+      if (mappingTemplateId === templateId) {
+        setMappingTemplateId(null);
+      }
+      loadTemplates();
+    } catch (error) {
+      notify('error', error.response?.data?.message || 'Unable to delete template.');
+    }
+  };
+
   const previewTemplate = async (templateId) => {
     try {
       const blob = await downloadTemplateBlob(templateId);
@@ -160,9 +188,14 @@ export default function PayslipTemplatesPage() {
                     <td className="px-3 py-3 text-slate-500">{new Date(template.createdAt).toLocaleDateString()}</td>
                     <td className="px-3 py-3">
                       {template.isActive ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                          <CheckCircle2 size={12} /> Active
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                            <CheckCircle2 size={12} /> Active
+                          </span>
+                          <button type="button" onClick={() => handleDeactivate(template.id)} className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
+                            Deactivate
+                          </button>
+                        </div>
                       ) : (
                         <button type="button" onClick={() => handleActivate(template.id)} className="rounded-full border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600">
                           Activate
@@ -180,6 +213,14 @@ export default function PayslipTemplatesPage() {
                           className="rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700"
                         >
                           Map fields
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete version"
+                          onClick={() => handleDelete(template.id, template.version)}
+                          className="rounded-xl bg-rose-50 p-2 text-rose-600"
+                        >
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>

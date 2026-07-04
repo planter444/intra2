@@ -82,6 +82,30 @@ const activateTemplate = async (req, res, next) => {
   }
 };
 
+const deactivateTemplate = async (req, res, next) => {
+  try {
+    const template = await payslipModel.deactivateTemplate(req.params.id);
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found.' });
+    }
+    res.json({ template });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteTemplate = async (req, res, next) => {
+  try {
+    const deleted = await payslipModel.deleteTemplate(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Template not found.' });
+    }
+    res.json({ message: 'Template deleted.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateTemplateMapping = async (req, res, next) => {
   try {
     const template = await payslipModel.updateTemplateFieldMap(req.params.id, req.body.fieldMap || {});
@@ -239,6 +263,8 @@ module.exports = {
   uploadTemplate,
   getTemplateFields,
   activateTemplate,
+  deactivateTemplate,
+  deleteTemplate,
   updateTemplateMapping,
   downloadTemplateFile,
   getDataKeys,

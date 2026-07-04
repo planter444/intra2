@@ -49,6 +49,16 @@ export const activateTemplate = async (templateId) => {
   return data.template;
 };
 
+export const deactivateTemplate = async (templateId) => {
+  const { data } = await api.patch(`/payslips/templates/${templateId}/deactivate`);
+  return data.template;
+};
+
+export const deleteTemplate = async (templateId) => {
+  const { data } = await api.delete(`/payslips/templates/${templateId}`);
+  return data;
+};
+
 export const saveTemplateMapping = async (templateId, fieldMap) => {
   const { data } = await api.patch(`/payslips/templates/${templateId}/mapping`, { fieldMap });
   return data.template;
