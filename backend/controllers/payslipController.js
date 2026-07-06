@@ -7,6 +7,7 @@ const {
   fillTemplate,
   buildPayslipValues
 } = require('../services/payslipPdfService');
+const { generateSystemPayslip } = require('../services/payslipDesignService');
 
 const PRIVILEGED_ROLES = ['admin', 'ceo', 'finance'];
 
@@ -167,12 +168,14 @@ const generateForEmployee = async ({ userId, period, template, generatedBy }) =>
 
   const values = buildPayslipValues({ employee, profile, period });
   const { summary, ...fillValues } = values;
-  const pdfData = await fillTemplate(template.fileData, template.fieldMap, fillValues);
+  const pdfData = template
+    ? await fillTemplate(template.fileData, template.fieldMap, fillValues)
+    : await generateSystemPayslip({ employee, profile, period, values: fillValues });
 
   const payslip = await payslipModel.upsertPayslip({
     userId,
     period,
-    templateId: template.id,
+    templateId: template ? template.id : null,
     data: { ...fillValues, summary },
     pdfData,
     generatedBy
@@ -189,11 +192,8 @@ const generatePayslips = async (req, res, next) => {
     }
 
     const template = await payslipModel.getActiveTemplate();
-    if (!template) {
-      return res.status(400).json({ message: 'No active payslip template. Please upload the official PDF template first.' });
-    }
-    if (!Object.keys(template.fieldMap || {}).length) {
-      return res.status(400).json({ message: 'The active template has no field mapping configured yet.' });
+    if (template && !Object.keys(template.fieldMap || {}).length) {
+      return res.status(400).json({ message: 'The active template has no field mapping configured yet. Map its fields or deactivate it to use the system-generated design.' });
     }
 
     let targets = [];
@@ -227,9 +227,6 @@ const previewPayslip = async (req, res, next) => {
     }
 
     const template = await payslipModel.getActiveTemplate();
-    if (!template) {
-      return res.status(400).json({ message: 'No active payslip template. Please upload the official PDF template first.' });
-    }
 
     const employee = await userModel.findById(userId);
     if (!employee) {
@@ -243,7 +240,9 @@ const previewPayslip = async (req, res, next) => {
 
     const values = buildPayslipValues({ employee, profile, period });
     const { summary, ...fillValues } = values;
-    const pdfData = await fillTemplate(template.fileData, template.fieldMap, fillValues, { flatten: false });
+    const pdfData = template
+      ? await fillTemplate(template.fileData, template.fieldMap, fillValues, { flatten: false })
+      : await generateSystemPayslip({ employee, profile, period, values: fillValues });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="payslip_preview_${period}.pdf"`);

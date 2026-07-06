@@ -191,6 +191,53 @@ export default function PayslipTemplatesPage() {
       ) : null}
 
       <SectionCard
+        title="PDF source"
+        subtitle="Choose how payslips are produced. Both options fill in the same payroll data automatically, including the pay period in the header and the dates under the signatures."
+      >
+        {(() => {
+          const activeTemplate = templates.find((template) => template.isActive);
+          return (
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className={`rounded-2xl border-2 p-4 ${activeTemplate ? 'border-emerald-600 bg-emerald-50/50' : 'border-slate-200'}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">Uploaded fillable template</h3>
+                  {activeTemplate ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                      <CheckCircle2 size={12} /> In use (v{activeTemplate.version})
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Your official PDF is used as-is; only its form fields are filled.</p>
+                {!activeTemplate && templates.length ? (
+                  <p className="mt-2 text-xs text-slate-600">To use this option, click <span className="font-semibold">Activate</span> on a version below.</p>
+                ) : null}
+              </div>
+              <div className={`rounded-2xl border-2 p-4 ${!activeTemplate ? 'border-emerald-600 bg-emerald-50/50' : 'border-slate-200'}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-slate-900">System-generated design</h3>
+                  {!activeTemplate ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                      <CheckCircle2 size={12} /> In use
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">The system draws the official one-page payslip design itself — no template file needed.</p>
+                {activeTemplate ? (
+                  <button
+                    type="button"
+                    onClick={() => handleDeactivate(activeTemplate.id)}
+                    className="mt-2 rounded-xl border border-emerald-200 bg-white px-3 py-1.5 text-xs font-semibold text-emerald-700"
+                  >
+                    Switch to system-generated design
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          );
+        })()}
+      </SectionCard>
+
+      <SectionCard
         title="Upload official template"
         subtitle="The PDF must contain fillable form fields where the dynamic values go. Uploading a new template creates a new version and activates it automatically. No code changes are required."
       >
