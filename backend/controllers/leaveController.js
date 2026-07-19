@@ -149,10 +149,6 @@ const deleteRequestPermanently = async (req, res, next) => {
       return res.status(403).json({ message: 'Only the IT Officer can delete leave requests.' });
     }
 
-    if (!['approved', 'rejected'].includes(request.status)) {
-      return res.status(400).json({ message: 'Only approved or disapproved leave requests can be deleted.' });
-    }
-
     if (request.status === 'approved') {
       await leaveModel.revertApprovedDaysToBalance({
         userId: request.userId,
@@ -234,14 +230,16 @@ const canRequesterModify = (currentUser, request) => {
     return false;
   }
 
-  if (request.status === 'pending_supervisor') {
+  // Editable/cancellable as long as no approval level has taken any action yet.
+  if (request.status === 'pending_supervisor' || request.status === 'pending_hr') {
     return true;
   }
 
-  return request.status === 'pending_hr'
-    && !request.supervisorApproverId
-    && !request.hrApproverId
-    && !request.ceoApproverId;
+  // pending_ceo is reachable two ways: (1) the requester's supervisor is the CEO,
+  // so routing skips the supervisor stage entirely and no action has been taken yet
+  // (requiresSupervisorReview is false in that case); or (2) a supervisor already
+  // approved and forwarded it to the CEO, which counts as an action already taken.
+  return request.status === 'pending_ceo' && !request.requiresSupervisorReview;
 };
 
 const getTodayDate = () => {

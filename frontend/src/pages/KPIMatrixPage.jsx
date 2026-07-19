@@ -9,6 +9,15 @@ import { fetchUsers } from '../services/userService';
 import { usePagePresentation } from '../hooks/usePagePresentation';
 import { getAverageKpiScore, getNormalizedKpiEntry } from '../utils/kpi';
 
+const accentClasses = [
+  'from-blue-600/15 to-blue-100',
+  'from-emerald-600/15 to-emerald-100',
+  'from-fuchsia-600/15 to-fuchsia-100',
+  'from-amber-500/15 to-amber-100',
+  'from-rose-500/15 to-rose-100',
+  'from-cyan-500/15 to-cyan-100'
+];
+
 export default function KPIMatrixPage() {
   const navigate = useNavigate();
   const { settings, user } = useAuth();
@@ -34,7 +43,7 @@ export default function KPIMatrixPage() {
     <div className="space-y-6">
       <PageHeader
         title="KPI Matrix"
-        subtitle="Choose an employee to open a dedicated KPI detail page with their configured roles, KPI wording, and saved scores."
+        subtitle="Choose an employee to open a dedicated KPI detail page with their configured roles, KPI description, and saved scores."
         actions={canManageKpi ? [
           <button key="edit-kpi" type="button" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700" onClick={() => navigate('/settings', { state: { settingsPage: 'kpi' } })}>
             <Pencil size={16} />Edit KPI setup
@@ -45,12 +54,12 @@ export default function KPIMatrixPage() {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         <StatCard title="Employees" value={rows.length} helper="Active employees available for KPI review" accent="from-emerald-700 to-green-500" />
         <StatCard title="Configured profiles" value={employeesWithScores} helper="Employees with at least one saved KPI score" accent="from-sky-700 to-cyan-500" />
-        <StatCard title="KPI editing" value="Settings" helper="Core roles, KPI wording, and scores are now managed in Settings" accent="from-violet-700 to-fuchsia-500" />
+        <StatCard title="KPI editing" value="Settings" helper="Core roles, KPI description, and scores are now managed in Settings" accent="from-violet-700 to-fuchsia-500" />
       </div>
 
       <SectionCard title="Employee KPI directory" subtitle="Open a full KPI page for any employee from this list." style={{ ...cardStyle, ...animationStyle }}>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rows.map((employee) => {
+          {rows.map((employee, index) => {
             const entry = getNormalizedKpiEntry(settings?.kpi?.records?.[String(employee.id)] || settings?.kpi?.matrix?.[String(employee.id)] || {});
             const average = getAverageKpiScore(entry);
             const configuredRoles = entry.coreRoles.filter((role) => String(role || '').trim()).length;
@@ -60,7 +69,7 @@ export default function KPIMatrixPage() {
               <Link
                 key={employee.id}
                 to={`/kpi-matrix/${employee.id}`}
-                className="group rounded-[28px] border border-slate-200 bg-white p-5 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
+                className={`group rounded-[28px] border border-slate-200 bg-gradient-to-br ${accentClasses[index % accentClasses.length]} p-5 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">

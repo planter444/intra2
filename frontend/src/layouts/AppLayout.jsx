@@ -305,6 +305,11 @@ export default function AppLayout({ children }) {
         <div className={`pointer-events-none ${isMobile ? 'fixed' : 'absolute'} inset-0`} style={{ backgroundColor: withOpacity(redesignedTheme?.overlayColor || '#0b2e13', redesignedTheme?.overlayOpacity ?? 0.45) }} />
       ) : null}
       <div className="relative flex min-h-screen overflow-x-hidden">
+        <div
+          className="pointer-events-none fixed top-0 z-30 hidden h-10 w-10 md:block"
+          style={{ left: 'calc(18rem - 2.5rem)', backgroundImage: sidebarBackgroundImage, ...sidebarBackdrop }}
+          aria-hidden="true"
+        />
         <aside
           className={`fixed inset-y-0 left-0 z-40 w-72 max-w-[88vw] transform px-5 py-6 text-white shadow-2xl ${menuAnimEnabled ? 'transition' : ''} md:flex md:h-screen md:flex-col md:translate-x-0 md:overflow-hidden md:rounded-r-[2.5rem] overflow-hidden overflow-y-auto overscroll-contain ${mobileOpen ? mobileOpenClasses : mobileClosedClasses}`}
           style={{ backgroundImage: sidebarBackgroundImage, ...sidebarBackdrop, transitionDuration: menuAnimEnabled ? `${menuAnimDuration}ms` : undefined }}

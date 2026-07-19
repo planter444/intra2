@@ -43,7 +43,7 @@ const getDecisionBadgeClassName = (decision) => {
     return 'bg-rose-100 text-rose-700';
   }
 
-  return 'bg-slate-100 text-slate-600';
+  return 'bg-amber-50 text-amber-600';
 };
 
 const getDecisionLabel = (decision) => {
@@ -164,12 +164,15 @@ export default function LeaveRequestDetailPage() {
       return false;
     }
 
-    if (request.status === 'pending_supervisor') {
+    // Editable/cancellable as long as no approval level has taken any action yet.
+    if (request.status === 'pending_supervisor' || request.status === 'pending_hr') {
       return true;
     }
 
-    return request.status === 'pending_hr' && !hasSupervisorStage && !request.hrApproverId && !request.ceoApproverId;
-  }, [hasSupervisorStage, request, user?.id]);
+    // pending_ceo without a supervisor stage means routing skipped straight to the
+    // CEO (e.g. the requester's supervisor is the CEO) and no action has happened yet.
+    return request.status === 'pending_ceo' && !request.requiresSupervisorReview;
+  }, [request, user?.id]);
 
   const canSupervisorReview = request
     && !isRequestOwner
@@ -453,15 +456,15 @@ export default function LeaveRequestDetailPage() {
           {(canSupervisorReview || canOperationalReview || canFinalCeoReview || canReviseSupervisorDecision || canReviseCeoDecision) ? (
             <SectionCard title={canReviseSupervisorDecision || canReviseCeoDecision ? 'Update Decision' : 'Take Action'} subtitle={canReviseSupervisorDecision || canReviseCeoDecision ? 'Switch the recorded decision for this leave request.' : 'Approve or reject this request with an optional comment.'}>
               {canReviseSupervisorDecision || canReviseCeoDecision ? (
-                <button type="button" className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold text-white ${request.status === 'rejected' ? 'bg-emerald-600' : 'bg-rose-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
+                <button type="button" className={`w-full rounded-xl px-4 py-2.5 text-sm font-medium text-white ${request.status === 'rejected' ? 'bg-emerald-600' : 'bg-rose-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
                   {request.status === 'rejected' ? 'Mark as Approved' : 'Mark as Rejected'}
                 </button>
               ) : (
-                <div className="grid gap-3 lg:grid-cols-2">
-                  <button type="button" className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setDecisionModal({ open: true, decision: 'approve', comment: '' })}>
+                <div className="flex flex-col gap-2.5">
+                  <button type="button" className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white" onClick={() => setDecisionModal({ open: true, decision: 'approve', comment: '' })}>
                     Approve
                   </button>
-                  <button type="button" className="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white" onClick={() => setDecisionModal({ open: true, decision: 'reject', comment: '' })}>
+                  <button type="button" className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-medium text-white" onClick={() => setDecisionModal({ open: true, decision: 'reject', comment: '' })}>
                     Reject
                   </button>
                 </div>
@@ -471,14 +474,14 @@ export default function LeaveRequestDetailPage() {
 
           <SectionCard title="Approval timeline" subtitle="Track the current stage of this leave request.">
             <div className="space-y-4">
-              {[timeline.submitted, timeline.supervisor, timeline.ceo].filter(Boolean).map((entry) => (
+              {[timeline.submitted, timeline.supervisor, timeline.ceo].filter(Boolean).map((entry, index) => (
                 <div key={entry.label} className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3">
                   <div>
                     <p className="font-medium text-slate-900">{entry.label}</p>
                     <p className="mt-1 text-sm text-slate-500">{formatDateTimeDisplay(entry.time)}</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getDecisionBadgeClassName(entry.decision)}`}>
-                    {getDecisionLabel(entry.decision)}
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${index === 0 ? 'bg-blue-100 text-blue-700' : getDecisionBadgeClassName(entry.decision)}`}>
+                    {index === 0 ? 'Applied' : getDecisionLabel(entry.decision)}
                   </span>
                 </div>
               ))}

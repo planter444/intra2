@@ -145,7 +145,7 @@ export default function SettingsPage() {
     if (!isAdmin || activePage !== 'leaves_cleanup') return;
     setCleanupLoading(true);
     fetchLeaveRequests()
-      .then((items) => setCleanupLeaves(items.filter((entry) => ['approved', 'rejected'].includes(entry.status))))
+      .then((items) => setCleanupLeaves(items))
       .catch(() => setCleanupLeaves([]))
       .finally(() => setCleanupLoading(false));
   }, [activePage, isAdmin]);
@@ -1093,7 +1093,7 @@ export default function SettingsPage() {
 
       {isAdmin && activePage === 'leaves_cleanup' ? (
         <div className="space-y-6">
-          <SectionCard title="Delete Leave Requests" subtitle="As IT Officer, you can permanently delete approved or disapproved leave requests. Approved leave days are restored before deletion.">
+          <SectionCard title="Delete Leave Requests" subtitle="As IT Officer, you can permanently delete any leave request, including pending ones. Approved leave days are restored before deletion.">
             {cleanupLoading ? (
               <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-600">Loading leave requests…</div>
             ) : cleanupLeaves.length ? (
@@ -1700,7 +1700,7 @@ export default function SettingsPage() {
 
       {activePage === 'kpi' ? (
         <div className="grid gap-6 xl:grid-cols-[320px,minmax(0,1fr)]">
-          <SectionCard title="Employees" subtitle="Choose an employee to set their core roles, KPI wording, and scores.">
+          <SectionCard title="Employees" subtitle="Choose an employee to set their core roles, KPI description, and scores.">
             <div className="space-y-3">
               {kpiEmployees.length ? kpiEmployees.map((employee) => {
                 const employeeEntry = getNormalizedKpiEntry(draft.kpi?.records?.[String(employee.id)] || draft.kpi?.matrix?.[String(employee.id)] || {});
@@ -1763,13 +1763,13 @@ export default function SettingsPage() {
 
                   <div className="rounded-3xl border border-slate-200 bg-white p-5">
                     <h3 className="text-base font-semibold text-slate-900">KPIs</h3>
-                    <p className="mt-1 text-sm text-slate-500">Set the KPI wording and the employee’s current score for each item, then add more KPI rows when needed.</p>
+                    <p className="mt-1 text-sm text-slate-500">Set the KPI description and the employee’s current score for each item, then add more KPI rows when needed.</p>
                     <div className="mt-4 space-y-4">
                       {selectedKpiEntry.indicators.map((indicator, index) => (
                         <div key={`indicator-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                           <div className="grid gap-4 md:grid-cols-[minmax(0,1fr),140px,auto]">
                             <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-700">KPI {index + 1} wording</label>
+                              <label className="mb-2 block text-sm font-medium text-slate-700">KPI {index + 1} description</label>
                               <input value={indicator.label || ''} onChange={(event) => updateSelectedKpiIndicator(index, 'label', event.target.value)} placeholder="Enter KPI" />
                             </div>
                             <div>
@@ -1803,7 +1803,7 @@ export default function SettingsPage() {
               <StatCard title="Editable roles" value="CEO, IT Officer, Finance" helper="People who can update KPI content" accent="from-violet-700 to-fuchsia-500" />
             </div>
             <div className="mt-6 rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
-              Save KPI details on the KPI Matrix settings tab and this page will automatically reflect the employee core roles, KPI wording, individual scores, and average score.
+              Save KPI details on the KPI Matrix settings tab and this page will automatically reflect the employee core roles, KPI description, individual scores, and average score.
             </div>
           </SectionCard>
 

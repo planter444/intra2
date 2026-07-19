@@ -80,7 +80,7 @@ export default function KPIMatrixEmployeePage() {
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
             <StatCard title="Employee" value={employee.fullName} helper="KPI detail profile" accent="from-emerald-700 to-green-500" />
             <StatCard title="Designation" value={employee.positionTitle || employee.roleTitle || 'Not set'} helper="Displayed on KPI pages" accent="from-sky-700 to-cyan-500" />
-            <StatCard title="Configured KPIs" value={configuredIndicators.length} helper="KPIs with wording or score" accent="from-violet-700 to-fuchsia-500" />
+            <StatCard title="Configured KPIs" value={configuredIndicators.length} helper="KPIs with description or score" accent="from-violet-700 to-fuchsia-500" />
           </div>
 
           <div className="grid gap-6 xl:grid-cols-[minmax(0,0.82fr),minmax(0,1.18fr)]">
@@ -100,7 +100,7 @@ export default function KPIMatrixEmployeePage() {
               </div>
             </SectionCard>
 
-            <SectionCard title="KPI scorecard" subtitle="Configured KPI wordings and the current recorded scores." style={{ ...cardStyle, ...animationStyle }}>
+            <SectionCard title="KPI scorecard" subtitle="Configured KPI descriptions and the current recorded scores." style={{ ...cardStyle, ...animationStyle }}>
               <div className="grid gap-4 md:grid-cols-2">
                 {entry.indicators.map((indicator, index) => {
                   const hasValue = String(indicator?.label || '').trim() || indicator?.score !== '';
@@ -109,7 +109,7 @@ export default function KPIMatrixEmployeePage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">KPI {index + 1}</p>
-                          <p className="mt-2 text-sm font-semibold text-slate-900">{indicator.label || 'No KPI wording set yet.'}</p>
+                          <p className="mt-2 text-sm font-semibold text-slate-900">{indicator.label || 'No KPI description set yet.'}</p>
                         </div>
                         <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${indicator.score === '' ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}>
                           <Target size={14} />
@@ -123,7 +123,7 @@ export default function KPIMatrixEmployeePage() {
                   );
                 })}
               </div>
-              {!configuredIndicators.length ? <div className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">No KPI wording or score has been configured for this employee yet.</div> : null}
+              {!configuredIndicators.length ? <div className="mt-4 rounded-2xl border border-dashed border-slate-200 px-4 py-6 text-sm text-slate-500">No KPI description or score has been configured for this employee yet.</div> : null}
             </SectionCard>
           </div>
 
@@ -138,7 +138,7 @@ export default function KPIMatrixEmployeePage() {
                       {indicator.score === '' ? '--' : indicator.score}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm font-medium text-slate-900">{indicator.label || 'No KPI wording set yet.'}</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">{indicator.label || 'No KPI description set yet.'}</p>
                 </div>
               ))}
             </div>

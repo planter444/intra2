@@ -109,7 +109,7 @@ export default function PerformanceEmployeePage() {
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                       <div className="min-w-0">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Performance KPI {index + 1}</p>
-                        <p className="mt-2 text-sm font-semibold text-slate-900">{indicator.label || 'No KPI wording set yet.'}</p>
+                        <p className="mt-2 text-sm font-semibold text-slate-900">{indicator.label || 'No KPI description set yet.'}</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${value === null ? 'bg-slate-100 text-slate-600' : 'bg-fuchsia-100 text-fuchsia-700'}`}>
@@ -142,7 +142,7 @@ export default function PerformanceEmployeePage() {
                       {indicator.score === '' ? '--' : indicator.score}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm font-medium text-slate-900">{indicator.label || 'No KPI wording set yet.'}</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">{indicator.label || 'No KPI description set yet.'}</p>
                 </div>
               ))}
             </div>
