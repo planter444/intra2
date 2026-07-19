@@ -6,7 +6,6 @@ const AuthContext = createContext(null);
 
 const STORAGE_KEY = 'kerea_hrms_auth';
 const SETTINGS_CACHE_KEY = 'kerea_hrms_settings_cache';
-const SESSION_NOTICE_KEY = 'kerea_hrms_session_notice';
 
 const decodeJwtPayload = (value) => {
   try {
@@ -40,7 +39,6 @@ const readSavedAuth = () => {
     const parsed = JSON.parse(saved);
     if (isTokenExpired(parsed?.token)) {
       localStorage.removeItem(STORAGE_KEY);
-      localStorage.setItem(SESSION_NOTICE_KEY, 'Your previous login session expired. Please log in again to refresh your dashboard data.');
       return null;
     }
 
@@ -113,20 +111,16 @@ export const AuthProvider = ({ children }) => {
     return cached ? JSON.parse(cached) : null;
   });
   const [loading, setLoading] = useState(Boolean(token));
-  const [error, setError] = useState(() => {
-    const notice = localStorage.getItem(SESSION_NOTICE_KEY) || '';
-    localStorage.removeItem(SESSION_NOTICE_KEY);
-    return notice;
-  });
+  const [error, setError] = useState('');
   const [sessionExpired, setSessionExpired] = useState(false);
 
-  const expireSession = (message = 'Your session has expired. Please log in again to refresh your data.') => {
+  const expireSession = () => {
     localStorage.removeItem(STORAGE_KEY);
     setAuthToken(null);
     setToken(null);
     setUser(null);
-    setSessionExpired(true);
-    setError(message);
+    setSessionExpired(false);
+    setError('');
     setSettings(() => {
       const cached = localStorage.getItem(SETTINGS_CACHE_KEY);
       return cached ? JSON.parse(cached) : null;
@@ -145,8 +139,8 @@ export const AuthProvider = ({ children }) => {
   }, [settings]);
 
   useEffect(() => {
-    const handleSessionExpired = (event) => {
-      expireSession(event.detail?.message || 'Your session has expired. Please log in again to refresh your data.');
+    const handleSessionExpired = () => {
+      expireSession();
     };
 
     window.addEventListener('auth-session-expired', handleSessionExpired);
@@ -165,7 +159,7 @@ export const AuthProvider = ({ children }) => {
 
     const expiresInMs = Math.max(0, (payload.exp * 1000) - Date.now());
     const timeoutId = window.setTimeout(() => {
-      expireSession('Your login session expired. Please log in again to refresh your dashboard data.');
+      expireSession();
     }, expiresInMs);
 
     return () => window.clearTimeout(timeoutId);
@@ -178,7 +172,7 @@ export const AuthProvider = ({ children }) => {
 
     const restoreSession = async () => {
       if (isTokenExpired(token)) {
-        expireSession('Your login session expired. Please log in again to refresh your dashboard data.');
+        expireSession();
         setLoading(false);
         return;
       }
@@ -195,7 +189,7 @@ export const AuthProvider = ({ children }) => {
           setError(restoreError.response?.status === 429 ? 'Server is busy. Keeping your saved session and trying again later.' : '');
           return;
         }
-        expireSession('Your session has expired. Please log in again to refresh your data.');
+        expireSession();
       } finally {
         setLoading(false);
       }

@@ -1357,6 +1357,26 @@ export default function SettingsPage() {
             </div>
           </SectionCard>
 
+          {isAdmin ? (
+            <SectionCard title="Payslip header" subtitle="Controls the organization name and contact line printed at the top of the system-generated payslip PDF (used when no uploaded template is active).">
+              <div className="grid gap-4 md:grid-cols-2">
+                <SettingsInput
+                  label="Organization Name (payslip header)"
+                  value={draft.branding?.payslipOrganizationName || ''}
+                  onChange={(value) => setBranding('payslipOrganizationName', value)}
+                />
+                <SettingsInput
+                  label="Address / Contact line (P.O. Box, email, website)"
+                  value={draft.branding?.payslipAddressLine || ''}
+                  onChange={(value) => setBranding('payslipAddressLine', value)}
+                />
+              </div>
+              <p className="mt-3 text-xs text-slate-500">
+                Example: <span className="font-medium">P.O. Box 42040-00100, Nairobi | administrator@kerea.org | www.kerea.org</span>. Leave blank to use the default KEREA details.
+              </p>
+            </SectionCard>
+          ) : null}
+
           <SectionCard title="Brand preview" subtitle="Quick visual preview of your current desktop and mobile theme settings.">
             <div className="space-y-4">
               <div className="rounded-[2rem] p-6 text-white shadow-soft" style={{ background: `linear-gradient(135deg, ${draft.branding?.gradientFrom || '#14532d'}, ${draft.branding?.gradientTo || '#22c55e'})` }}>

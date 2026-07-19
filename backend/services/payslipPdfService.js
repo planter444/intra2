@@ -20,6 +20,7 @@ const DATA_KEYS = [
   { key: 'gratuity', label: 'Gratuity' },
   { key: 'paye', label: 'PAYE' },
   { key: 'nssf', label: 'NSSF Deduction' },
+  { key: 'nssfLabel', label: 'NSSF Deduction Row Label (Tier)' },
   { key: 'shif', label: 'SHIF Deduction' },
   { key: 'housingLevy', label: 'Housing Levy' },
   { key: 'pension', label: 'Pension' },
@@ -184,6 +185,12 @@ const formatAmount = (value) => {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
+const NSSF_TIER_LABELS = {
+  I: 'NSSF (Tier I)',
+  I_II: 'NSSF (Tier I and Tier II)',
+  I_II_III: 'NSSF (Tier I, Tier II and Tier III)'
+};
+
 const buildPayslipValues = ({ employee, profile, period }) => {
   const totalEarnings = (profile.grossSalary || 0) + (profile.allowances || 0) + (profile.bonuses || 0)
     + (profile.overtime || 0) + (profile.gratuity || 0);
@@ -217,6 +224,7 @@ const buildPayslipValues = ({ employee, profile, period }) => {
     gratuity: formatAmount(profile.gratuity),
     paye: formatAmount(profile.paye),
     nssf: formatAmount(profile.nssf),
+    nssfLabel: NSSF_TIER_LABELS[profile.nssfTier] || NSSF_TIER_LABELS.I_II,
     shif: formatAmount(profile.shif),
     housingLevy: formatAmount(profile.housingLevy),
     pension: formatAmount(profile.pension),

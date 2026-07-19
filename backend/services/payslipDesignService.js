@@ -23,7 +23,10 @@ const COL_W = (CONTENT_W - GAP) / 2;
 
 const DASH = '\u2014';
 
-const generateSystemPayslip = async ({ employee, profile, period, values }) => {
+const generateSystemPayslip = async ({ employee, profile, period, values, header }) => {
+  const organizationName = header?.organizationName || 'KENYA RENEWABLE ENERGY ASSOCIATION';
+  const addressLine = header?.addressLine || 'P.O. Box 42040-00100, Nairobi | administrator@kerea.org | www.kerea.org';
+  const authorisedByName = header?.authorisedByName || 'Kenya Renewable Energy Association';
   const doc = await PDFDocument.create();
   const page = doc.addPage([PAGE_W, PAGE_H]);
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -109,9 +112,9 @@ const generateSystemPayslip = async ({ employee, profile, period, values }) => {
   // ===== Banner =====
   const bannerH = 58;
   rect(MARGIN, y - bannerH, CONTENT_W, bannerH, BANNER_GREEN);
-  textCenter('KENYA RENEWABLE ENERGY ASSOCIATION', PAGE_W / 2, y - 20, 13, bold, WHITE);
+  textCenter(organizationName.toUpperCase(), PAGE_W / 2, y - 20, 13, bold, WHITE);
   textCenter(`EMPLOYEE PAY SLIP ${DASH} ${periodLabel.toUpperCase()}`, PAGE_W / 2, y - 34, 9.5, font, BANNER_SUB);
-  textCenter('P.O. Box 42040-00100, Nairobi | administrator@kerea.org | www.kerea.org', PAGE_W / 2, y - 47, 6.5, font, BANNER_SUB);
+  textCenter(addressLine, PAGE_W / 2, y - 47, 6.5, font, BANNER_SUB);
   y -= bannerH + 12;
 
   const sectionBar = (title, icon, x, w, yPos) => {
@@ -187,7 +190,7 @@ const generateSystemPayslip = async ({ employee, profile, period, values }) => {
   // ===== Statutory Deductions | PAYE Computation =====
   const statRows = [
     notDash(values.paye) && { label: 'PAYE (Pay As You Earn)', amount: values.paye },
-    notDash(values.nssf) && { label: 'NSSF (Tier I and Tier II)', amount: values.nssf },
+    notDash(values.nssf) && { label: values.nssfLabel || 'NSSF (Tier I and Tier II)', amount: values.nssf },
     notDash(values.shif) && { label: 'SHIF (Social Health Insurance Fund)', amount: values.shif },
     notDash(values.housingLevy) && { label: 'Housing Levy', amount: values.housingLevy },
     notDash(values.pension) && { label: 'Pension', amount: values.pension },
@@ -263,7 +266,7 @@ const generateSystemPayslip = async ({ employee, profile, period, values }) => {
   text(values.fullName || employee.fullName || '', leftX, lineY - 21, 8, bold, BLACK);
   text(`Date: ${dateLabel}`, leftX, lineY - 31, 6, font, GREY);
   text('Authorised by (HR / Finance)', rightX, lineY - 10, 6.5, font, GREY);
-  text('Kenya Renewable Energy Association', rightX, lineY - 21, 8, bold, BLACK);
+  text(authorisedByName, rightX, lineY - 21, 8, bold, BLACK);
   text(`Date: ${dateLabel}`, rightX, lineY - 31, 6, font, GREY);
   y -= ackH + 22;
 

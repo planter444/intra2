@@ -8,6 +8,17 @@ const {
   buildPayslipValues
 } = require('../services/payslipPdfService');
 const { generateSystemPayslip } = require('../services/payslipDesignService');
+const settingsModel = require('../models/settingsModel');
+
+const getPayslipHeader = async () => {
+  const settings = await settingsModel.getGlobal();
+  const branding = settings?.payload?.branding || {};
+  return {
+    organizationName: branding.payslipOrganizationName || undefined,
+    addressLine: branding.payslipAddressLine || undefined,
+    authorisedByName: branding.payslipOrganizationName || undefined
+  };
+};
 
 const PRIVILEGED_ROLES = ['admin', 'ceo', 'finance'];
 
@@ -170,7 +181,7 @@ const generateForEmployee = async ({ userId, period, template, generatedBy }) =>
   const { summary, ...fillValues } = values;
   const pdfData = template
     ? await fillTemplate(template.fileData, template.fieldMap, fillValues)
-    : await generateSystemPayslip({ employee, profile, period, values: fillValues });
+    : await generateSystemPayslip({ employee, profile, period, values: fillValues, header: await getPayslipHeader() });
 
   const payslip = await payslipModel.upsertPayslip({
     userId,
@@ -242,7 +253,7 @@ const previewPayslip = async (req, res, next) => {
     const { summary, ...fillValues } = values;
     const pdfData = template
       ? await fillTemplate(template.fileData, template.fieldMap, fillValues, { flatten: false })
-      : await generateSystemPayslip({ employee, profile, period, values: fillValues });
+      : await generateSystemPayslip({ employee, profile, period, values: fillValues, header: await getPayslipHeader() });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="payslip_preview_${period}.pdf"`);

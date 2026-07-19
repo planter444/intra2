@@ -10,13 +10,7 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const url = String(error.config?.url || '');
     if ([401, 403].includes(status) && !url.includes('/auth/login')) {
-      window.dispatchEvent(new CustomEvent('auth-session-expired', {
-        detail: {
-          message: status === 401
-            ? 'Your session has expired. Please refresh the page or log in again.'
-            : 'Your session no longer has permission for this action. Please log out and log in again.'
-        }
-      }));
+      window.dispatchEvent(new CustomEvent('auth-session-expired'));
     }
     return Promise.reject(error);
   }

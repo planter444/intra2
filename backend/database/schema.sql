@@ -320,6 +320,9 @@ DROP CONSTRAINT IF EXISTS documents_folder_type_check;
 ALTER TABLE documents
 ADD CONSTRAINT documents_folder_type_check CHECK (CHAR_LENGTH(TRIM(folder_type)) > 0);
 
+ALTER TABLE payroll_profiles
+ADD COLUMN IF NOT EXISTS nssf_tier VARCHAR(20) NOT NULL DEFAULT 'I_II';
+
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_department ON users(department_id);
 CREATE INDEX IF NOT EXISTS idx_users_supervisor ON users(supervisor_id);

@@ -34,6 +34,7 @@ const emptyProfile = {
   gratuity: 0,
   paye: 0,
   nssf: 0,
+  nssfTier: 'I_II',
   shif: 0,
   housingLevy: 0,
   pension: 0,
@@ -44,6 +45,12 @@ const emptyProfile = {
 };
 
 const formatMoney = (value) => Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+const NSSF_TIER_OPTIONS = [
+  { value: 'I', label: 'NSSF (Tier I)' },
+  { value: 'I_II', label: 'NSSF (Tier I and Tier II)' },
+  { value: 'I_II_III', label: 'NSSF (Tier I, Tier II and Tier III)' }
+];
 
 const periodLabelOf = (period) => {
   const date = new Date(`${period}-01T00:00:00`);
@@ -76,6 +83,7 @@ function MoneyInput({ value, onChange }) {
       step="0.01"
       value={value ?? 0}
       onChange={(event) => onChange(event.target.value === '' ? 0 : Number(event.target.value))}
+      onFocus={(event) => event.target.select()}
       className="w-full rounded-lg border border-slate-200 bg-transparent px-2 py-1.5 text-right text-sm font-semibold text-slate-900 focus:border-emerald-500 focus:outline-none"
     />
   );
@@ -447,7 +455,18 @@ export default function PayslipsPage() {
                 <div className="grid gap-5 lg:grid-cols-2">
                   <SlipSection title="Statutory Deductions">
                     <SlipRow label="PAYE (Pay As You Earn)"><MoneyInput value={profile.paye} onChange={setField('paye')} /></SlipRow>
-                    <SlipRow label="NSSF (Tier I and Tier II)" alt><MoneyInput value={profile.nssf} onChange={setField('nssf')} /></SlipRow>
+                    <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-emerald-50/40 px-4 py-2 last:border-b-0">
+                      <select
+                        value={profile.nssfTier || 'I_II'}
+                        onChange={(event) => setField('nssfTier')(event.target.value)}
+                        className="max-w-[60%] rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs font-medium text-slate-600"
+                      >
+                        {NSSF_TIER_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                      <div className="w-44"><MoneyInput value={profile.nssf} onChange={setField('nssf')} /></div>
+                    </div>
                     <SlipRow label="SHIF (Social Health Insurance Fund)"><MoneyInput value={profile.shif} onChange={setField('shif')} /></SlipRow>
                     <SlipRow label="Housing Levy" alt><MoneyInput value={profile.housingLevy} onChange={setField('housingLevy')} /></SlipRow>
                     <SlipRow label="Pension"><MoneyInput value={profile.pension} onChange={setField('pension')} /></SlipRow>

@@ -54,6 +54,7 @@ const mapProfile = (row) => {
     gratuity: Number(row.gratuity) || 0,
     paye: Number(row.paye) || 0,
     nssf: Number(row.nssf) || 0,
+    nssfTier: row.nssf_tier || 'I_II',
     shif: Number(row.shif) || 0,
     housingLevy: Number(row.housing_levy) || 0,
     pension: Number(row.pension) || 0,
@@ -189,9 +190,9 @@ const upsertProfile = async (userId, profile) => {
     `INSERT INTO payroll_profiles (
        user_id, id_number, kra_pin, nssf_number, shif_number, payment_mode,
        gross_salary, allowances, bonuses, overtime, gratuity,
-       paye, nssf, shif, housing_levy, pension, other_deductions,
+       paye, nssf, nssf_tier, shif, housing_levy, pension, other_deductions,
        personal_relief, insurance_relief, other_contributions
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
      ON CONFLICT (user_id) DO UPDATE SET
        id_number = EXCLUDED.id_number,
        kra_pin = EXCLUDED.kra_pin,
@@ -205,6 +206,7 @@ const upsertProfile = async (userId, profile) => {
        gratuity = EXCLUDED.gratuity,
        paye = EXCLUDED.paye,
        nssf = EXCLUDED.nssf,
+       nssf_tier = EXCLUDED.nssf_tier,
        shif = EXCLUDED.shif,
        housing_levy = EXCLUDED.housing_levy,
        pension = EXCLUDED.pension,
@@ -228,6 +230,7 @@ const upsertProfile = async (userId, profile) => {
       profile.gratuity || 0,
       profile.paye || 0,
       profile.nssf || 0,
+      ['I', 'I_II', 'I_II_III'].includes(profile.nssfTier) ? profile.nssfTier : 'I_II',
       profile.shif || 0,
       profile.housingLevy || 0,
       profile.pension || 0,

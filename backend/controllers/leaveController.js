@@ -293,9 +293,12 @@ const validateLeaveInputs = async ({ user, leaveTypeCode, startDate, endDate, ha
 };
 
 const buildLeaveRouting = async (user) => {
-  const requesterIsSupervisor = await userModel.hasDirectReports(user.id);
+  // Any requester with an assigned, active supervisor is routed to that supervisor
+  // first - including a supervisor who has their own supervisor above them. Once
+  // that supervisor decides, decideRequest sends the request straight to the CEO
+  // (a single hop) rather than chaining further up the hierarchy.
   const supervisor = user.supervisorId ? await userModel.findById(user.supervisorId) : null;
-  const shouldStartWithSupervisor = user.role === 'employee' && !requesterIsSupervisor && supervisor && supervisor.isActive && !supervisor.isDeleted;
+  const shouldStartWithSupervisor = Boolean(supervisor && supervisor.isActive && !supervisor.isDeleted);
   const supervisorIsCeo = shouldStartWithSupervisor && supervisor.role === 'ceo';
 
   return {
