@@ -295,7 +295,7 @@ export default function AppLayout({ children }) {
       overscrollBehaviorY: isMobile ? 'none' : undefined
     }}>
       {isMobile && backgroundUrl ? (
-        <div className="fixed inset-0 -z-10" style={{ backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center center', backgroundRepeat: 'no-repeat', willChange: 'transform' }} />
+        <div className="app-mobile-bg-fixed -z-10" style={{ backgroundImage: `url(${backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center center', backgroundRepeat: 'no-repeat' }} />
       ) : null}
       
       {backgroundUrl ? (

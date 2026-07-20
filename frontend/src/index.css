@@ -42,6 +42,20 @@ body {
   overflow-x: hidden;
 }
 
+/* Mobile fixed background layer: sized to the LARGEST possible viewport (100lvh) instead of
+   the dynamic viewport (which shrinks/grows as the mobile browser's address bar shows/hides
+   at the top/bottom scroll boundaries). This keeps background-size: cover from recalculating
+   and visually "zooming" during that browser-chrome transition. Falls back to 100vh on
+   browsers without lvh support. */
+.app-mobile-bg-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
+}
+
 @media (min-width: 768px) {
   .app-layout-desktop-offset {
     padding-left: 18rem;
