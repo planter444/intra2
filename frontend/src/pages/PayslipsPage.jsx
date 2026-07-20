@@ -650,7 +650,7 @@ export default function PayslipsPage() {
                         <button type="button" title="Print" onClick={() => openPayslip(payslip, true)} className="rounded-xl bg-slate-100 p-2 text-slate-700">
                           <Printer size={15} />
                         </button>
-                        {isAdmin ? (
+                        {privileged ? (
                           <button type="button" title="Delete" onClick={() => handleDeletePayslip(payslip)} className="rounded-xl bg-rose-50 p-2 text-rose-600">
                             <Trash2 size={15} />
                           </button>

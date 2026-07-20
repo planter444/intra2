@@ -306,8 +306,8 @@ export default function AppLayout({ children }) {
       ) : null}
       <div className="relative flex min-h-screen overflow-x-hidden">
         <div
-          className="pointer-events-none fixed top-0 z-30 hidden h-10 w-10 md:block"
-          style={{ left: 'calc(18rem - 2.5rem)', backgroundImage: sidebarBackgroundImage, ...sidebarBackdrop }}
+          className={`pointer-events-none fixed top-0 z-30 hidden h-10 w-10 md:block ${redesignedActive ? 'backdrop-blur-xl' : 'backdrop-blur'}`}
+          style={{ left: 'calc(18rem - 2.5rem)', backgroundColor: redesignedActive ? withOpacity('#ffffff', 0.25) : withOpacity('#ffffff', 0.9) }}
           aria-hidden="true"
         />
         <aside

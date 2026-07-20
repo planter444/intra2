@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { usePagePresentation } from '../hooks/usePagePresentation';
 import { forgotPasswordRequest } from '../services/authService';
@@ -14,6 +15,8 @@ export default function LoginPage() {
   const [resetNotice, setResetNotice] = useState('');
   const [resetNoticeTone, setResetNoticeTone] = useState('success');
   const [resetLoading, setResetLoading] = useState(false);
+  const [forgotModalOpen, setForgotModalOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -42,18 +45,28 @@ export default function LoginPage() {
     }
   };
 
+  const openForgotModal = () => {
+    setForgotEmail(form.email.trim());
+    setForgotModalOpen(true);
+  };
+
+  const closeForgotModal = () => {
+    setForgotModalOpen(false);
+  };
+
   const handleForgotPassword = async () => {
-    if (!form.email.trim()) {
+    if (!forgotEmail.trim()) {
       setResetNoticeTone('error');
-      setResetNotice('Enter your email address first, then use Forgot password.');
+      setResetNotice('Enter your email address to request a reset link.');
       return;
     }
 
     try {
       setResetLoading(true);
-      const response = await forgotPasswordRequest({ email: form.email.trim() });
+      const response = await forgotPasswordRequest({ email: forgotEmail.trim() });
       setResetNoticeTone('success');
       setResetNotice(response.message || 'If that email exists in the system, a reset link has been sent.');
+      setForgotModalOpen(false);
     } catch (requestError) {
       setResetNoticeTone('error');
       setResetNotice(requestError.response?.data?.message || 'Unable to send a reset link right now.');
@@ -183,8 +196,8 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <button type="button" onClick={handleForgotPassword} disabled={resetLoading} className="text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70" style={{ color: branding.primaryColor || '#166534' }}>
-              {resetLoading ? 'Sending reset link...' : 'Forgot Password?'}
+            <button type="button" onClick={openForgotModal} disabled={resetLoading} className="text-sm font-medium disabled:cursor-not-allowed disabled:opacity-70" style={{ color: branding.primaryColor || '#166534' }}>
+              Forgot Password?
             </button>
             {error ? <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
             {resetNotice ? <div className={`rounded-2xl px-4 py-3 text-sm ${resetNoticeTone === 'error' ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>{resetNotice}</div> : null}
@@ -200,6 +213,31 @@ export default function LoginPage() {
           <p className="mt-8 text-center text-xs text-slate-400">{labels.loginFooterText || '2026 KEREA. All rights reserved.'}</p>
         </div>
       </div>
+
+      <Modal
+        open={forgotModalOpen}
+        title="Forgot your password?"
+        description="Please enter your email address below. If it exists in our database, we'll send you a password reset link."
+        onClose={closeForgotModal}
+        actions={[
+          <button key="cancel" type="button" onClick={closeForgotModal} disabled={resetLoading} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-70">
+            Cancel
+          </button>,
+          <button key="submit" type="button" onClick={handleForgotPassword} disabled={resetLoading} className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-70" style={{ background: branding.primaryColor || '#166534' }}>
+            {resetLoading ? 'Sending...' : 'Send Reset Link'}
+          </button>
+        ]}
+      >
+        <label className="mb-2 block text-sm font-medium text-slate-700">Email address</label>
+        <input
+          type="email"
+          value={forgotEmail}
+          onChange={(event) => setForgotEmail(event.target.value)}
+          placeholder="you@example.com"
+          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-emerald-600 focus:ring-1 focus:ring-emerald-600"
+          autoFocus
+        />
+      </Modal>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Eye, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Download, Eye, Pencil, Trash2, X } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -456,15 +456,17 @@ export default function LeaveRequestDetailPage() {
           {(canSupervisorReview || canOperationalReview || canFinalCeoReview || canReviseSupervisorDecision || canReviseCeoDecision) ? (
             <SectionCard title={canReviseSupervisorDecision || canReviseCeoDecision ? 'Update Decision' : 'Take Action'} subtitle={canReviseSupervisorDecision || canReviseCeoDecision ? 'Switch the recorded decision for this leave request.' : 'Approve or reject this request with an optional comment.'}>
               {canReviseSupervisorDecision || canReviseCeoDecision ? (
-                <button type="button" className={`w-full rounded-xl px-4 py-2.5 text-sm font-medium text-white ${request.status === 'rejected' ? 'bg-emerald-600' : 'bg-rose-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
+                <button type="button" className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90 ${request.status === 'rejected' ? 'bg-emerald-600' : 'bg-rose-600'}`} onClick={() => setDecisionModal({ open: true, decision: request.status === 'rejected' ? 'approve' : 'reject', comment: canReviseSupervisorDecision ? request.supervisorComment || '' : request.ceoComment || '' })}>
                   {request.status === 'rejected' ? 'Mark as Approved' : 'Mark as Rejected'}
                 </button>
               ) : (
-                <div className="flex flex-col gap-2.5">
-                  <button type="button" className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white" onClick={() => setDecisionModal({ open: true, decision: 'approve', comment: '' })}>
+                <div className="flex flex-wrap gap-3">
+                  <button type="button" className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700" onClick={() => setDecisionModal({ open: true, decision: 'approve', comment: '' })}>
+                    <Check size={16} />
                     Approve
                   </button>
-                  <button type="button" className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-medium text-white" onClick={() => setDecisionModal({ open: true, decision: 'reject', comment: '' })}>
+                  <button type="button" className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-700" onClick={() => setDecisionModal({ open: true, decision: 'reject', comment: '' })}>
+                    <X size={16} />
                     Reject
                   </button>
                 </div>

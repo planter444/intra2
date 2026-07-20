@@ -40,7 +40,7 @@ router.put('/profile/:userId', authenticate, authorize('admin', 'ceo', 'finance'
 
 router.post('/generate', authenticate, authorize('admin', 'ceo', 'finance'), generatePayslips);
 router.post('/preview', authenticate, authorize('admin', 'ceo', 'finance'), previewPayslip);
-router.delete('/:id', authenticate, authorize('admin'), deletePayslip);
+router.delete('/:id', authenticate, authorize('admin', 'ceo', 'finance'), deletePayslip);
 router.get('/', authenticate, listMyOrAllPayslips);
 router.get('/:id/file', authenticate, downloadPayslipFile);
 
