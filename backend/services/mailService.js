@@ -85,6 +85,8 @@ const buildLeaveCard = ({ employeeName, employeeNo, departmentName, leaveTypeLab
 
 const buildLeaveRequestUrl = (requestId) => `${String(env.frontendUrl || '').replace(/\/+$/, '')}/leaves/${encodeURIComponent(requestId)}`;
 
+const buildTravelRequestUrl = (requestId) => `${String(env.frontendUrl || '').replace(/\/+$/, '')}/travel/${encodeURIComponent(requestId)}`;
+
 const buildActionLink = ({ url, label }) => `
   <div style="margin: 24px 0;">
     <a href="${url}" style="display: inline-block; padding: 13px 22px; background: #166534; color: #ffffff; text-decoration: none; border-radius: 14px; font-weight: 700;">
@@ -213,9 +215,70 @@ const sendSupervisorDecisionToCeoEmail = async ({ recipients, request, superviso
   });
 };
 
+const buildTravelCard = ({ employeeName, employeeNo, departmentName, origin, destination, startDate, endDate, reason, estimatedCost, receiptAmount, receiptDescription }) => `
+  <div style="margin: 22px 0; overflow: hidden; border-radius: 20px; border: 1px solid #dbeafe; background: #ffffff; box-shadow: 0 18px 45px rgba(30,64,175,0.12);">
+    <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 18px 22px; color: #ffffff;">
+      <p style="margin: 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.82;">KEREA HRMS Travel Desk</p>
+      <h2 style="margin: 6px 0 0; font-size: 22px; line-height: 1.25;">Travel request details</h2>
+    </div>
+    <div style="padding: 20px 22px; color: #0f172a;">
+      ${employeeName ? `<p style="margin: 0 0 10px;"><strong>Employee:</strong> ${employeeName}${employeeNo ? ` (${employeeNo})` : ''}</p>` : ''}
+      ${departmentName ? `<p style="margin: 0 0 10px;"><strong>Department:</strong> ${departmentName}</p>` : ''}
+      <p style="margin: 0 0 10px;"><strong>Route:</strong> ${origin} → ${destination}</p>
+      <p style="margin: 0 0 10px;"><strong>Dates:</strong> ${startDate}${endDate && endDate !== startDate ? ` to ${endDate}` : ''}</p>
+      ${estimatedCost ? `<p style="margin: 0 0 10px;"><strong>Estimated cost:</strong> ${estimatedCost}</p>` : ''}
+      ${receiptAmount ? `<p style="margin: 0 0 10px;"><strong>Receipt amount:</strong> ${receiptAmount}</p>` : ''}
+      ${reason ? `<p style="margin: 0 0 10px;"><strong>Reason:</strong> ${reason}</p>` : ''}
+      ${receiptDescription ? `<p style="margin: 0;"><strong>Receipt description:</strong> ${receiptDescription}</p>` : ''}
+    </div>
+  </div>
+`;
+
+const sendTravelReceiptNotificationEmail = async ({ recipients, travelRequest, receipt, uploaderName }) => {
+  const to = (recipients || [])
+    .filter((recipient) => recipient?.email)
+    .map((recipient) => ({ email: recipient.email, name: recipient.name || recipient.email }));
+
+  if (!to.length) {
+    return;
+  }
+
+  const requestUrl = buildTravelRequestUrl(travelRequest.id);
+
+  await sendBrevoEmail({
+    to,
+    subject: `Travel receipt uploaded by ${uploaderName}`,
+    htmlContent: `
+      <div style="margin: 0; background: #eff6ff; padding: 28px; font-family: Arial, sans-serif; color: #0f172a; line-height: 1.55;">
+        <div style="margin: 0 auto; max-width: 640px;">
+          <p style="margin: 0 0 12px; color: #1e40af; font-weight: 700;">Action required</p>
+          <h1 style="margin: 0; font-size: 28px; color: #1e3a8a;">${uploaderName} has uploaded a travel receipt for reimbursement</h1>
+          <p style="margin: 12px 0 0; color: #475569;">A travel receipt is waiting for your review in KEREA HRMS.</p>
+          ${buildTravelCard({
+            employeeName: travelRequest.employeeName,
+            employeeNo: travelRequest.employeeNo,
+            departmentName: travelRequest.employeeDepartmentName,
+            origin: travelRequest.origin,
+            destination: travelRequest.destination,
+            startDate: travelRequest.startDate,
+            endDate: travelRequest.endDate,
+            reason: travelRequest.reason,
+            estimatedCost: travelRequest.estimatedCost,
+            receiptAmount: receipt.amount,
+            receiptDescription: receipt.description
+          })}
+          ${buildActionLink({ url: requestUrl, label: 'View travel receipt in HRMS' })}
+          <p style="margin: 0; color: #475569;">Please log in to HRMS to review the receipt and process the reimbursement.</p>
+        </div>
+      </div>
+    `
+  });
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendLeaveApplicationEmail,
   sendLeaveDecisionEmail,
-  sendSupervisorDecisionToCeoEmail
+  sendSupervisorDecisionToCeoEmail,
+  sendTravelReceiptNotificationEmail
 };

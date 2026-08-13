@@ -342,3 +342,61 @@ ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS travel_requests (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  origin VARCHAR(255) NOT NULL,
+  destination VARCHAR(255) NOT NULL,
+  reason TEXT NOT NULL,
+  estimated_cost NUMERIC(14,2),
+  status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')),
+  approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  rejection_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS travel_receipts (
+  id BIGSERIAL PRIMARY KEY,
+  travel_request_id BIGINT NOT NULL REFERENCES travel_requests(id) ON DELETE CASCADE,
+  uploaded_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  file_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT NOT NULL,
+  storage_path TEXT NOT NULL,
+  amount NUMERIC(14,2),
+  description TEXT,
+  reimbursement_status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (reimbursement_status IN ('pending', 'submitted', 'under_review', 'approved', 'rejected', 'settled', 'not_settled')),
+  reviewed_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  review_comment TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS travel_notification_settings (
+  id BIGSERIAL PRIMARY KEY,
+  notify_finance BOOLEAN NOT NULL DEFAULT TRUE,
+  notify_admin BOOLEAN NOT NULL DEFAULT TRUE,
+  notify_supervisor BOOLEAN NOT NULL DEFAULT TRUE,
+  notify_ceo BOOLEAN NOT NULL DEFAULT FALSE,
+  custom_recipients TEXT[],
+  updated_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_travel_requests_user ON travel_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_travel_requests_status ON travel_requests(status);
+CREATE INDEX IF NOT EXISTS idx_travel_receipts_travel ON travel_receipts(travel_request_id);
+CREATE INDEX IF NOT EXISTS idx_travel_receipts_status ON travel_receipts(reimbursement_status);
+CREATE INDEX IF NOT EXISTS idx_travel_receipts_uploaded_by ON travel_receipts(uploaded_by);
+
+ALTER TABLE travel_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_receipts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_notification_settings ENABLE ROW LEVEL SECURITY;
