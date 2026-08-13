@@ -167,31 +167,37 @@ export default function TravelApplyPage() {
         {step === 1 ? (
           <div className="space-y-6">
             <p className="text-center text-lg font-medium text-slate-900">What type of travel request would you like to submit?</p>
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <button
                 type="button"
-                onClick={() => setForm({ ...initialForm, travelType: 'booking' })}
-                className="flex cursor-pointer items-center gap-4 rounded-3xl border-2 border-slate-200 bg-white p-8 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
+                onClick={() => {
+                  setForm({ ...initialForm, travelType: 'booking' });
+                  setStep(2);
+                }}
+                className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
-                  <Upload size={32} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                  <Upload size={24} />
                 </div>
                 <div>
-                  <p className="text-xl font-semibold text-slate-900">Travel Booking</p>
-                  <p className="mt-1 text-sm text-slate-500">Book travel for upcoming trips</p>
+                  <p className="font-semibold text-slate-900">Travel Booking</p>
+                  <p className="mt-1 text-xs text-slate-500">Book travel for upcoming trips</p>
                 </div>
               </button>
               <button
                 type="button"
-                onClick={() => setForm({ ...initialForm, travelType: 'reimbursement' })}
-                className="flex cursor-pointer items-center gap-4 rounded-3xl border-2 border-slate-200 bg-white p-8 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
+                onClick={() => {
+                  setForm({ ...initialForm, travelType: 'reimbursement' });
+                  setStep(2);
+                }}
+                className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
-                  <Upload size={32} />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
+                  <Upload size={24} />
                 </div>
                 <div>
-                  <p className="text-xl font-semibold text-slate-900">Reimbursement</p>
-                  <p className="mt-1 text-sm text-slate-500">Request reimbursement for travel already taken</p>
+                  <p className="font-semibold text-slate-900">Reimbursement</p>
+                  <p className="mt-1 text-xs text-slate-500">Request reimbursement for travel already taken</p>
                 </div>
               </button>
             </div>

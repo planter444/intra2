@@ -16,7 +16,10 @@ const {
   getTravelNotificationSettings,
   updateTravelNotificationSettings,
   getTravelRoutingSettings,
-  updateTravelRoutingSettings
+  updateTravelRoutingSettings,
+  getAllEmployeeRouting,
+  addEmployeeRouting,
+  removeEmployeeRouting
 } = require('../controllers/travelController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -50,5 +53,10 @@ router.put('/notification-settings', authorize('admin'), updateTravelNotificatio
 // Travel routing settings routes (admin only)
 router.get('/routing-settings', getTravelRoutingSettings);
 router.put('/routing-settings', authorize('admin'), updateTravelRoutingSettings);
+
+// Employee routing routes (admin only)
+router.get('/employee-routing', authorize('admin'), getAllEmployeeRouting);
+router.post('/employee-routing', authorize('admin'), addEmployeeRouting);
+router.delete('/employee-routing/:id', authorize('admin'), removeEmployeeRouting);
 
 module.exports = router;

@@ -402,6 +402,15 @@ CREATE TABLE IF NOT EXISTS travel_routing_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS travel_employee_routing (
+  id BIGSERIAL PRIMARY KEY,
+  employee_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  approver_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(employee_id, approver_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_travel_requests_user ON travel_requests(user_id);
 CREATE INDEX IF NOT EXISTS idx_travel_requests_status ON travel_requests(status);
 CREATE INDEX IF NOT EXISTS idx_travel_receipts_travel ON travel_receipts(travel_request_id);
@@ -412,3 +421,4 @@ ALTER TABLE travel_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travel_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travel_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travel_routing_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_employee_routing ENABLE ROW LEVEL SECURITY;

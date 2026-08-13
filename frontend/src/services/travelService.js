@@ -95,3 +95,18 @@ export const updateTravelRoutingSettings = async (data) => {
   const response = await api.put('/travel/routing-settings', data);
   return response.data.settings;
 };
+
+export const fetchAllEmployeeRouting = async () => {
+  const response = await api.get('/travel/employee-routing');
+  return response.data.routing;
+};
+
+export const addEmployeeRouting = async (data) => {
+  const response = await api.post('/travel/employee-routing', data);
+  return response.data.routing;
+};
+
+export const removeEmployeeRouting = async (id) => {
+  const response = await api.delete(`/travel/employee-routing/${id}`);
+  return response.data;
+};

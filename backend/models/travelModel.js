@@ -660,6 +660,108 @@ const updateTravelRoutingSettings = async ({ routeToSupervisor, routeToCeo, rout
   };
 };
 
+const getEmployeeTravelRouting = async (employeeId) => {
+  const result = await query(
+    `
+      SELECT
+        ter.id,
+        ter.employee_id,
+        ter.approver_id,
+        u.full_name as approver_name,
+        u.email as approver_email,
+        u.role as approver_role,
+        ter.created_at,
+        ter.updated_at
+      FROM travel_employee_routing ter
+      INNER JOIN users u ON u.id = ter.approver_id
+      WHERE ter.employee_id = $1
+      ORDER BY ter.created_at DESC
+    `,
+    [employeeId]
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    employeeId: row.employee_id,
+    approverId: row.approver_id,
+    approverName: row.approver_name,
+    approverEmail: row.approver_email,
+    approverRole: row.approver_role,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+};
+
+const getAllEmployeeRouting = async () => {
+  const result = await query(
+    `
+      SELECT
+        ter.id,
+        ter.employee_id,
+        e.full_name as employee_name,
+        e.email as employee_email,
+        ter.approver_id,
+        a.full_name as approver_name,
+        a.email as approver_email,
+        a.role as approver_role,
+        ter.created_at,
+        ter.updated_at
+      FROM travel_employee_routing ter
+      INNER JOIN users e ON e.id = ter.employee_id
+      INNER JOIN users a ON a.id = ter.approver_id
+      ORDER BY ter.employee_id, ter.created_at DESC
+    `
+  );
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    employeeId: row.employee_id,
+    employeeName: row.employee_name,
+    employeeEmail: row.employee_email,
+    approverId: row.approver_id,
+    approverName: row.approver_name,
+    approverEmail: row.approver_email,
+    approverRole: row.approver_role,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }));
+};
+
+const addEmployeeRouting = async ({ employeeId, approverId }) => {
+  const result = await query(
+    `
+      INSERT INTO travel_employee_routing (employee_id, approver_id)
+      VALUES ($1, $2)
+      ON CONFLICT (employee_id, approver_id) DO NOTHING
+      RETURNING *
+    `,
+    [employeeId, approverId]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    employeeId: row.employee_id,
+    approverId: row.approver_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+};
+
+const removeEmployeeRouting = async (id) => {
+  await query(
+    `
+      DELETE FROM travel_employee_routing WHERE id = $1
+    `,
+    [id]
+  );
+  return true;
+};
+
 module.exports = {
   createTravelRequest,
   findTravelRequestById,
@@ -679,6 +781,10 @@ module.exports = {
   getTravelRecipientsForNotification,
   getTravelRoutingSettings,
   updateTravelRoutingSettings,
+  getEmployeeTravelRouting,
+  getAllEmployeeRouting,
+  addEmployeeRouting,
+  removeEmployeeRouting,
   getSummaryStats,
   getSummaryStatsForUser
 };

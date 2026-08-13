@@ -593,6 +593,65 @@ const updateTravelRoutingSettings = async (req, res, next) => {
   }
 };
 
+const getAllEmployeeRouting = async (req, res, next) => {
+  try {
+    const routing = await travelModel.getAllEmployeeRouting();
+    res.json({ routing });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addEmployeeRouting = async (req, res, next) => {
+  try {
+    const { employeeId, approverId } = req.body;
+
+    if (!employeeId || !approverId) {
+      return res.status(400).json({ message: 'Employee ID and Approver ID are required.' });
+    }
+
+    const routing = await travelModel.addEmployeeRouting({ employeeId, approverId });
+
+    await logAction({
+      actorUserId: req.user.id,
+      actorRole: req.user.role,
+      action: 'TRAVEL_EMPLOYEE_ROUTING_ADD',
+      entityType: 'travel_employee_routing',
+      entityId: String(routing?.id || 'unknown'),
+      description: `${req.user.fullName} added travel routing for employee ${employeeId} to approver ${approverId}.`,
+      metadata: { employeeId, approverId },
+      ipAddress: req.ip
+    });
+
+    res.json({ routing });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const removeEmployeeRouting = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    await travelModel.removeEmployeeRouting(id);
+
+    await logAction({
+      actorUserId: req.user.id,
+      actorRole: req.user.role,
+      action: 'TRAVEL_EMPLOYEE_ROUTING_REMOVE',
+      entityType: 'travel_employee_routing',
+      entityId: String(id),
+      description: `${req.user.fullName} removed travel routing ${id}.`,
+      metadata: { id },
+      ipAddress: req.ip
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listTravelRequests,
   getTravelRequest,
@@ -610,5 +669,8 @@ module.exports = {
   getTravelNotificationSettings,
   updateTravelNotificationSettings,
   getTravelRoutingSettings,
-  updateTravelRoutingSettings
+  updateTravelRoutingSettings,
+  getAllEmployeeRouting,
+  addEmployeeRouting,
+  removeEmployeeRouting
 };
