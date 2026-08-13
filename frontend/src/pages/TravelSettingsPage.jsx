@@ -384,7 +384,7 @@ export default function TravelSettingsPage() {
               >
                 <option value="">Select employee</option>
                 {users.filter(u => u.role === 'employee' || u.role === 'supervisor').map((u) => (
-                  <option key={u.id} value={u.id}>{u.fullName} ({u.email})</option>
+                  <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>
                 ))}
               </select>
             </div>
@@ -397,7 +397,7 @@ export default function TravelSettingsPage() {
               >
                 <option value="">Select approver</option>
                 {users.filter(u => ['supervisor', 'admin', 'ceo', 'finance'].includes(u.role)).map((u) => (
-                  <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>
+                  <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.role})</option>
                 ))}
               </select>
             </div>

@@ -698,10 +698,10 @@ const getAllEmployeeRouting = async () => {
       SELECT
         ter.id,
         ter.employee_id,
-        e.full_name as employee_name,
+        e.first_name || ' ' || e.last_name as employee_name,
         e.email as employee_email,
         ter.approver_id,
-        a.full_name as approver_name,
+        a.first_name || ' ' || a.last_name as approver_name,
         a.email as approver_email,
         a.role as approver_role,
         ter.created_at,
