@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Upload, X } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -8,13 +9,14 @@ import useUnsavedChangesGuard from '../hooks/useUnsavedChangesGuard';
 import { createTravelRequest, fetchTravelRequests } from '../services/travelService';
 
 const initialForm = {
-  travelType: 'booking',
+  travelType: '',
   startDate: '',
   endDate: '',
   origin: '',
   destination: '',
   reason: '',
-  estimatedCost: ''
+  estimatedCost: '',
+  receiptFile: null
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
@@ -25,6 +27,7 @@ export default function TravelApplyPage() {
   const [requests, setRequests] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState(1);
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
@@ -68,30 +71,80 @@ export default function TravelApplyPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    const errorMessage = validate();
 
-    if (errorMessage) {
-      setNotice({ open: true, title: 'Travel request error', description: errorMessage });
+    if (!form.startDate || !form.endDate || !form.origin || !form.destination || !form.reason) {
+      setNotice({
+        open: true,
+        title: 'Missing required fields',
+        description: 'Start date, end date, origin, destination, and reason are required.'
+      });
+      return;
+    }
+
+    const start = new Date(form.startDate);
+    const end = new Date(form.endDate);
+
+    if (start > end) {
+      setNotice({
+        open: true,
+        title: 'Invalid date range',
+        description: 'Start date must be before or equal to end date.'
+      });
+      return;
+    }
+
+    if (form.travelType === 'reimbursement' && !form.receiptFile) {
+      setNotice({
+        open: true,
+        title: 'Receipt required',
+        description: 'Please upload a receipt for reimbursement requests.'
+      });
       return;
     }
 
     try {
       setSubmitting(true);
-      const request = await createTravelRequest({
-        ...form,
-        estimatedCost: form.estimatedCost ? parseFloat(form.estimatedCost) : null
-      });
+
+      const requestData = {
+        travelType: form.travelType,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        origin: form.origin,
+        destination: form.destination,
+        reason: form.reason,
+        estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : null
+      };
+
+      const request = await createTravelRequest(requestData);
+
+      if (form.travelType === 'reimbursement' && form.receiptFile) {
+        const formData = new FormData();
+        formData.append('receipt', form.receiptFile);
+        formData.append('amount', form.estimatedCost || '');
+        formData.append('description', form.reason);
+
+        await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/travel/receipts`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
+      }
+
       setSubmittedRequestId(request.id);
       setNotice({
         open: true,
         title: 'Travel request submitted',
-        description: 'Your travel request has been submitted successfully and sent for approval.'
+        description: 'Your travel request has been submitted successfully.'
       });
+      setForm(initialForm);
+      setStep(1);
     } catch (error) {
       setNotice({
         open: true,
         title: 'Travel request error',
-        description: error.response?.data?.message || 'Unable to submit your travel request.'
+        description: error.response?.data?.message || 'Unable to submit travel request. Please try again.'
       });
     } finally {
       setSubmitting(false);
@@ -111,40 +164,40 @@ export default function TravelApplyPage() {
       />
 
       <SectionCard title="Travel request form" subtitle="Enter your travel details including dates, route, reason, and estimated cost.">
-        <form className="space-y-5" onSubmit={handleSubmit}>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Request type</label>
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${form.travelType === 'booking' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                <input
-                  type="radio"
-                  name="travelType"
-                  value="booking"
-                  checked={form.travelType === 'booking'}
-                  onChange={(e) => setForm((current) => ({ ...current, travelType: e.target.value }))}
-                  className="sr-only"
-                />
-                <div className="flex-1">
-                  <p className="font-medium text-slate-900">Travel Booking</p>
-                  <p className="text-sm text-slate-500">Book travel for upcoming trips</p>
+        {step === 1 ? (
+          <div className="space-y-6">
+            <p className="text-center text-lg font-medium text-slate-900">What type of travel request would you like to submit?</p>
+            <div className="grid gap-6 md:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => setForm({ ...initialForm, travelType: 'booking' })}
+                className="flex cursor-pointer items-center gap-4 rounded-3xl border-2 border-slate-200 bg-white p-8 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
+              >
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-600">
+                  <Upload size={32} />
                 </div>
-              </label>
-              <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${form.travelType === 'reimbursement' ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 bg-white'}`}>
-                <input
-                  type="radio"
-                  name="travelType"
-                  value="reimbursement"
-                  checked={form.travelType === 'reimbursement'}
-                  onChange={(e) => setForm((current) => ({ ...current, travelType: e.target.value }))}
-                  className="sr-only"
-                />
-                <div className="flex-1">
-                  <p className="font-medium text-slate-900">Reimbursement</p>
-                  <p className="text-sm text-slate-500">Request reimbursement for travel already taken</p>
+                <div>
+                  <p className="text-xl font-semibold text-slate-900">Travel Booking</p>
+                  <p className="mt-1 text-sm text-slate-500">Book travel for upcoming trips</p>
                 </div>
-              </label>
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm({ ...initialForm, travelType: 'reimbursement' })}
+                className="flex cursor-pointer items-center gap-4 rounded-3xl border-2 border-slate-200 bg-white p-8 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
+              >
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-blue-600">
+                  <Upload size={32} />
+                </div>
+                <div>
+                  <p className="text-xl font-semibold text-slate-900">Reimbursement</p>
+                  <p className="mt-1 text-sm text-slate-500">Request reimbursement for travel already taken</p>
+                </div>
+              </button>
             </div>
           </div>
+        ) : (
+          <form className="space-y-5" onSubmit={handleSubmit}>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -223,15 +276,43 @@ export default function TravelApplyPage() {
             />
           </div>
 
+          {form.travelType === 'reimbursement' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Receipt upload (required for reimbursement)</label>
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
+                <Upload size={24} className="text-slate-400" />
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Click to upload receipt</p>
+                  <p className="mt-1 text-xs text-slate-400">PDF, images, or other receipt files (max 10 MB)</p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  onChange={(e) => setForm((current) => ({ ...current, receiptFile: e.target.files?.[0] || null }))}
+                />
+              </label>
+              {form.receiptFile && (
+                <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                  <span>{form.receiptFile.name}</span>
+                  <button type="button" className="text-slate-500" onClick={() => setForm((current) => ({ ...current, receiptFile: null }))}>
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="flex flex-wrap justify-end gap-3">
-            <button type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700" onClick={() => navigate('/travel')}>
-              Cancel
+            <button type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700" onClick={() => setStep(1)}>
+              Back
             </button>
             <button type="submit" disabled={submitting} className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-60">
               {submitting ? 'Submitting...' : 'Submit Travel Request'}
             </button>
           </div>
         </form>
+        )}
       </SectionCard>
 
       <Modal

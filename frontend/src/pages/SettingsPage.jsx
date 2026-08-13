@@ -101,7 +101,8 @@ export default function SettingsPage() {
         ['leave', 'Leave Page'],
         ['kpi', 'KPI Matrix Page'],
         ['performance', 'Performance Dashboard'],
-        ['leaves_cleanup', 'Delete Leave Requests']
+        ['leaves_cleanup', 'Delete Leave Requests'],
+        ['travel', 'Travel Settings']
       ];
   const [draft, setDraft] = useState(() => clone(settings || {}));
   const [message, setMessage] = useState('');
@@ -2005,6 +2006,26 @@ export default function SettingsPage() {
               </div>
             </div>
           </Modal>
+        </div>
+      ) : null}
+
+      {activePage === 'travel' ? (
+        <div className="space-y-6">
+          <SectionCard title="Travel settings" subtitle="Configure travel management notification and routing settings.">
+            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-600">
+              <p className="font-medium text-slate-900">Travel Management Settings</p>
+              <p className="mt-2">Configure who receives email notifications when travel receipts are uploaded and who should approve travel requests.</p>
+            </div>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => navigate('/travel/settings')}
+                className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg"
+              >
+                Go to Travel Settings
+              </button>
+            </div>
+          </SectionCard>
         </div>
       ) : null}
     </div>
