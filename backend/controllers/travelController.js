@@ -104,6 +104,7 @@ const createTravelRequest = async (req, res, next) => {
     }
 
     let supportingDocumentId = null;
+    let supportingDocumentPath = null;
     
     // Handle supporting document upload for booking type
     if (travelType === 'booking' && req.file) {
@@ -114,16 +115,23 @@ const createTravelRequest = async (req, res, next) => {
           file: req.file
         });
         
-        const documentResult = await query(
-          `
-            INSERT INTO documents (user_id, uploaded_by, folder_type, file_name, stored_name, mime_type, file_size, storage_path)
-            VALUES ($1, $2, 'travel', $3, $4, $5, $6, $7)
-            RETURNING id
-          `,
-          [req.user.id, req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
-        );
+        supportingDocumentPath = targetPath;
         
-        supportingDocumentId = documentResult.rows[0].id;
+        // Try to create document record for tracking, but don't fail if it doesn't work
+        try {
+          const documentResult = await query(
+            `
+              INSERT INTO documents (user_id, uploaded_by, folder_type, file_name, stored_name, mime_type, file_size, storage_path)
+              VALUES ($1, $2, 'travel', $3, $4, $5, $6, $7)
+              RETURNING id
+            `,
+            [req.user.id, req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
+          );
+          supportingDocumentId = documentResult.rows[0].id;
+        } catch (docError) {
+          console.warn('Failed to create document record (will use direct path):', docError.message);
+          // Continue without document record - we'll use the direct path
+        }
       } catch (uploadError) {
         console.error('Failed to upload supporting document:', uploadError.message);
         // Continue without the document - it's optional

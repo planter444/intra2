@@ -357,6 +357,8 @@ const exportLeaveReportPdf = async (req, res, next) => {
   try {
     const { startDate, endDate, employeeId, departmentId, leaveTypeId, status } = req.query;
     
+    console.log('Leave report PDF export request:', { startDate, endDate, employeeId, departmentId, leaveTypeId, status });
+    
     // Build WHERE clauses for filters
     const conditions = [];
     const params = [];
@@ -400,6 +402,8 @@ const exportLeaveReportPdf = async (req, res, next) => {
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
+    console.log('Where clause:', whereClause);
+    
     // Get summary statistics
     const statsResult = await query(
       `
@@ -420,6 +424,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
     );
     
     const stats = statsResult.rows[0];
+    console.log('Statistics:', stats);
     
     // Get leave days by type
     const leaveByTypeResult = await query(
@@ -521,6 +526,19 @@ const exportLeaveReportPdf = async (req, res, next) => {
       employeesOnLeave: onLeaveResult.rows
     };
     
+    console.log('Payload created, generating PDF...');
+    
+    try {
+      const pdfBuffer = buildLeaveReportPdf(payload);
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="kerea-leave-report-${new Date().toISOString().slice(0, 10)}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (pdfError) {
+      console.error('PDF generation error:', pdfError);
+      return res.status(500).json({ message: 'Failed to generate PDF', error: pdfError.message });
+    }
+    
     await logAction({
       actorUserId: req.user.id,
       actorRole: req.user.role,
@@ -531,13 +549,8 @@ const exportLeaveReportPdf = async (req, res, next) => {
       metadata: { filters: { startDate, endDate, employeeId, departmentId, leaveTypeId, status } },
       ipAddress: req.ip
     });
-    
-    const pdfBuffer = buildLeaveReportPdf(payload);
-    
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="kerea-leave-report-${new Date().toISOString().slice(0, 10)}.pdf"`);
-    res.send(pdfBuffer);
   } catch (error) {
+    console.error('Leave report PDF export error:', error);
     next(error);
   }
 };

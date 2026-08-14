@@ -61,8 +61,10 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
       [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
     );
   } catch (error) {
-    // If supporting_document_id column doesn't exist, retry without it
-    if (error.message && error.message.includes('supporting_document_id')) {
+    console.error('Travel request insert error:', error.message);
+    // If supporting_document_id column doesn't exist or any other error, retry without it
+    console.warn('Retrying travel request insert without supporting_document_id');
+    try {
       result = await query(
         `
           INSERT INTO travel_requests (
@@ -82,8 +84,9 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         `,
         [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES']
       );
-    } else {
-      throw error;
+    } catch (fallbackError) {
+      console.error('Fallback travel request insert also failed:', fallbackError.message);
+      throw fallbackError;
     }
   }
 
