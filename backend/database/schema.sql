@@ -353,6 +353,7 @@ CREATE TABLE IF NOT EXISTS travel_requests (
   destination VARCHAR(255) NOT NULL,
   reason TEXT NOT NULL,
   estimated_cost NUMERIC(14,2),
+  currency VARCHAR(10) NOT NULL DEFAULT 'KES' CHECK (currency IN ('KES', 'USD')),
   status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')),
   approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
   approved_at TIMESTAMPTZ,
@@ -382,11 +383,7 @@ CREATE TABLE IF NOT EXISTS travel_receipts (
 
 CREATE TABLE IF NOT EXISTS travel_notification_settings (
   id BIGSERIAL PRIMARY KEY,
-  notify_finance BOOLEAN NOT NULL DEFAULT TRUE,
-  notify_admin BOOLEAN NOT NULL DEFAULT TRUE,
-  notify_supervisor BOOLEAN NOT NULL DEFAULT TRUE,
-  notify_ceo BOOLEAN NOT NULL DEFAULT FALSE,
-  custom_recipients TEXT[],
+  recipient_ids BIGINT[] NOT NULL DEFAULT '{}',
   updated_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

@@ -10,11 +10,7 @@ import { fetchUsers } from '../services/userService';
 export default function TravelSettingsPage() {
   const { user } = useAuth();
   const [notificationSettings, setNotificationSettings] = useState({
-    notifyFinance: true,
-    notifyAdmin: true,
-    notifySupervisor: true,
-    notifyCeo: false,
-    customRecipients: []
+    recipientIds: []
   });
   const [routingSettings, setRoutingSettings] = useState({
     routeToSupervisor: true,
@@ -26,9 +22,9 @@ export default function TravelSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
-  const [newRecipient, setNewRecipient] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedApprover, setSelectedApprover] = useState('');
+  const [selectedNotificationRecipients, setSelectedNotificationRecipients] = useState([]);
 
   useEffect(() => {
     loadSettings();
@@ -47,6 +43,7 @@ export default function TravelSettingsPage() {
       setRoutingSettings(routingData);
       setEmployeeRouting(routingList);
       setUsers(usersList);
+      setSelectedNotificationRecipients(notificationData.recipientIds || []);
     } catch (error) {
       setNotice({
         open: true,
@@ -62,9 +59,10 @@ export default function TravelSettingsPage() {
     try {
       setSaving(true);
       await Promise.all([
-        updateTravelNotificationSettings(notificationSettings),
+        updateTravelNotificationSettings({ recipientIds: selectedNotificationRecipients }),
         updateTravelRoutingSettings(routingSettings)
       ]);
+      setNotificationSettings({ ...notificationSettings, recipientIds: selectedNotificationRecipients });
       setNotice({
         open: true,
         title: 'Settings saved',
@@ -82,40 +80,20 @@ export default function TravelSettingsPage() {
   };
 
   const handleAddRecipient = () => {
-    if (!newRecipient.trim()) {
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(newRecipient.trim())) {
-      setNotice({
-        open: true,
-        title: 'Invalid email',
-        description: 'Please enter a valid email address.'
-      });
-      return;
-    }
-
-    if (notificationSettings.customRecipients.includes(newRecipient.trim())) {
-      setNotice({
-        open: true,
-        title: 'Email already exists',
-        description: 'This email is already in the custom recipients list.'
-      });
-      return;
-    }
-
-    setNotificationSettings({
-      ...notificationSettings,
-      customRecipients: [...notificationSettings.customRecipients, newRecipient.trim()]
-    });
-    setNewRecipient('');
+    // Removed - using employee selection instead
   };
 
   const handleRemoveRecipient = (email) => {
-    setNotificationSettings({
-      ...notificationSettings,
-      customRecipients: notificationSettings.customRecipients.filter((r) => r !== email)
+    // Removed - using employee selection instead
+  };
+
+  const handleNotificationRecipientChange = (userId) => {
+    setSelectedNotificationRecipients(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
     });
   };
 
@@ -202,125 +180,35 @@ export default function TravelSettingsPage() {
         ]}
       />
 
-      <SectionCard title="Notification recipients" subtitle="Choose which roles should receive email notifications when travel receipts are uploaded.">
+      <SectionCard title="Travel notification recipients" subtitle="Select employees who should receive notifications when travel requests are submitted or receipts are uploaded.">
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">Finance Officer</p>
-              <p className="text-sm text-slate-500">Notify finance officers when receipts are uploaded for reimbursement</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={notificationSettings.notifyFinance}
-                onChange={(e) => setNotificationSettings({ ...notificationSettings, notifyFinance: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">IT Officer (Admin)</p>
-              <p className="text-sm text-slate-500">Notify IT officers when receipts are uploaded</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={notificationSettings.notifyAdmin}
-                onChange={(e) => setNotificationSettings({ ...notificationSettings, notifyAdmin: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">Supervisor</p>
-              <p className="text-sm text-slate-500">Notify the employee's supervisor when receipts are uploaded</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={notificationSettings.notifySupervisor}
-                onChange={(e) => setNotificationSettings({ ...notificationSettings, notifySupervisor: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">CEO</p>
-              <p className="text-sm text-slate-500">Notify CEO when receipts are uploaded</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={notificationSettings.notifyCeo}
-                onChange={(e) => setNotificationSettings({ ...notificationSettings, notifyCeo: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Custom email recipients" subtitle="Add additional email addresses to receive travel receipt notifications.">
-        <div className="space-y-4">
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <div className="relative">
-                <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="email"
-                  className="bg-slate-50 pl-10"
-                  placeholder="Enter email address"
-                  value={newRecipient}
-                  onChange={(e) => setNewRecipient(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddRecipient()}
-                />
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleAddRecipient}
-              className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white"
-            >
-              <Plus size={18} />
-              Add
-            </button>
-          </div>
-
-          {notificationSettings.customRecipients.length === 0 ? (
-            <p className="text-sm text-slate-500">No custom recipients added yet.</p>
+          {users.length === 0 ? (
+            <p className="text-sm text-slate-500">No employees available.</p>
           ) : (
-            <div className="space-y-2">
-              {notificationSettings.customRecipients.map((email) => (
-                <div key={email} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <Mail size={18} className="text-slate-400" />
-                    <span className="text-sm font-medium text-slate-900">{email}</span>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {users.map((u) => (
+                <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="checkbox"
+                    checked={selectedNotificationRecipients.includes(String(u.id))}
+                    onChange={() => handleNotificationRecipientChange(String(u.id))}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                    <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
                   </div>
-                  <button
-                    type="button"
-                    className="rounded-xl p-2 text-slate-400 hover:bg-slate-100 hover:text-rose-600"
-                    onClick={() => handleRemoveRecipient(email)}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
+                </label>
               ))}
             </div>
           )}
+          <p className="text-sm text-slate-500">
+            {selectedNotificationRecipients.length} employee(s) selected for notifications
+          </p>
         </div>
       </SectionCard>
 
-      <SectionCard title="Travel request routing" subtitle="Configure who should receive and approve travel requests.">
+      <SectionCard title="Travel routing settings" subtitle="Configure how travel requests are routed for approval.">
         <div className="space-y-4">
           <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
             <div>
@@ -383,7 +271,7 @@ export default function TravelSettingsPage() {
                 className="bg-slate-50"
               >
                 <option value="">Select employee</option>
-                {users.filter(u => u.role === 'employee' || u.role === 'supervisor').map((u) => (
+                {users.filter(u => ['employee', 'supervisor', 'admin'].includes(u.role)).map((u) => (
                   <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>
                 ))}
               </select>

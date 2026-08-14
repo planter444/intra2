@@ -16,6 +16,7 @@ const initialForm = {
   destination: '',
   reason: '',
   estimatedCost: '',
+  currency: 'KES',
   receiptFile: null
 };
 
@@ -112,7 +113,8 @@ export default function TravelApplyPage() {
         origin: form.origin,
         destination: form.destination,
         reason: form.reason,
-        estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : null
+        estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : null,
+        currency: form.currency
       };
 
       const request = await createTravelRequest(requestData);
@@ -257,17 +259,30 @@ export default function TravelApplyPage() {
             </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Estimated cost (optional)</label>
-            <input
-              type="number"
-              className="bg-slate-50"
-              placeholder="e.g., 50000"
-              value={form.estimatedCost}
-              onChange={(event) => setForm((current) => ({ ...current, estimatedCost: event.target.value }))}
-              min="0"
-              step="0.01"
-            />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated cost (optional)</label>
+              <input
+                type="number"
+                className="bg-slate-50"
+                placeholder="e.g., 50000"
+                value={form.estimatedCost}
+                onChange={(event) => setForm((current) => ({ ...current, estimatedCost: event.target.value }))}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Currency</label>
+              <select
+                value={form.currency}
+                onChange={(event) => setForm((current) => ({ ...current, currency: event.target.value }))}
+                className="bg-slate-50"
+              >
+                <option value="KES">Kenya Shillings (KES)</option>
+                <option value="USD">US Dollar (USD)</option>
+              </select>
+            </div>
           </div>
 
           <div>

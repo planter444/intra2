@@ -27,6 +27,7 @@ const mapTravelRequest = (row) => ({
   destination: row.destination,
   reason: row.reason,
   estimatedCost: row.estimated_cost ? Number(row.estimated_cost) : null,
+  currency: row.currency || 'KES',
   status: row.status,
   approvedBy: row.approved_by,
   approvedAt: row.approved_at,
@@ -35,7 +36,7 @@ const mapTravelRequest = (row) => ({
   updatedAt: row.updated_at
 });
 
-const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost }) => {
+const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency }) => {
   const result = await query(
     `
       INSERT INTO travel_requests (
@@ -47,12 +48,13 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         destination,
         reason,
         estimated_cost,
+        currency,
         status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
       RETURNING id
     `,
-    [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null]
+    [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES']
   );
 
   return findTravelRequestById(result.rows[0].id);
@@ -365,26 +367,18 @@ const getTravelNotificationSettings = async () => {
   if (result.rows.length === 0) {
     return {
       id: null,
-      notifyFinance: true,
-      notifyAdmin: true,
-      notifySupervisor: true,
-      notifyCeo: false,
-      customRecipients: []
+      recipientIds: []
     };
   }
 
   const row = result.rows[0];
   return {
     id: row.id,
-    notifyFinance: row.notify_finance,
-    notifyAdmin: row.notify_admin,
-    notifySupervisor: row.notify_supervisor,
-    notifyCeo: row.notify_ceo,
-    customRecipients: row.custom_recipients || []
+    recipientIds: row.recipient_ids || []
   };
 };
 
-const updateTravelNotificationSettings = async ({ notifyFinance, notifyAdmin, notifySupervisor, notifyCeo, customRecipients, updatedBy }) => {
+const updateTravelNotificationSettings = async ({ recipientIds, updatedBy }) => {
   const existing = await query(`SELECT id FROM travel_notification_settings LIMIT 1`);
 
   if (existing.rows.length > 0) {
@@ -392,31 +386,23 @@ const updateTravelNotificationSettings = async ({ notifyFinance, notifyAdmin, no
       `
         UPDATE travel_notification_settings
         SET
-          notify_finance = $2,
-          notify_admin = $3,
-          notify_supervisor = $4,
-          notify_ceo = $5,
-          custom_recipients = $6,
-          updated_by = $7,
+          recipient_ids = $2,
+          updated_by = $3,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [existing.rows[0].id, notifyFinance, notifyAdmin, notifySupervisor, notifyCeo, customRecipients || [], updatedBy]
+      [existing.rows[0].id, recipientIds || [], updatedBy]
     );
   } else {
     await query(
       `
         INSERT INTO travel_notification_settings (
-          notify_finance,
-          notify_admin,
-          notify_supervisor,
-          notify_ceo,
-          custom_recipients,
+          recipient_ids,
           updated_by
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2)
       `,
-      [notifyFinance, notifyAdmin, notifySupervisor, notifyCeo, customRecipients || [], updatedBy]
+      [recipientIds || [], updatedBy]
     );
   }
 

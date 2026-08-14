@@ -90,7 +90,7 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
-    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost } = req.body;
+    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
       return res.status(400).json({ message: 'Start date, end date, origin, destination, and reason are required.' });
@@ -111,7 +111,8 @@ const createTravelRequest = async (req, res, next) => {
       origin,
       destination,
       reason,
-      estimatedCost: estimatedCost || null
+      estimatedCost: estimatedCost || null,
+      currency: currency || 'KES'
     });
 
     await logAction({
@@ -528,14 +529,10 @@ const getTravelNotificationSettings = async (req, res, next) => {
 
 const updateTravelNotificationSettings = async (req, res, next) => {
   try {
-    const { notifyFinance, notifyAdmin, notifySupervisor, notifyCeo, customRecipients } = req.body;
+    const { recipientIds } = req.body;
 
     const settings = await travelModel.updateTravelNotificationSettings({
-      notifyFinance: notifyFinance !== undefined ? notifyFinance : true,
-      notifyAdmin: notifyAdmin !== undefined ? notifyAdmin : true,
-      notifySupervisor: notifySupervisor !== undefined ? notifySupervisor : true,
-      notifyCeo: notifyCeo !== undefined ? notifyCeo : false,
-      customRecipients: customRecipients || [],
+      recipientIds: recipientIds || [],
       updatedBy: req.user.id
     });
 
@@ -546,7 +543,7 @@ const updateTravelNotificationSettings = async (req, res, next) => {
       entityType: 'travel_notification_settings',
       entityId: String(settings.id || '1'),
       description: `${req.user.fullName} updated travel notification settings.`,
-      metadata: { notifyFinance, notifyAdmin, notifySupervisor, notifyCeo, customRecipients },
+      metadata: { recipientIds },
       ipAddress: req.ip
     });
 
