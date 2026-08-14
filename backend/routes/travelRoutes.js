@@ -18,6 +18,7 @@ const {
   getTravelRoutingSettings,
   updateTravelRoutingSettings,
   getAllEmployeeRouting,
+  getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting
 } = require('../controllers/travelController');
