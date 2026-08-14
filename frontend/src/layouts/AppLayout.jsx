@@ -24,7 +24,8 @@ const routeMap = {
   performance: '/performance-dashboard',
   leave_status: '/leave-status',
   payslips: '/payslips',
-  travel: '/travel'
+  travel: '/travel',
+  leave_report: '/leave-report'
 };
 
 const labelKeyMap = {
@@ -35,7 +36,8 @@ const labelKeyMap = {
   settings: 'navigationSettings',
   audit: 'navigationAudit',
   kpi: 'navigationKpiMatrix',
-  performance: 'navigationPerformance'
+  performance: 'navigationPerformance',
+  leave_report: 'navigationLeaveReport'
 };
 
 const iconMap = {
@@ -50,15 +52,16 @@ const iconMap = {
   performance: BarChart2,
   leave_status: ClipboardList,
   payslips: DollarSign,
-  travel: Plane
+  travel: Plane,
+  leave_report: FileText
 };
 
 const defaultNavigationByRole = {
   employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel'],
   supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel'],
   hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel'],
-  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel'],
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel', 'leave_report'],
+  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel', 'leave_report'],
   finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel']
 };
 

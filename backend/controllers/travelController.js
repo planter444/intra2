@@ -3,7 +3,7 @@ const auditModel = require('../models/auditModel');
 const travelModel = require('../models/travelModel');
 const { query } = require('../config/db');
 const { logAction } = require('../services/auditService');
-const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, buildTravelRequestUrl } = require('../services/mailService');
+const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
 const oversightRoles = ['admin', 'ceo', 'finance', 'supervisor'];
@@ -299,6 +299,28 @@ const decideTravelRequest = async (req, res, next) => {
       metadata: { comment: normalizedComment },
       ipAddress: req.ip
     });
+
+    // Send email notification to applicant (best-effort)
+    try {
+      const applicantResult = await query(
+        `SELECT id, first_name, last_name, email FROM users WHERE id = $1`,
+        [request.userId]
+      );
+      if (applicantResult.rows.length > 0) {
+        const applicant = applicantResult.rows[0];
+        await sendTravelDecisionEmail({
+          toEmail: applicant.email,
+          toName: `${applicant.first_name} ${applicant.last_name}`,
+          travelRequest: updatedRequest,
+          decision,
+          reviewerName: req.user.fullName,
+          comment: normalizedComment
+        });
+      }
+    } catch (emailError) {
+      // Best-effort email - don't fail the request if email fails
+      console.error('Failed to send travel decision notification email:', emailError.message);
+    }
 
     res.json({ request: updatedRequest });
   } catch (error) {

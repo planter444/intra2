@@ -372,7 +372,7 @@ export default function TravelDetailPage() {
               {request.estimatedCost && (
                 <div>
                   <p className="text-sm text-slate-500">Estimated cost</p>
-                  <p className="font-medium text-slate-900">{request.estimatedCost.toLocaleString()}</p>
+                  <p className="font-medium text-slate-900">{request.currency} {request.estimatedCost.toLocaleString()}</p>
                 </div>
               )}
               <div>
@@ -396,22 +396,22 @@ export default function TravelDetailPage() {
 
           <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-4">
             {canCancel && (
-              <button type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={handleCancel}>
+              <button type="button" className="w-full sm:w-auto rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={handleCancel}>
                 Cancel Request
               </button>
             )}
             {canDecide && (
-              <>
-                <button type="button" className="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700" onClick={() => handleDecision('approve', '')}>
+              <div className="flex w-full sm:w-auto gap-3">
+                <button type="button" className="flex-1 sm:flex-none rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700" onClick={() => handleDecision('approve', '')}>
                   Approve
                 </button>
-                <button type="button" className="rounded-2xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700" onClick={() => handleDecision('reject', '')}>
+                <button type="button" className="flex-1 sm:flex-none rounded-2xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700" onClick={() => handleDecision('reject', '')}>
                   Reject
                 </button>
-              </>
+              </div>
             )}
             {canDelete && (
-              <button type="button" className="rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50" onClick={() => setDeleteModal({ open: true, type: 'request', item: request })}>
+              <button type="button" className="w-full sm:w-auto rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50" onClick={() => setDeleteModal({ open: true, type: 'request', item: request })}>
                 Delete
               </button>
             )}
@@ -431,11 +431,11 @@ export default function TravelDetailPage() {
           )
         }
       >
-        {!request.receipts || request.receipts.length === 0 ? (
+        {(!request.receipts || request.receipts.length === 0) && request.travelType !== 'reimbursement' ? (
           <EmptyState title="No receipts uploaded" description="Upload your travel receipts here for reimbursement processing." />
         ) : (
           <div className="space-y-3">
-            {request.receipts.map((receipt) => {
+            {request.receipts && request.receipts.map((receipt) => {
               const receiptConfig = receiptStatusConfig[receipt.reimbursementStatus] || receiptStatusConfig.pending;
               return (
                 <div key={receipt.id} className="rounded-2xl border border-slate-200 bg-white p-4">
@@ -477,9 +477,28 @@ export default function TravelDetailPage() {
                 </div>
               );
             })}
+            {(!request.receipts || request.receipts.length === 0) && request.travelType === 'reimbursement' && (
+              <EmptyState title="No receipts uploaded" description="Upload your travel receipts here for reimbursement processing." />
+            )}
           </div>
         )}
       </SectionCard>
+
+      {request.travelType === 'booking' && request.supportingDocumentId && (
+        <SectionCard title="Supporting document" subtitle="Supporting document uploaded with this travel booking request.">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-slate-900">Supporting document attached</p>
+                <p className="mt-1 text-xs text-slate-500">Uploaded with travel request</p>
+              </div>
+              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+                Attached
+              </span>
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       <Modal
         open={notice.open}

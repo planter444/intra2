@@ -197,36 +197,18 @@ const buildExcel = (payload) => {
 const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
 
 const buildLeaveReportPdf = (payload) => {
-  const leaveRequests = payload.LeaveRequests || [];
-  
-  // Calculate summary statistics
-  const totalRequests = leaveRequests.length;
-  const approved = leaveRequests.filter(r => r.status === 'approved').length;
-  const rejected = leaveRequests.filter(r => r.status === 'rejected').length;
-  const pending = leaveRequests.filter(r => r.status.startsWith('pending')).length;
-  
-  // Group by leave type
-  const byLeaveType = {};
-  leaveRequests.forEach(r => {
-    byLeaveType[r.leaveType] = (byLeaveType[r.leaveType] || 0) + 1;
-  });
-  
-  // Group by department
-  const byDepartment = {};
-  leaveRequests.forEach(r => {
-    byDepartment[r.department] = (byDepartment[r.department] || 0) + 1;
-  });
-  
-  // Calculate total days taken
-  const totalDaysTaken = leaveRequests
-    .filter(r => r.status === 'approved')
-    .reduce((sum, r) => sum + (r.daysApplied || 0), 0);
+  const statistics = payload.statistics || {};
+  const leaveByType = payload.leaveByType || [];
+  const leaveByDepartment = payload.leaveByDepartment || [];
+  const employeeLeaveInfo = payload.employeeLeaveInfo || [];
+  const employeesOnLeave = payload.employeesOnLeave || [];
   
   // Build PDF content
   const lines = [];
   
   // Title and header
-  lines.push('KEREA HRMS - LEAVE MANAGEMENT REPORT');
+  lines.push('KENYA RENEWABLE ENERGY ASSOCIATION (KEREA)');
+  lines.push('EMPLOYEE LEAVE MANAGEMENT REPORT');
   lines.push('=====================================');
   lines.push(`Generated: ${new Date().toLocaleDateString()}`);
   lines.push('');
@@ -234,57 +216,68 @@ const buildLeaveReportPdf = (payload) => {
   // Executive Summary
   lines.push('EXECUTIVE SUMMARY');
   lines.push('-----------------');
-  lines.push(`Total Leave Requests: ${totalRequests}`);
-  lines.push(`Approved: ${approved} (${totalRequests > 0 ? ((approved/totalRequests)*100).toFixed(1) : 0}%)`);
-  lines.push(`Rejected: ${rejected} (${totalRequests > 0 ? ((rejected/totalRequests)*100).toFixed(1) : 0}%)`);
-  lines.push(`Pending: ${pending} (${totalRequests > 0 ? ((pending/totalRequests)*100).toFixed(1) : 0}%)`);
-  lines.push(`Total Leave Days Taken: ${totalDaysTaken}`);
+  lines.push(`Total Employees: ${statistics.totalEmployees || 0}`);
+  lines.push(`Total Leave Applications: ${statistics.totalLeaveApplications || 0}`);
+  lines.push(`Approved Leaves: ${statistics.approvedLeaves || 0}`);
+  lines.push(`Pending Leaves: ${statistics.pendingLeaves || 0}`);
+  lines.push(`Rejected Leaves: ${statistics.rejectedLeaves || 0}`);
+  lines.push(`Cancelled Leaves: ${statistics.cancelledLeaves || 0}`);
+  lines.push(`Employees Currently on Leave: ${statistics.employeesOnLeave || 0}`);
+  lines.push(`Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`);
   lines.push('');
   
   // Leave Type Distribution
   lines.push('LEAVE TYPE DISTRIBUTION');
   lines.push('-----------------------');
-  const maxTypeCount = Math.max(...Object.values(byLeaveType), 1);
-  Object.entries(byLeaveType).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
-    const barLength = Math.floor((count / maxTypeCount) * 30);
+  const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
+  leaveByType.forEach((item) => {
+    const barLength = Math.floor((item.days_taken / maxTypeDays) * 30);
     const bar = '█'.repeat(barLength);
-    lines.push(`${type}: ${count} ${bar}`);
+    lines.push(`${item.leave_type}: ${item.days_taken} days ${bar}`);
   });
   lines.push('');
   
   // Department Distribution
   lines.push('DEPARTMENT DISTRIBUTION');
   lines.push('-----------------------');
-  const maxDeptCount = Math.max(...Object.values(byDepartment), 1);
-  Object.entries(byDepartment).sort((a, b) => b[1] - a[1]).forEach(([dept, count]) => {
-    const barLength = Math.floor((count / maxDeptCount) * 30);
+  const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
+  leaveByDepartment.forEach((item) => {
+    const barLength = Math.floor((item.days_taken / maxDeptDays) * 30);
     const bar = '█'.repeat(barLength);
-    lines.push(`${dept}: ${count} ${bar}`);
+    lines.push(`${item.department}: ${item.days_taken} days ${bar}`);
   });
   lines.push('');
   
-  // Detailed Leave Requests
-  lines.push('DETAILED LEAVE REQUESTS');
-  lines.push('-----------------------');
+  // Employees Currently on Leave
+  if (employeesOnLeave.length > 0) {
+    lines.push('EMPLOYEES CURRENTLY ON LEAVE');
+    lines.push('----------------------------');
+    employeesOnLeave.forEach((emp) => {
+      lines.push(`- ${emp.employee_name} (${emp.employee_no})`);
+      lines.push(`  ${emp.leave_type}: ${emp.start_date} to ${emp.end_date} (${emp.days_requested} days)`);
+    });
+    lines.push('');
+  }
+  
+  // Employee Leave Information
+  lines.push('EMPLOYEE LEAVE INFORMATION');
+  lines.push('--------------------------');
   lines.push('');
   
-  leaveRequests.slice(0, 100).forEach((r, i) => {
-    lines.push(`Request #${i + 1}`);
-    lines.push(`  Employee: ${r.employeeName} (${r.employeeNo})`);
-    lines.push(`  Department: ${r.department}`);
-    lines.push(`  Leave Type: ${r.leaveType}`);
-    lines.push(`  Period: ${r.startDate} to ${r.endDate}`);
-    lines.push(`  Days: ${r.daysApplied}`);
-    lines.push(`  Status: ${r.status.toUpperCase()}`);
-    if (r.supervisorName) lines.push(`  Supervisor: ${r.supervisorName}`);
-    if (r.hrName) lines.push(`  HR: ${r.hrName}`);
-    if (r.ceoName) lines.push(`  CEO: ${r.ceoName}`);
-    lines.push(`  Applied: ${r.appliedAt}`);
+  employeeLeaveInfo.slice(0, 100).forEach((emp) => {
+    lines.push(`${emp.employee_name} (${emp.employee_no})`);
+    lines.push(`  Department: ${emp.department}`);
+    lines.push(`  Leave Type: ${emp.leave_type}`);
+    lines.push(`  Entitlement: ${emp.leave_entitlement} days`);
+    lines.push(`  Days Taken: ${emp.days_taken} days`);
+    lines.push(`  Remaining: ${emp.remaining_days} days`);
+    lines.push(`  Pending: ${emp.pending_days} days`);
+    lines.push(`  Status: ${emp.current_status || 'N/A'}`);
     lines.push('');
   });
   
-  if (leaveRequests.length > 100) {
-    lines.push(`... and ${leaveRequests.length - 100} more requests`);
+  if (employeeLeaveInfo.length > 100) {
+    lines.push(`... and ${employeeLeaveInfo.length - 100} more employees`);
     lines.push('');
   }
   
@@ -319,7 +312,12 @@ const buildLeaveReportPdf = (payload) => {
 };
 
 const buildPdf = (payload) => {
-  // Use enhanced leave report if dataset is leaves
+  // Use enhanced leave report if the new data structure is present
+  if (payload.statistics && payload.leaveByType && payload.employeeLeaveInfo) {
+    return buildLeaveReportPdf(payload);
+  }
+  
+  // Fallback to old format for backward compatibility
   if (payload.LeaveRequests && Object.keys(payload).length === 1) {
     return buildLeaveReportPdf(payload);
   }

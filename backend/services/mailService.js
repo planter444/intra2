@@ -300,11 +300,44 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   });
 };
 
+const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decision, reviewerName, comment }) => {
+  const isApproved = decision === 'approve';
+  const accent = isApproved ? '#16a34a' : '#dc2626';
+  const statusLabel = isApproved ? 'Approved' : 'Rejected';
+
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: `Your travel request has been ${statusLabel.toLowerCase()}`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: ${accent};">Travel Request ${statusLabel}</h2>
+        <p style="margin: 0 0 18px;">Hello ${toName || 'there'}, your travel request has been ${statusLabel.toLowerCase()} by ${reviewerName}.</p>
+        <p style="margin: 0 0 18px;">
+          <strong>Travel Type:</strong> ${travelRequest.travel_type}<br>
+          <strong>Origin:</strong> ${travelRequest.origin}<br>
+          <strong>Destination:</strong> ${travelRequest.destination}<br>
+          <strong>Start Date:</strong> ${new Date(travelRequest.start_date).toLocaleDateString()}<br>
+          <strong>End Date:</strong> ${new Date(travelRequest.end_date).toLocaleDateString()}<br>
+          <strong>Estimated Cost:</strong> ${travelRequest.estimated_cost ? `${travelRequest.currency} ${travelRequest.estimated_cost.toLocaleString()}` : 'Not specified'}
+        </p>
+        ${comment ? `<p style="margin: 0 0 18px;"><strong>Comment:</strong> ${comment}</p>` : ''}
+        <p style="margin: 0; color: #475569;">If you have any questions, please contact your supervisor or the IT Officer.</p>
+      </div>
+    `
+  });
+};
+
 module.exports = {
   sendPasswordResetEmail,
   sendLeaveApplicationEmail,
   sendLeaveDecisionEmail,
   sendSupervisorDecisionToCeoEmail,
   sendTravelReceiptNotificationEmail,
-  sendTravelRequestSubmittedEmail
+  sendTravelRequestSubmittedEmail,
+  sendTravelDecisionEmail
 };

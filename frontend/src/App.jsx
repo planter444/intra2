@@ -25,6 +25,7 @@ import TravelPage from './pages/TravelPage';
 import TravelApplyPage from './pages/TravelApplyPage';
 import TravelDetailPage from './pages/TravelDetailPage';
 import TravelSettingsPage from './pages/TravelSettingsPage';
+import LeaveReportPage from './pages/LeaveReportPage';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { isAuthenticated, loading, user } = useAuth();
@@ -86,6 +87,7 @@ export default function App() {
       <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelApplyPage /></ProtectedRoute>} />
       <Route path="/travel/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelDetailPage /></ProtectedRoute>} />
       <Route path="/travel/settings" element={<ProtectedRoute allowedRoles={['admin']}><TravelSettingsPage /></ProtectedRoute>} />
+      <Route path="/leave-report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><LeaveReportPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
