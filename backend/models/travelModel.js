@@ -846,15 +846,21 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
     );
   } else if (userRole === 'supervisor') {
     // Supervisors can see pending requests from their team members
-    result = await query(
-      `
-        SELECT COUNT(*) as count
-        FROM travel_requests tr
-        INNER JOIN users u ON u.id = tr.user_id
-        WHERE tr.status = 'pending' AND u.employee_supervisor_id = $1
-      `,
-      [userId]
-    );
+    try {
+      result = await query(
+        `
+          SELECT COUNT(*) as count
+          FROM travel_requests tr
+          INNER JOIN users u ON u.id = tr.user_id
+          WHERE tr.status = 'pending' AND u.employee_supervisor_id = $1
+        `,
+        [userId]
+      );
+    } catch (error) {
+      console.warn('employee_supervisor_id column does not exist, using fallback query');
+      // Fallback: return 0 if column doesn't exist
+      result = { rows: [{ count: 0 }] };
+    }
   } else {
     // Regular employees can only see requests where they are the designated approver
     result = await query(

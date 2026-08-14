@@ -58,6 +58,12 @@ export default function LeaveReportPage() {
   };
 
   const handleDownloadPDF = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Authentication required. Please log in again.');
+      return;
+    }
+
     const params = new URLSearchParams();
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
@@ -69,12 +75,13 @@ export default function LeaveReportPage() {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
       if (!response.ok) {
-        throw new Error('Failed to download PDF');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to download PDF' }));
+        throw new Error(errorData.message || 'Failed to download PDF');
       }
       
       const blob = await response.blob();
@@ -88,7 +95,7 @@ export default function LeaveReportPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Failed to download PDF:', error);
-      alert('Failed to download PDF. Please try again.');
+      alert(`Failed to download PDF: ${error.message}. Please try again.`);
     }
   };
 
