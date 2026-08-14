@@ -57,7 +57,7 @@ export default function LeaveReportPage() {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const params = new URLSearchParams();
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
@@ -66,7 +66,30 @@ export default function LeaveReportPage() {
     if (filters.leaveTypeId) params.append('leaveTypeId', filters.leaveTypeId);
     if (filters.status) params.append('status', filters.status);
 
-    window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}`, '_blank');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to download PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `kerea-leave-report-${new Date().toISOString().slice(0, 10)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download PDF:', error);
+      alert('Failed to download PDF. Please try again.');
+    }
   };
 
   if (loading) {

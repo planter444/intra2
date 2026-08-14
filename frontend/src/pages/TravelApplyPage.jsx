@@ -138,13 +138,18 @@ export default function TravelApplyPage() {
         formData.append('receipt', form.receiptFile);
         formData.append('travelRequestId', request.id);
 
-        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
+        const receiptResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
           body: formData
         });
+
+        if (!receiptResponse.ok) {
+          const errorData = await receiptResponse.json().catch(() => ({ message: 'Failed to upload receipt' }));
+          throw new Error(errorData.message || 'Failed to upload receipt');
+        }
       }
 
       setNotice({

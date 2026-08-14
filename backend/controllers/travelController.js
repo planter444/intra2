@@ -116,11 +116,11 @@ const createTravelRequest = async (req, res, next) => {
         
         const documentResult = await query(
           `
-            INSERT INTO documents (user_id, folder_type, file_name, stored_name, mime_type, file_size, storage_path)
-            VALUES ($1, 'travel', $2, $3, $4, $5, $6)
+            INSERT INTO documents (user_id, uploaded_by, folder_type, file_name, stored_name, mime_type, file_size, storage_path)
+            VALUES ($1, $2, 'travel', $3, $4, $5, $6, $7)
             RETURNING id
           `,
-          [req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
+          [req.user.id, req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
         );
         
         supportingDocumentId = documentResult.rows[0].id;
@@ -456,17 +456,33 @@ const uploadTravelReceipt = async (req, res, next) => {
       file: req.file
     });
 
-    const receipt = await travelModel.createTravelReceipt({
-      travelRequestId,
-      uploadedBy: req.user.id,
-      fileName: req.file.originalname,
-      storedName,
-      mimeType: req.file.mimetype,
-      fileSize: req.file.size,
-      storagePath: targetPath,
-      amount: amount || null,
-      description: description || null
-    });
+    let receipt;
+    try {
+      receipt = await travelModel.createTravelReceipt({
+        travelRequestId,
+        uploadedBy: req.user.id,
+        fileName: req.file.originalname,
+        storedName,
+        mimeType: req.file.mimetype,
+        fileSize: req.file.size,
+        storagePath: targetPath,
+        amount: amount || null,
+        description: description || null
+      });
+    } catch (dbError) {
+      console.error('Failed to create travel receipt record:', dbError.message);
+      // Try to clean up the uploaded file if database insert failed
+      try {
+        await deleteStoredDocument({
+          storagePath: targetPath,
+          storedName,
+          mimeType: req.file.mimetype
+        });
+      } catch (cleanupError) {
+        console.error('Failed to clean up uploaded file:', cleanupError.message);
+      }
+      throw dbError;
+    }
 
     await logAction({
       actorUserId: req.user.id,
@@ -490,6 +506,7 @@ const uploadTravelReceipt = async (req, res, next) => {
 
     res.status(201).json({ receipt });
   } catch (error) {
+    console.error('Travel receipt upload error:', error);
     next(error);
   }
 };

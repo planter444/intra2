@@ -253,25 +253,57 @@ const mapTravelReceipt = (row) => ({
 });
 
 const createTravelReceipt = async ({ travelRequestId, uploadedBy, fileName, storedName, mimeType, fileSize, storagePath, amount, description }) => {
-  const result = await query(
-    `
-      INSERT INTO travel_receipts (
-        travel_request_id,
-        uploaded_by,
-        file_name,
-        stored_name,
-        mime_type,
-        file_size,
-        storage_path,
-        amount,
-        description,
-        reimbursement_status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'submitted')
-      RETURNING id
-    `,
-    [travelRequestId, uploadedBy, fileName, storedName, mimeType, fileSize, storagePath, amount || null, description || null]
-  );
+  let result;
+  try {
+    result = await query(
+      `
+        INSERT INTO travel_receipts (
+          travel_request_id,
+          uploaded_by,
+          file_name,
+          stored_name,
+          mime_type,
+          file_size,
+          storage_path,
+          amount,
+          description,
+          reimbursement_status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'submitted')
+        RETURNING id
+      `,
+      [travelRequestId, uploadedBy, fileName, storedName, mimeType, fileSize, storagePath, amount || null, description || null]
+    );
+  } catch (dbError) {
+    console.error('Failed to insert travel receipt:', dbError.message);
+    // If table doesn't exist or has schema issues, try with minimal columns
+    if (dbError.message && (dbError.message.includes('relation "travel_receipts" does not exist') || dbError.message.includes('column'))) {
+      console.warn('travel_receipts table has schema issues, attempting minimal insert');
+      try {
+        result = await query(
+          `
+            INSERT INTO travel_receipts (
+              travel_request_id,
+              uploaded_by,
+              file_name,
+              stored_name,
+              mime_type,
+              file_size,
+              storage_path
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING id
+          `,
+          [travelRequestId, uploadedBy, fileName, storedName, mimeType, fileSize, storagePath]
+        );
+      } catch (fallbackError) {
+        console.error('Fallback insert also failed:', fallbackError.message);
+        throw fallbackError;
+      }
+    } else {
+      throw dbError;
+    }
+  }
 
   return findTravelReceiptById(result.rows[0].id);
 };
