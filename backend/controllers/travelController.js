@@ -130,18 +130,41 @@ const createTravelRequest = async (req, res, next) => {
       }
     }
 
-    const request = await travelModel.createTravelRequest({
-      userId: req.user.id,
-      travelType: travelType || 'booking',
-      startDate,
-      endDate,
-      origin,
-      destination,
-      reason,
-      estimatedCost: estimatedCost || null,
-      currency: currency || 'KES',
-      supportingDocumentId
-    });
+    // Create travel request - try with supportingDocumentId first, fall back if column doesn't exist
+    let request;
+    try {
+      request = await travelModel.createTravelRequest({
+        userId: req.user.id,
+        travelType: travelType || 'booking',
+        startDate,
+        endDate,
+        origin,
+        destination,
+        reason,
+        estimatedCost: estimatedCost || null,
+        currency: currency || 'KES',
+        supportingDocumentId
+      });
+    } catch (dbError) {
+      // If the error is about supporting_document_id column not existing, retry without it
+      if (dbError.message && dbError.message.includes('supporting_document_id')) {
+        console.warn('supporting_document_id column not found, creating request without it');
+        request = await travelModel.createTravelRequest({
+          userId: req.user.id,
+          travelType: travelType || 'booking',
+          startDate,
+          endDate,
+          origin,
+          destination,
+          reason,
+          estimatedCost: estimatedCost || null,
+          currency: currency || 'KES',
+          supportingDocumentId: null
+        });
+      } else {
+        throw dbError;
+      }
+    }
 
     await logAction({
       actorUserId: req.user.id,

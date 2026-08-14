@@ -223,7 +223,7 @@ description: '' });
                         {request.estimatedCost && (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
-                            {request.estimatedCost.toLocaleString()}
+                            {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
                           </span>
                         )}
                       </div>
@@ -231,11 +231,11 @@ description: '' });
                         <p className="mt-2 line-clamp-2 text-sm text-slate-500">{request.reason}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {String(request.userId) === String(user.id) && request.status === 'pending' && (
                         <button
                           type="button"
-                          className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                          className="w-full sm:w-auto rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCancel(request);
@@ -245,28 +245,28 @@ description: '' });
                         </button>
                       )}
                       {canDecideTravel(user, request, employeeApprovers) && (
-                        <button
-                          type="button"
-                          className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActionModal({ open: true, request, action: 'approve', comment: '' });
-                          }}
-                        >
-                          Approve
-                        </button>
-                      )}
-                      {canDecideTravel(user, request, employeeApprovers) && (
-                        <button
-                          type="button"
-                          className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActionModal({ open: true, request, action: 'reject', comment: '' });
-                          }}
-                        >
-                          Reject
-                        </button>
+                        <div className="flex w-full sm:w-auto gap-2">
+                          <button
+                            type="button"
+                            className="flex-1 sm:flex-none rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActionModal({ open: true, request, action: 'approve', comment: '' });
+                            }}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="flex-1 sm:flex-none rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActionModal({ open: true, request, action: 'reject', comment: '' });
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
                       )}
                       {canDeleteTravel(user, request) && (
                         <button
@@ -329,7 +329,7 @@ description: '' });
                         {request.estimatedCost && (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
-                            {request.estimatedCost.toLocaleString()}
+                            {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
                           </span>
                         )}
                       </div>
@@ -337,30 +337,30 @@ description: '' });
                         <p className="mt-2 line-clamp-2 text-sm text-slate-500">{request.reason}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       {canDecideTravel(user, request, employeeApprovers) && (
-                        <button
-                          type="button"
-                          className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActionModal({ open: true, request, action: 'approve', comment: '' });
-                          }}
-                        >
-                          Approve
-                        </button>
-                      )}
-                      {canDecideTravel(user, request, employeeApprovers) && (
-                        <button
-                          type="button"
-                          className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActionModal({ open: true, request, action: 'reject', comment: '' });
-                          }}
-                        >
-                          Reject
-                        </button>
+                        <div className="flex w-full sm:w-auto gap-2">
+                          <button
+                            type="button"
+                            className="flex-1 sm:flex-none rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActionModal({ open: true, request, action: 'approve', comment: '' });
+                            }}
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            className="flex-1 sm:flex-none rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActionModal({ open: true, request, action: 'reject', comment: '' });
+                            }}
+                          >
+                            Reject
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

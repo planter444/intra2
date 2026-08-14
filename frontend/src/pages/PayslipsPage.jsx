@@ -492,7 +492,7 @@ export default function PayslipsPage() {
                     <SlipRow label="Total Earnings" alt><span className="block text-right text-sm font-bold text-emerald-900">{formatMoney(totals.earnings)}</span></SlipRow>
                   </SlipSection>
 
-                  <SlipSection title="Other Contributions">
+                  <SlipSection title="Contributions">
                     {(profile.otherContributions || []).length === 0 ? (
                       <p className="px-4 py-3 text-xs text-slate-500">No contributions configured for this employee.</p>
                     ) : (

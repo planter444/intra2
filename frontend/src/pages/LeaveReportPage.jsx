@@ -35,10 +35,13 @@ export default function LeaveReportPage() {
 
   const loadFilterOptions = async () => {
     try {
+      setLoading(true);
       const data = await getLeaveReportFilters();
       setFilterOptions(data);
     } catch (error) {
       console.error('Failed to load filter options:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,9 +65,8 @@ export default function LeaveReportPage() {
     if (filters.departmentId) params.append('departmentId', filters.departmentId);
     if (filters.leaveTypeId) params.append('leaveTypeId', filters.leaveTypeId);
     if (filters.status) params.append('status', filters.status);
-    params.append('format', 'pdf');
 
-    window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/exports/leaves?${params.toString()}`, '_blank');
+    window.open(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}`, '_blank');
   };
 
   if (loading) {

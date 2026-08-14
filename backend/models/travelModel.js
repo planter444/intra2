@@ -38,26 +38,54 @@ const mapTravelRequest = (row) => ({
 });
 
 const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId }) => {
-  const result = await query(
-    `
-      INSERT INTO travel_requests (
-        user_id,
-        travel_type,
-        start_date,
-        end_date,
-        origin,
-        destination,
-        reason,
-        estimated_cost,
-        currency,
-        supporting_document_id,
-        status
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
-      RETURNING id
-    `,
-    [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
-  );
+  let result;
+  try {
+    result = await query(
+      `
+        INSERT INTO travel_requests (
+          user_id,
+          travel_type,
+          start_date,
+          end_date,
+          origin,
+          destination,
+          reason,
+          estimated_cost,
+          currency,
+          supporting_document_id,
+          status
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
+        RETURNING id
+      `,
+      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
+    );
+  } catch (error) {
+    // If supporting_document_id column doesn't exist, retry without it
+    if (error.message && error.message.includes('supporting_document_id')) {
+      result = await query(
+        `
+          INSERT INTO travel_requests (
+            user_id,
+            travel_type,
+            start_date,
+            end_date,
+            origin,
+            destination,
+            reason,
+            estimated_cost,
+            currency,
+            status
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+          RETURNING id
+        `,
+        [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES']
+      );
+    } else {
+      throw error;
+    }
+  }
 
   return findTravelRequestById(result.rows[0].id);
 };
