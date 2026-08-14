@@ -431,7 +431,7 @@ export default function TravelDetailPage() {
           )
         }
       >
-        {(!request.receipts || request.receipts.length === 0) && request.travelType !== 'reimbursement' ? (
+        {!request.receipts || request.receipts.length === 0 ? (
           <EmptyState title="No receipts uploaded" description="Upload your travel receipts here for reimbursement processing." />
         ) : (
           <div className="space-y-3">

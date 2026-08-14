@@ -60,8 +60,8 @@ const defaultNavigationByRole = {
   employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel'],
   supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel'],
   hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel', 'leave_report'],
-  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel', 'leave_report'],
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_report', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel'],
+  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_report', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel'],
   finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel']
 };
 

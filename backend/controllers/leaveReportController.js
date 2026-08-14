@@ -1,6 +1,122 @@
 const { query } = require('../config/db');
 const { logAction } = require('../services/auditService');
-const { buildLeaveReportPdf } = require('../controllers/exportController');
+
+const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
+
+const buildLeaveReportPdf = (payload) => {
+  const statistics = payload.statistics || {};
+  const leaveByType = payload.leaveByType || [];
+  const leaveByDepartment = payload.leaveByDepartment || [];
+  const employeeLeaveInfo = payload.employeeLeaveInfo || [];
+  const employeesOnLeave = payload.employeesOnLeave || [];
+  
+  // Build PDF content
+  const lines = [];
+  
+  // Title and header
+  lines.push('KENYA RENEWABLE ENERGY ASSOCIATION (KEREA)');
+  lines.push('EMPLOYEE LEAVE MANAGEMENT REPORT');
+  lines.push('=====================================');
+  lines.push(`Generated: ${new Date().toLocaleDateString()}`);
+  lines.push('');
+  
+  // Executive Summary
+  lines.push('EXECUTIVE SUMMARY');
+  lines.push('-----------------');
+  lines.push(`Total Employees: ${statistics.totalEmployees || 0}`);
+  lines.push(`Total Leave Applications: ${statistics.totalLeaveApplications || 0}`);
+  lines.push(`Approved Leaves: ${statistics.approvedLeaves || 0}`);
+  lines.push(`Pending Leaves: ${statistics.pendingLeaves || 0}`);
+  lines.push(`Rejected Leaves: ${statistics.rejectedLeaves || 0}`);
+  lines.push(`Cancelled Leaves: ${statistics.cancelledLeaves || 0}`);
+  lines.push(`Employees Currently on Leave: ${statistics.employeesOnLeave || 0}`);
+  lines.push(`Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`);
+  lines.push('');
+  
+  // Leave Type Distribution
+  lines.push('LEAVE TYPE DISTRIBUTION');
+  lines.push('-----------------------');
+  const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
+  leaveByType.forEach((item) => {
+    const barLength = Math.floor((item.days_taken / maxTypeDays) * 30);
+    const bar = '█'.repeat(barLength);
+    lines.push(`${item.leave_type}: ${item.days_taken} days ${bar}`);
+  });
+  lines.push('');
+  
+  // Department Distribution
+  lines.push('DEPARTMENT DISTRIBUTION');
+  lines.push('-----------------------');
+  const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
+  leaveByDepartment.forEach((item) => {
+    const barLength = Math.floor((item.days_taken / maxDeptDays) * 30);
+    const bar = '█'.repeat(barLength);
+    lines.push(`${item.department}: ${item.days_taken} days ${bar}`);
+  });
+  lines.push('');
+  
+  // Employees Currently on Leave
+  if (employeesOnLeave.length > 0) {
+    lines.push('EMPLOYEES CURRENTLY ON LEAVE');
+    lines.push('----------------------------');
+    employeesOnLeave.forEach((emp) => {
+      lines.push(`- ${emp.employee_name} (${emp.employee_no})`);
+      lines.push(`  ${emp.leave_type}: ${emp.start_date} to ${emp.end_date} (${emp.days_requested} days)`);
+    });
+    lines.push('');
+  }
+  
+  // Employee Leave Information
+  lines.push('EMPLOYEE LEAVE INFORMATION');
+  lines.push('--------------------------');
+  lines.push('');
+  
+  employeeLeaveInfo.slice(0, 100).forEach((emp) => {
+    lines.push(`${emp.employee_name} (${emp.employee_no})`);
+    lines.push(`  Department: ${emp.department}`);
+    lines.push(`  Leave Type: ${emp.leave_type}`);
+    lines.push(`  Entitlement: ${emp.leave_entitlement} days`);
+    lines.push(`  Days Taken: ${emp.days_taken} days`);
+    lines.push(`  Remaining: ${emp.remaining_days} days`);
+    lines.push(`  Pending: ${emp.pending_days} days`);
+    lines.push(`  Status: ${emp.current_status || 'N/A'}`);
+    lines.push('');
+  });
+  
+  if (employeeLeaveInfo.length > 100) {
+    lines.push(`... and ${employeeLeaveInfo.length - 100} more employees`);
+    lines.push('');
+  }
+  
+  // Footer
+  lines.push('=====================================');
+  lines.push('End of Report');
+  lines.push('KEREA HRMS - Leave Management System');
+
+  const text = lines.map((line) => `(${escapePdfText(line)}) Tj T*`).join('\n');
+  const stream = `BT /F1 9 Tf 40 790 Td 11 TL\n${text}\nET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`
+  ];
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefOffset = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  });
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return Buffer.from(pdf);
+};
 
 const getLeaveReportData = async (req, res, next) => {
   try {

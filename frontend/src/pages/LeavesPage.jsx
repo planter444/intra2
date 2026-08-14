@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Plus, ArrowRight, Download, FileText, CalendarDays, Eye } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import LeaveStatusTimeline from '../components/LeaveStatusTimeline';
@@ -151,9 +151,9 @@ export default function LeavesPage() {
             </button>
           ] : []),
           ...(user?.role === 'admin' || user?.role === 'ceo' ? [
-            <button key="report" type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={handleGenerateReport}>
-              <span className="inline-flex items-center gap-2"><Download size={16} />Generate Report</span>
-            </button>
+            <Link key="report" to="/leave-report" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <span className="inline-flex items-center gap-2"><FileText size={16} />Leave Report</span>
+            </Link>
           ] : [])
         ]}
       />
