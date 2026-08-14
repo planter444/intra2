@@ -6,6 +6,16 @@ const errorHandler = (error, req, res, next) => {
   let statusCode = error.statusCode || 500;
   let message = error.message || 'Internal server error';
 
+  // Always log errors in production for debugging
+  console.error('Error handler caught:', {
+    statusCode,
+    message,
+    path: req.path,
+    method: req.method,
+    error: error.message,
+    stack: error.stack
+  });
+
   if (error.code === '23505') {
     statusCode = 400;
 

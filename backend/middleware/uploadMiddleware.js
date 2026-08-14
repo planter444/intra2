@@ -16,7 +16,9 @@ const upload = multer({
     fileSize: env.maxFileSizeMb * 1024 * 1024
   },
   fileFilter: (req, file, cb) => {
+    console.log('Upload middleware - file info:', { mimetype: file.mimetype, originalname: file.originalname });
     if (!allowedMimeTypes.includes(file.mimetype)) {
+      console.log('Upload middleware - rejected file type:', file.mimetype);
       return cb(new Error('Unsupported file type. Please upload a PDF, image, or Word document.'));
     }
 
