@@ -20,7 +20,8 @@ const {
   getAllEmployeeRouting,
   getApproverForEmployee,
   addEmployeeRouting,
-  removeEmployeeRouting
+  removeEmployeeRouting,
+  getPendingTravelRequestCount
 } = require('../controllers/travelController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -33,7 +34,7 @@ router.use(authenticate);
 // Travel request routes
 router.get('/requests', listTravelRequests);
 router.get('/requests/:id', getTravelRequest);
-router.post('/requests', authorize('employee', 'supervisor', 'admin', 'finance'), createTravelRequest);
+router.post('/requests', authorize('employee', 'supervisor', 'admin', 'finance'), upload.single('supportingDocument'), createTravelRequest);
 router.put('/requests/:id', authorize('employee', 'supervisor', 'admin', 'finance'), updateTravelRequest);
 router.patch('/requests/:id/cancel', authorize('employee', 'supervisor', 'admin', 'finance'), cancelTravelRequest);
 router.patch('/requests/:id/decision', authorize('supervisor', 'admin', 'ceo', 'finance'), decideTravelRequest);
@@ -55,10 +56,13 @@ router.put('/notification-settings', authorize('admin'), updateTravelNotificatio
 router.get('/routing-settings', getTravelRoutingSettings);
 router.put('/routing-settings', authorize('admin'), updateTravelRoutingSettings);
 
-// Employee routing routes (admin only)
+// Employee routing routes
 router.get('/employee-routing', authorize('admin'), getAllEmployeeRouting);
-router.get('/employee-routing/employee/:employeeId', authorize('admin'), getApproverForEmployee);
+router.get('/employee-routing/employee/:employeeId', getApproverForEmployee);
 router.post('/employee-routing', authorize('admin'), addEmployeeRouting);
 router.delete('/employee-routing/:id', authorize('admin'), removeEmployeeRouting);
+
+// Pending count route
+router.get('/pending-count', getPendingTravelRequestCount);
 
 module.exports = router;

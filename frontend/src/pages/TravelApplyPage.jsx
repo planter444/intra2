@@ -17,7 +17,8 @@ const initialForm = {
   reason: '',
   estimatedCost: '',
   currency: 'KES',
-  receiptFile: null
+  receiptFile: null,
+  supportingDocuments: null
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
@@ -94,18 +95,8 @@ export default function TravelApplyPage() {
       return;
     }
 
-    if (form.travelType === 'reimbursement' && !form.receiptFile) {
-      setNotice({
-        open: true,
-        title: 'Receipt required',
-        description: 'Please upload a receipt for reimbursement requests.'
-      });
-      return;
-    }
 
     try {
-      setSubmitting(true);
-
       const requestData = {
         travelType: form.travelType,
         startDate: form.startDate,
@@ -117,15 +108,37 @@ export default function TravelApplyPage() {
         currency: form.currency
       };
 
-      const request = await createTravelRequest(requestData);
+      let request;
+      
+      if (form.travelType === 'booking' && form.supportingDocuments) {
+        // Upload supporting document for booking
+        const formData = new FormData();
+        formData.append('supportingDocument', form.supportingDocuments);
+        Object.keys(requestData).forEach(key => formData.append(key, requestData[key]));
 
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
+        const result = await response.json();
+        request = result.request;
+      } else {
+        // Regular request without supporting document
+        request = await createTravelRequest(requestData);
+      }
+
+      setSubmittedRequestId(request.id);
+
+      // Handle receipt upload for reimbursement
       if (form.travelType === 'reimbursement' && form.receiptFile) {
         const formData = new FormData();
         formData.append('receipt', form.receiptFile);
-        formData.append('amount', form.estimatedCost || '');
-        formData.append('description', form.reason);
+        formData.append('travelRequestId', request.id);
 
-        await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/travel/receipts`, {
+        await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -134,7 +147,6 @@ export default function TravelApplyPage() {
         });
       }
 
-      setSubmittedRequestId(request.id);
       setNotice({
         open: true,
         title: 'Travel request submitted',
@@ -314,6 +326,33 @@ export default function TravelApplyPage() {
               required
             />
           </div>
+
+          {form.travelType === 'booking' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Supporting documents (optional)</label>
+              <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
+                <Upload size={24} className="text-slate-400" />
+                <div>
+                  <p className="text-sm font-medium text-slate-700">Click to upload supporting documents</p>
+                  <p className="mt-1 text-xs text-slate-400">PDF, images, or other files (max 10 MB) - Optional</p>
+                </div>
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                  onChange={(e) => setForm((current) => ({ ...current, supportingDocuments: e.target.files?.[0] || null }))}
+                />
+              </label>
+              {form.supportingDocuments && (
+                <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                  <span>{form.supportingDocuments.name}</span>
+                  <button type="button" className="text-slate-500" onClick={() => setForm((current) => ({ ...current, supportingDocuments: null }))}>
+                    <X size={16} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {form.travelType === 'reimbursement' && (
             <div>

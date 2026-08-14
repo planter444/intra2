@@ -5,6 +5,7 @@ import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { fetchDocuments, getDocumentUrl } from '../services/documentService';
 import { fetchLeaveRequests } from '../services/leaveService';
+import { getPendingTravelRequestCount } from '../services/travelService';
 import { getPendingReviewCount } from '../utils/leave';
 import { getRedesignedTheme, isRedesignedActive, resolvePagePresentationKey, withOpacity } from '../hooks/usePagePresentation';
 
@@ -65,6 +66,7 @@ export default function AppLayout({ children }) {
   const { user, settings, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
+  const [pendingTravelCount, setPendingTravelCount] = useState(0);
   const [documentNotificationCount, setDocumentNotificationCount] = useState(0);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -124,6 +126,31 @@ export default function AppLayout({ children }) {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', refreshPendingReviewCount);
       window.removeEventListener('leave-requests-updated', refreshPendingReviewCount);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setPendingTravelCount(0);
+      return;
+    }
+
+    const refreshPendingTravelCount = () => {
+      getPendingTravelRequestCount()
+        .then((count) => setPendingTravelCount(count))
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            setPendingTravelCount(0);
+          }
+        });
+    };
+
+    refreshPendingTravelCount();
+    const intervalId = window.setInterval(refreshPendingTravelCount, 60000);
+    window.addEventListener('focus', refreshPendingTravelCount);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshPendingTravelCount);
     };
   }, [user]);
 
@@ -366,6 +393,8 @@ export default function AppLayout({ children }) {
                       <span className="relative flex items-center gap-2">
                         {item.key === 'leaves' && pendingReviewCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
+                        ) : item.key === 'travel' && pendingTravelCount > 0 ? (
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
                         ) : item.key === 'documents' && documentNotificationCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{documentNotificationCount}</span>
                         ) : null}

@@ -196,7 +196,134 @@ const buildExcel = (payload) => {
 
 const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
 
+const buildLeaveReportPdf = (payload) => {
+  const leaveRequests = payload.LeaveRequests || [];
+  
+  // Calculate summary statistics
+  const totalRequests = leaveRequests.length;
+  const approved = leaveRequests.filter(r => r.status === 'approved').length;
+  const rejected = leaveRequests.filter(r => r.status === 'rejected').length;
+  const pending = leaveRequests.filter(r => r.status.startsWith('pending')).length;
+  
+  // Group by leave type
+  const byLeaveType = {};
+  leaveRequests.forEach(r => {
+    byLeaveType[r.leaveType] = (byLeaveType[r.leaveType] || 0) + 1;
+  });
+  
+  // Group by department
+  const byDepartment = {};
+  leaveRequests.forEach(r => {
+    byDepartment[r.department] = (byDepartment[r.department] || 0) + 1;
+  });
+  
+  // Calculate total days taken
+  const totalDaysTaken = leaveRequests
+    .filter(r => r.status === 'approved')
+    .reduce((sum, r) => sum + (r.daysApplied || 0), 0);
+  
+  // Build PDF content
+  const lines = [];
+  
+  // Title and header
+  lines.push('KEREA HRMS - LEAVE MANAGEMENT REPORT');
+  lines.push('=====================================');
+  lines.push(`Generated: ${new Date().toLocaleDateString()}`);
+  lines.push('');
+  
+  // Executive Summary
+  lines.push('EXECUTIVE SUMMARY');
+  lines.push('-----------------');
+  lines.push(`Total Leave Requests: ${totalRequests}`);
+  lines.push(`Approved: ${approved} (${totalRequests > 0 ? ((approved/totalRequests)*100).toFixed(1) : 0}%)`);
+  lines.push(`Rejected: ${rejected} (${totalRequests > 0 ? ((rejected/totalRequests)*100).toFixed(1) : 0}%)`);
+  lines.push(`Pending: ${pending} (${totalRequests > 0 ? ((pending/totalRequests)*100).toFixed(1) : 0}%)`);
+  lines.push(`Total Leave Days Taken: ${totalDaysTaken}`);
+  lines.push('');
+  
+  // Leave Type Distribution
+  lines.push('LEAVE TYPE DISTRIBUTION');
+  lines.push('-----------------------');
+  const maxTypeCount = Math.max(...Object.values(byLeaveType), 1);
+  Object.entries(byLeaveType).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+    const barLength = Math.floor((count / maxTypeCount) * 30);
+    const bar = '█'.repeat(barLength);
+    lines.push(`${type}: ${count} ${bar}`);
+  });
+  lines.push('');
+  
+  // Department Distribution
+  lines.push('DEPARTMENT DISTRIBUTION');
+  lines.push('-----------------------');
+  const maxDeptCount = Math.max(...Object.values(byDepartment), 1);
+  Object.entries(byDepartment).sort((a, b) => b[1] - a[1]).forEach(([dept, count]) => {
+    const barLength = Math.floor((count / maxDeptCount) * 30);
+    const bar = '█'.repeat(barLength);
+    lines.push(`${dept}: ${count} ${bar}`);
+  });
+  lines.push('');
+  
+  // Detailed Leave Requests
+  lines.push('DETAILED LEAVE REQUESTS');
+  lines.push('-----------------------');
+  lines.push('');
+  
+  leaveRequests.slice(0, 100).forEach((r, i) => {
+    lines.push(`Request #${i + 1}`);
+    lines.push(`  Employee: ${r.employeeName} (${r.employeeNo})`);
+    lines.push(`  Department: ${r.department}`);
+    lines.push(`  Leave Type: ${r.leaveType}`);
+    lines.push(`  Period: ${r.startDate} to ${r.endDate}`);
+    lines.push(`  Days: ${r.daysApplied}`);
+    lines.push(`  Status: ${r.status.toUpperCase()}`);
+    if (r.supervisorName) lines.push(`  Supervisor: ${r.supervisorName}`);
+    if (r.hrName) lines.push(`  HR: ${r.hrName}`);
+    if (r.ceoName) lines.push(`  CEO: ${r.ceoName}`);
+    lines.push(`  Applied: ${r.appliedAt}`);
+    lines.push('');
+  });
+  
+  if (leaveRequests.length > 100) {
+    lines.push(`... and ${leaveRequests.length - 100} more requests`);
+    lines.push('');
+  }
+  
+  // Footer
+  lines.push('=====================================');
+  lines.push('End of Report');
+  lines.push('KEREA HRMS - Leave Management System');
+
+  const text = lines.map((line) => `(${escapePdfText(line)}) Tj T*`).join('\n');
+  const stream = `BT /F1 9 Tf 40 790 Td 11 TL\n${text}\nET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`
+  ];
+
+  let pdf = '%PDF-1.4\n';
+  const offsets = [0];
+  objects.forEach((object, index) => {
+    offsets.push(Buffer.byteLength(pdf));
+    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  });
+  const xrefOffset = Buffer.byteLength(pdf);
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  offsets.slice(1).forEach((offset) => {
+    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  });
+  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+  return Buffer.from(pdf);
+};
+
 const buildPdf = (payload) => {
+  // Use enhanced leave report if dataset is leaves
+  if (payload.LeaveRequests && Object.keys(payload).length === 1) {
+    return buildLeaveReportPdf(payload);
+  }
+  
   const rows = flattenPayload(payload);
   const lines = ['KEREA HRMS Data Export', `Generated: ${new Date().toISOString()}`, ''];
   rows.slice(0, 300).forEach((row) => {

@@ -6,6 +6,6 @@ const { authorize } = require('../middleware/roleMiddleware');
 const router = express.Router();
 
 router.use(authenticate);
-router.get('/:dataset', authorize('admin'), exportData);
+router.get('/:dataset', authorize('admin', 'ceo'), exportData);
 
 module.exports = router;

@@ -70,7 +70,8 @@ description: '' });
               approverMap[employeeId] = approverId;
             }
           } catch (error) {
-            // Ignore errors for individual approver lookups
+            // Ignore errors for individual approver lookups - don't let them cause logout
+            console.warn(`Failed to load approver for employee ${employeeId}:`, error.message);
           }
         })
       );

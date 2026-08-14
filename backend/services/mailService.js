@@ -249,27 +249,52 @@ const sendTravelReceiptNotificationEmail = async ({ recipients, travelRequest, r
     to,
     subject: `Travel receipt uploaded by ${uploaderName}`,
     htmlContent: `
-      <div style="margin: 0; background: #eff6ff; padding: 28px; font-family: Arial, sans-serif; color: #0f172a; line-height: 1.55;">
-        <div style="margin: 0 auto; max-width: 640px;">
-          <p style="margin: 0 0 12px; color: #1e40af; font-weight: 700;">Action required</p>
-          <h1 style="margin: 0; font-size: 28px; color: #1e3a8a;">${uploaderName} has uploaded a travel receipt for reimbursement</h1>
-          <p style="margin: 12px 0 0; color: #475569;">A travel receipt is waiting for your review in KEREA HRMS.</p>
-          ${buildTravelCard({
-            employeeName: travelRequest.employeeName,
-            employeeNo: travelRequest.employeeNo,
-            departmentName: travelRequest.employeeDepartmentName,
-            origin: travelRequest.origin,
-            destination: travelRequest.destination,
-            startDate: travelRequest.startDate,
-            endDate: travelRequest.endDate,
-            reason: travelRequest.reason,
-            estimatedCost: travelRequest.estimatedCost,
-            receiptAmount: receipt.amount,
-            receiptDescription: receipt.description
-          })}
-          ${buildActionLink({ url: requestUrl, label: 'View travel receipt in HRMS' })}
-          <p style="margin: 0; color: #475569;">Please log in to HRMS to review the receipt and process the reimbursement.</p>
-        </div>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #166534;">Travel Receipt Uploaded</h2>
+        <p style="margin: 0 0 18px;">${uploaderName} has uploaded a receipt for a travel request.</p>
+        <p style="margin: 0 0 18px;">
+          <strong>Travel Request:</strong> ${travelRequest.origin} to ${travelRequest.destination}<br>
+          <strong>Travel Type:</strong> ${travelRequest.travel_type}<br>
+          <strong>Receipt File:</strong> ${receipt.file_name}
+        </p>
+        <p style="margin: 0 0 18px;">
+          <a href="${requestUrl}" style="background-color: #166534; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">View Travel Request</a>
+        </p>
+      </div>
+    `
+  });
+};
+
+const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, applicantName }) => {
+  const to = (recipients || [])
+    .filter((recipient) => recipient?.email)
+    .map((recipient) => ({ email: recipient.email, name: recipient.fullName || recipient.email }));
+
+  if (!to.length) {
+    return;
+  }
+
+  const requestUrl = buildTravelRequestUrl(travelRequest.id);
+
+  await sendBrevoEmail({
+    to,
+    subject: `New travel request from ${applicantName}`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #166534;">New Travel Request Submitted</h2>
+        <p style="margin: 0 0 18px;">${applicantName} has submitted a new travel request for your review.</p>
+        <p style="margin: 0 0 18px;">
+          <strong>Travel Type:</strong> ${travelRequest.travel_type}<br>
+          <strong>Origin:</strong> ${travelRequest.origin}<br>
+          <strong>Destination:</strong> ${travelRequest.destination}<br>
+          <strong>Start Date:</strong> ${new Date(travelRequest.start_date).toLocaleDateString()}<br>
+          <strong>End Date:</strong> ${new Date(travelRequest.end_date).toLocaleDateString()}<br>
+          <strong>Estimated Cost:</strong> ${travelRequest.estimated_cost ? `${travelRequest.currency} ${travelRequest.estimated_cost.toLocaleString()}` : 'Not specified'}<br>
+          <strong>Reason:</strong> ${travelRequest.reason}
+        </p>
+        <p style="margin: 0 0 18px;">
+          <a href="${requestUrl}" style="background-color: #166534; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Review Travel Request</a>
+        </p>
       </div>
     `
   });
@@ -280,5 +305,6 @@ module.exports = {
   sendLeaveApplicationEmail,
   sendLeaveDecisionEmail,
   sendSupervisorDecisionToCeoEmail,
-  sendTravelReceiptNotificationEmail
+  sendTravelReceiptNotificationEmail,
+  sendTravelRequestSubmittedEmail
 };

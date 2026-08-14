@@ -354,6 +354,7 @@ CREATE TABLE IF NOT EXISTS travel_requests (
   reason TEXT NOT NULL,
   estimated_cost NUMERIC(14,2),
   currency VARCHAR(10) NOT NULL DEFAULT 'KES',
+  supporting_document_id BIGINT REFERENCES documents(id) ON DELETE SET NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')),
   approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
   approved_at TIMESTAMPTZ,

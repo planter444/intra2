@@ -1,10 +1,10 @@
 const fs = require('fs');
 const auditModel = require('../models/auditModel');
 const travelModel = require('../models/travelModel');
-const userModel = require('../models/userModel');
+const { query } = require('../config/db');
 const { logAction } = require('../services/auditService');
+const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
-const { sendTravelReceiptNotificationEmail } = require('../services/mailService');
 
 const oversightRoles = ['admin', 'ceo', 'finance', 'supervisor'];
 
@@ -103,6 +103,33 @@ const createTravelRequest = async (req, res, next) => {
       return res.status(400).json({ message: 'Start date must be before or equal to end date.' });
     }
 
+    let supportingDocumentId = null;
+    
+    // Handle supporting document upload for booking type
+    if (travelType === 'booking' && req.file) {
+      try {
+        const { storedName, targetPath } = await saveDocument({
+          userId: String(req.user.id),
+          folderType: 'travel',
+          file: req.file
+        });
+        
+        const documentResult = await query(
+          `
+            INSERT INTO documents (user_id, folder_type, file_name, stored_name, mime_type, file_size, storage_path)
+            VALUES ($1, 'travel', $2, $3, $4, $5, $6)
+            RETURNING id
+          `,
+          [req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
+        );
+        
+        supportingDocumentId = documentResult.rows[0].id;
+      } catch (uploadError) {
+        console.error('Failed to upload supporting document:', uploadError.message);
+        // Continue without the document - it's optional
+      }
+    }
+
     const request = await travelModel.createTravelRequest({
       userId: req.user.id,
       travelType: travelType || 'booking',
@@ -112,7 +139,8 @@ const createTravelRequest = async (req, res, next) => {
       destination,
       reason,
       estimatedCost: estimatedCost || null,
-      currency: currency || 'KES'
+      currency: currency || 'KES',
+      supportingDocumentId
     });
 
     await logAction({
@@ -125,6 +153,28 @@ const createTravelRequest = async (req, res, next) => {
       metadata: { travelType, origin, destination, startDate, endDate },
       ipAddress: req.ip
     });
+
+    // Send email notification to approver (best-effort)
+    try {
+      const approverId = await travelModel.getApproverForEmployee(req.user.id);
+      if (approverId) {
+        const approverResult = await query(
+          `SELECT id, first_name, last_name, email FROM users WHERE id = $1`,
+          [approverId]
+        );
+        if (approverResult.rows.length > 0) {
+          const approver = approverResult.rows[0];
+          await sendTravelRequestSubmittedEmail({
+            recipients: [{ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email }],
+            travelRequest: request,
+            applicantName: req.user.fullName
+          });
+        }
+      }
+    } catch (emailError) {
+      // Best-effort email - don't fail the request if email fails
+      console.error('Failed to send travel request notification email:', emailError.message);
+    }
 
     res.status(201).json({ request });
   } catch (error) {
@@ -349,8 +399,10 @@ const uploadTravelReceipt = async (req, res, next) => {
       return res.status(403).json({ message: 'You can only upload receipts for your own travel requests.' });
     }
 
-    if (travelRequest.status !== 'approved') {
-      return res.status(400).json({ message: 'Receipts can only be uploaded for approved travel requests.' });
+    // Allow receipt upload for reimbursement requests regardless of status
+    // For booking requests, require approval first
+    if (travelRequest.travelType === 'booking' && travelRequest.status !== 'approved') {
+      return res.status(400).json({ message: 'Receipts can only be uploaded for approved travel bookings.' });
     }
 
     const { storedName, targetPath } = await saveDocument({
@@ -659,6 +711,15 @@ const removeEmployeeRouting = async (req, res, next) => {
   }
 };
 
+const getPendingTravelRequestCount = async (req, res, next) => {
+  try {
+    const count = await travelModel.getPendingTravelRequestCountForUser(req.user.id, req.user.role);
+    res.json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listTravelRequests,
   getTravelRequest,
@@ -680,5 +741,6 @@ module.exports = {
   getAllEmployeeRouting,
   getApproverForEmployee,
   addEmployeeRouting,
-  removeEmployeeRouting
+  removeEmployeeRouting,
+  getPendingTravelRequestCount
 };

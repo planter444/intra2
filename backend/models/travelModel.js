@@ -28,6 +28,7 @@ const mapTravelRequest = (row) => ({
   reason: row.reason,
   estimatedCost: row.estimated_cost ? Number(row.estimated_cost) : null,
   currency: row.currency || 'KES',
+  supportingDocumentId: row.supporting_document_id,
   status: row.status,
   approvedBy: row.approved_by,
   approvedAt: row.approved_at,
@@ -36,7 +37,7 @@ const mapTravelRequest = (row) => ({
   updatedAt: row.updated_at
 });
 
-const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency }) => {
+const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId }) => {
   const result = await query(
     `
       INSERT INTO travel_requests (
@@ -49,12 +50,13 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         reason,
         estimated_cost,
         currency,
+        supporting_document_id,
         status
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
       RETURNING id
     `,
-    [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES']
+    [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
   );
 
   return findTravelRequestById(result.rows[0].id);
@@ -767,6 +769,45 @@ const removeEmployeeRouting = async (id) => {
   return true;
 };
 
+const getPendingTravelRequestCountForUser = async (userId, userRole) => {
+  let result;
+  
+  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance') {
+    // Admin, CEO, and finance can see all pending requests
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests
+        WHERE status = 'pending'
+      `
+    );
+  } else if (userRole === 'supervisor') {
+    // Supervisors can see pending requests from their team members
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        INNER JOIN users u ON u.id = tr.user_id
+        WHERE tr.status = 'pending' AND u.employee_supervisor_id = $1
+      `,
+      [userId]
+    );
+  } else {
+    // Regular employees can only see requests where they are the designated approver
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
+        WHERE tr.status = 'pending' AND ter.approver_id = $1
+      `,
+      [userId]
+    );
+  }
+  
+  return parseInt(result.rows[0].count, 10);
+};
+
 module.exports = {
   createTravelRequest,
   findTravelRequestById,
@@ -790,6 +831,7 @@ module.exports = {
   getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting,
+  getPendingTravelRequestCountForUser,
   getSummaryStats,
   getSummaryStatsForUser
 };

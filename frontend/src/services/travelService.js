@@ -115,3 +115,8 @@ export const removeEmployeeRouting = async (id) => {
   const response = await api.delete(`/travel/employee-routing/${id}`);
   return response.data;
 };
+
+export const getPendingTravelRequestCount = async () => {
+  const response = await api.get('/travel/pending-count');
+  return response.data.count;
+};

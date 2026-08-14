@@ -9,7 +9,8 @@ api.interceptors.response.use(
   (error) => {
     const status = error.response?.status;
     const url = String(error.config?.url || '');
-    if ([401, 403].includes(status) && !url.includes('/auth/login')) {
+    // Only trigger logout on 401 (unauthorized) - 403 (forbidden) means user is authenticated but lacks permission
+    if (status === 401 && !url.includes('/auth/login')) {
       window.dispatchEvent(new CustomEvent('auth-session-expired'));
     }
     return Promise.reject(error);
