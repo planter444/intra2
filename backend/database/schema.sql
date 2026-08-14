@@ -353,7 +353,7 @@ CREATE TABLE IF NOT EXISTS travel_requests (
   destination VARCHAR(255) NOT NULL,
   reason TEXT NOT NULL,
   estimated_cost NUMERIC(14,2),
-  currency VARCHAR(10) NOT NULL DEFAULT 'KES' CHECK (currency IN ('KES', 'USD')),
+  currency VARCHAR(10) NOT NULL DEFAULT 'KES',
   status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')),
   approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
   approved_at TIMESTAMPTZ,

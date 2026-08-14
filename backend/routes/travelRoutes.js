@@ -56,6 +56,7 @@ router.put('/routing-settings', authorize('admin'), updateTravelRoutingSettings)
 
 // Employee routing routes (admin only)
 router.get('/employee-routing', authorize('admin'), getAllEmployeeRouting);
+router.get('/employee-routing/employee/:employeeId', authorize('admin'), getApproverForEmployee);
 router.post('/employee-routing', authorize('admin'), addEmployeeRouting);
 router.delete('/employee-routing/:id', authorize('admin'), removeEmployeeRouting);
 

@@ -599,6 +599,16 @@ const getAllEmployeeRouting = async (req, res, next) => {
   }
 };
 
+const getApproverForEmployee = async (req, res, next) => {
+  try {
+    const { employeeId } = req.params;
+    const approverId = await travelModel.getApproverForEmployee(employeeId);
+    res.json({ approverId });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const addEmployeeRouting = async (req, res, next) => {
   try {
     const { employeeId, approverId } = req.body;
@@ -668,6 +678,7 @@ module.exports = {
   getTravelRoutingSettings,
   updateTravelRoutingSettings,
   getAllEmployeeRouting,
+  getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting
 };

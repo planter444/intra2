@@ -271,7 +271,7 @@ export default function TravelSettingsPage() {
                 className="bg-slate-50"
               >
                 <option value="">Select employee</option>
-                {users.filter(u => ['employee', 'supervisor', 'admin'].includes(u.role)).map((u) => (
+                {users.map((u) => (
                   <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.email})</option>
                 ))}
               </select>

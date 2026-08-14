@@ -6,7 +6,7 @@ import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest } from '../services/travelService';
+import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee } from '../services/travelService';
 
 const statusConfig = {
   pending: { label: 'Pending', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
@@ -17,10 +17,23 @@ const statusConfig = {
   completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' }
 };
 
-const canDecideTravel = (user, request) => {
-  if (['admin', 'ceo', 'finance', 'supervisor'].includes(user.role)) {
+const canDecideTravel = (user, request, employeeApprovers) => {
+  // Check if user is the designated approver for this employee
+  const designatedApproverId = employeeApprovers[request.userId];
+  if (designatedApproverId && String(designatedApproverId) === String(user.id)) {
     return ['pending', 'rejected'].includes(request.status);
   }
+  
+  // Fallback to role-based approval for admin, ceo, finance
+  if (['admin', 'ceo', 'finance'].includes(user.role)) {
+    return ['pending', 'rejected'].includes(request.status);
+  }
+  
+  // Supervisors can only approve if they are the designated approver
+  if (user.role === 'supervisor') {
+    return false;
+  }
+  
   return false;
 };
 
@@ -32,6 +45,7 @@ export default function TravelPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [requests, setRequests] = useState([]);
+  const [employeeApprovers, setEmployeeApprovers] = useState({});
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState({ open: false, title: '',
 description: '' });
@@ -42,7 +56,25 @@ description: '' });
     try {
       setLoading(true);
       const data = await fetchTravelRequests();
-      setRequests(data);
+      const filteredRequests = data.filter(r => r.status !== 'cancelled');
+      setRequests(filteredRequests);
+      
+      // Load approvers for each unique employee
+      const uniqueEmployeeIds = [...new Set(filteredRequests.map(r => r.userId))];
+      const approverMap = {};
+      await Promise.all(
+        uniqueEmployeeIds.map(async (employeeId) => {
+          try {
+            const approverId = await getApproverForEmployee(employeeId);
+            if (approverId) {
+              approverMap[employeeId] = approverId;
+            }
+          } catch (error) {
+            // Ignore errors for individual approver lookups
+          }
+        })
+      );
+      setEmployeeApprovers(approverMap);
     } catch (error) {
       setNotice({
         open: true,
@@ -211,7 +243,7 @@ description: '' });
                           Cancel
                         </button>
                       )}
-                      {canDecideTravel(user, request) && (
+                      {canDecideTravel(user, request, employeeApprovers) && (
                         <button
                           type="button"
                           className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
@@ -223,7 +255,7 @@ description: '' });
                           Approve
                         </button>
                       )}
-                      {canDecideTravel(user, request) && (
+                      {canDecideTravel(user, request, employeeApprovers) && (
                         <button
                           type="button"
                           className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
@@ -305,7 +337,7 @@ description: '' });
                       )}
                     </div>
                     <div className="flex gap-2">
-                      {canDecideTravel(user, request) && (
+                      {canDecideTravel(user, request, employeeApprovers) && (
                         <button
                           type="button"
                           className="rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
@@ -317,7 +349,7 @@ description: '' });
                           Approve
                         </button>
                       )}
-                      {canDecideTravel(user, request) && (
+                      {canDecideTravel(user, request, employeeApprovers) && (
                         <button
                           type="button"
                           className="rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"

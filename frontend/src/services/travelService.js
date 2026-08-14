@@ -101,6 +101,11 @@ export const fetchAllEmployeeRouting = async () => {
   return response.data.routing;
 };
 
+export const getApproverForEmployee = async (employeeId) => {
+  const response = await api.get(`/travel/employee-routing/employee/${employeeId}`);
+  return response.data.approver;
+};
+
 export const addEmployeeRouting = async (data) => {
   const response = await api.post('/travel/employee-routing', data);
   return response.data.routing;

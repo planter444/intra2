@@ -281,6 +281,24 @@ export default function TravelApplyPage() {
               >
                 <option value="KES">Kenya Shillings (KES)</option>
                 <option value="USD">US Dollar (USD)</option>
+                <option value="GBP">British Pound Sterling (GBP)</option>
+                <option value="EUR">Euro (EUR)</option>
+                <option value="CAD">Canadian Dollar (CAD)</option>
+                <option value="AUD">Australian Dollar (AUD)</option>
+                <option value="JPY">Japanese Yen (JPY)</option>
+                <option value="CNY">Chinese Yuan (CNY)</option>
+                <option value="INR">Indian Rupee (INR)</option>
+                <option value="AED">UAE Dirham (AED)</option>
+                <option value="SAR">Saudi Riyal (SAR)</option>
+                <option value="ZAR">South African Rand (ZAR)</option>
+                <option value="NGN">Nigerian Naira (NGN)</option>
+                <option value="GHS">Ghanaian Cedi (GHS)</option>
+                <option value="UGX">Ugandan Shilling (UGX)</option>
+                <option value="TZS">Tanzanian Shilling (TZS)</option>
+                <option value="RWF">Rwandan Franc (RWF)</option>
+                <option value="ETB">Ethiopian Birr (ETB)</option>
+                <option value="BWP">Botswana Pula (BWP)</option>
+                <option value="NAD">Namibian Dollar (NAD)</option>
               </select>
             </div>
           </div>

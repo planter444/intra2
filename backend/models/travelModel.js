@@ -713,6 +713,25 @@ const getAllEmployeeRouting = async () => {
   }));
 };
 
+const getApproverForEmployee = async (employeeId) => {
+  const result = await query(
+    `
+      SELECT approver_id
+      FROM travel_employee_routing
+      WHERE employee_id = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [employeeId]
+  );
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  return result.rows[0].approver_id;
+};
+
 const addEmployeeRouting = async ({ employeeId, approverId }) => {
   const result = await query(
     `
@@ -767,8 +786,8 @@ module.exports = {
   getTravelRecipientsForNotification,
   getTravelRoutingSettings,
   updateTravelRoutingSettings,
-  getEmployeeTravelRouting,
   getAllEmployeeRouting,
+  getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting,
   getSummaryStats,

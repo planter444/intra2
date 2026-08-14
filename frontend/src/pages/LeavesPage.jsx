@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CalendarDays, Eye, Plus } from 'lucide-react';
+import { Plus, ArrowRight, Download, FileText, CalendarDays, Eye } from 'lucide-react';
 import EmptyState from '../components/EmptyState';
 import LeaveStatusTimeline from '../components/LeaveStatusTimeline';
 import PageHeader from '../components/PageHeader';
@@ -10,6 +10,7 @@ import { usePagePresentation } from '../hooks/usePagePresentation';
 import { fetchLeaveBalances, fetchLeaveRequests } from '../services/leaveService';
 import { formatDateRangeDisplay, formatStatusLabel } from '../utils/formatters';
 import { getAvailableBalanceDays, isLeaveRequestActionableByUser } from '../utils/leave';
+import api from '../services/api';
 
 const accentClasses = [
   'from-blue-600/15 to-blue-100',
@@ -118,16 +119,43 @@ export default function LeavesPage() {
     return visibleLeaveRequests.filter((request) => isLeaveRequestActionableByUser(request, user));
   }, [user, visibleLeaveRequests]);
 
+  const handleGenerateReport = async () => {
+    try {
+      const response = await api.get('/exports/leaves', {
+        params: { format: 'pdf' },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `leave-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={settings?.labels?.leaveModuleTitle || 'Leave Management'}
         subtitle="Track leave balances, request history, approval progress, and incoming review work from one dashboard."
-        actions={canApplyForLeave ? [
-          <button key="apply" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg" onClick={() => navigate('/leaves/new')}>
-            <span className="inline-flex items-center gap-2"><Plus size={16} />Apply for Leave</span>
-          </button>
-        ] : undefined}
+        actions={[
+          ...(canApplyForLeave ? [
+            <button key="apply" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg" onClick={() => navigate('/leaves/new')}>
+              <span className="inline-flex items-center gap-2"><Plus size={16} />Apply for Leave</span>
+            </button>
+          ] : []),
+          ...(user?.role === 'admin' || user?.role === 'ceo' ? [
+            <button key="report" type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50" onClick={handleGenerateReport}>
+              <span className="inline-flex items-center gap-2"><Download size={16} />Generate Report</span>
+            </button>
+          ] : [])
+        ]}
       />
       {isCeo ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
