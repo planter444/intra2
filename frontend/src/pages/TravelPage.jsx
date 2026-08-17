@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users } from 'lucide-react';
+import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users, Eye } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
@@ -245,28 +245,17 @@ description: '' });
                         </button>
                       )}
                       {canDecideTravel(user, request, employeeApprovers) && (
-                        <div className="flex w-full sm:w-auto gap-2">
-                          <button
-                            type="button"
-                            className="flex-1 sm:flex-none rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActionModal({ open: true, request, action: 'approve', comment: '' });
-                            }}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            className="flex-1 sm:flex-none rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActionModal({ open: true, request, action: 'reject', comment: '' });
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          className="w-full sm:w-auto rounded-xl bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/travel/${request.id}`);
+                          }}
+                        >
+                          <Eye size={16} className="inline mr-1" />
+                          View
+                        </button>
                       )}
                       {canDeleteTravel(user, request) && (
                         <button

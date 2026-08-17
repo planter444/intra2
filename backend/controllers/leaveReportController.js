@@ -1,121 +1,342 @@
 const { query } = require('../config/db');
 const { logAction } = require('../services/auditService');
+const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 
 const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
 
-const buildLeaveReportPdf = (payload) => {
+const buildLeaveReportPdf = async (payload) => {
   const statistics = payload.statistics || {};
   const leaveByType = payload.leaveByType || [];
   const leaveByDepartment = payload.leaveByDepartment || [];
   const employeeLeaveInfo = payload.employeeLeaveInfo || [];
   const employeesOnLeave = payload.employeesOnLeave || [];
   
-  // Build PDF content
-  const lines = [];
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([612, 792]);
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
-  // Title and header
-  lines.push('KENYA RENEWABLE ENERGY ASSOCIATION (KEREA)');
-  lines.push('EMPLOYEE LEAVE MANAGEMENT REPORT');
-  lines.push('=====================================');
-  lines.push(`Generated: ${new Date().toLocaleDateString()}`);
-  lines.push('');
+  const { width, height } = page.getSize();
+  let y = height - 50;
   
-  // Executive Summary
-  lines.push('EXECUTIVE SUMMARY');
-  lines.push('-----------------');
-  lines.push(`Total Employees: ${statistics.totalEmployees || 0}`);
-  lines.push(`Total Leave Applications: ${statistics.totalLeaveApplications || 0}`);
-  lines.push(`Approved Leaves: ${statistics.approvedLeaves || 0}`);
-  lines.push(`Pending Leaves: ${statistics.pendingLeaves || 0}`);
-  lines.push(`Rejected Leaves: ${statistics.rejectedLeaves || 0}`);
-  lines.push(`Cancelled Leaves: ${statistics.cancelledLeaves || 0}`);
-  lines.push(`Employees Currently on Leave: ${statistics.employeesOnLeave || 0}`);
-  lines.push(`Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`);
-  lines.push('');
+  // Colors
+  const primaryColor = rgb(0.09, 0.4, 0.2); // Green
+  const secondaryColor = rgb(0.13, 0.33, 0.18); // Darker green
+  const accentColor = rgb(0.52, 0.94, 0.67); // Light green
+  const textColor = rgb(0.06, 0.09, 0.16); // Dark slate
+  const lightGray = rgb(0.95, 0.95, 0.95);
+  const borderColor = rgb(0.8, 0.8, 0.8);
   
-  // Leave Type Distribution
-  lines.push('LEAVE TYPE DISTRIBUTION');
-  lines.push('-----------------------');
-  const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
-  leaveByType.forEach((item) => {
-    const barLength = Math.floor((item.days_taken / maxTypeDays) * 30);
-    const bar = '█'.repeat(barLength);
-    lines.push(`${item.leave_type}: ${item.days_taken} days ${bar}`);
+  // Header section with background
+  page.drawRectangle({
+    x: 0,
+    y: height - 80,
+    width: width,
+    height: 80,
+    color: primaryColor,
   });
-  lines.push('');
   
-  // Department Distribution
-  lines.push('DEPARTMENT DISTRIBUTION');
-  lines.push('-----------------------');
-  const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
-  leaveByDepartment.forEach((item) => {
-    const barLength = Math.floor((item.days_taken / maxDeptDays) * 30);
-    const bar = '█'.repeat(barLength);
-    lines.push(`${item.department}: ${item.days_taken} days ${bar}`);
+  // Title
+  page.drawText('KENYA RENEWABLE ENERGY ASSOCIATION (KEREA)', {
+    x: 50,
+    y: height - 30,
+    size: 14,
+    font: fontBold,
+    color: rgb(1, 1, 1),
   });
-  lines.push('');
   
-  // Employees Currently on Leave
-  if (employeesOnLeave.length > 0) {
-    lines.push('EMPLOYEES CURRENTLY ON LEAVE');
-    lines.push('----------------------------');
-    employeesOnLeave.forEach((emp) => {
-      lines.push(`- ${emp.employee_name} (${emp.employee_no})`);
-      lines.push(`  ${emp.leave_type}: ${emp.start_date} to ${emp.end_date} (${emp.days_requested} days)`);
+  page.drawText('EMPLOYEE LEAVE MANAGEMENT REPORT', {
+    x: 50,
+    y: height - 50,
+    size: 12,
+    font: font,
+    color: rgb(1, 1, 1),
+  });
+  
+  page.drawText(`Generated: ${new Date().toLocaleDateString()}`, {
+    x: 50,
+    y: height - 70,
+    size: 10,
+    font: font,
+    color: rgb(0.9, 0.9, 0.9),
+  });
+  
+  y -= 40;
+  
+  // Executive Summary Section
+  page.drawRectangle({
+    x: 40,
+    y: y - 10,
+    width: width - 80,
+    height: 140,
+    color: rgb(1, 1, 1),
+    borderColor: primaryColor,
+    borderWidth: 2,
+  });
+  
+  page.drawText('EXECUTIVE SUMMARY', {
+    x: 50,
+    y: y - 5,
+    size: 14,
+    font: fontBold,
+    color: primaryColor,
+  });
+  
+  const summaryData = [
+    `Total Employees: ${statistics.totalEmployees || 0}`,
+    `Total Leave Applications: ${statistics.totalLeaveApplications || 0}`,
+    `Approved Leaves: ${statistics.approvedLeaves || 0}`,
+    `Pending Leaves: ${statistics.pendingLeaves || 0}`,
+    `Rejected Leaves: ${statistics.rejectedLeaves || 0}`,
+    `Cancelled Leaves: ${statistics.cancelledLeaves || 0}`,
+    `Employees Currently on Leave: ${statistics.employeesOnLeave || 0}`,
+    `Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`,
+  ];
+  
+  summaryData.forEach((text, index) => {
+    page.drawText(text, {
+      x: 50,
+      y: y - 25 - (index * 15),
+      size: 10,
+      font: font,
+      color: textColor,
     });
-    lines.push('');
-  }
-  
-  // Employee Leave Information
-  lines.push('EMPLOYEE LEAVE INFORMATION');
-  lines.push('--------------------------');
-  lines.push('');
-  
-  employeeLeaveInfo.slice(0, 100).forEach((emp) => {
-    lines.push(`${emp.employee_name} (${emp.employee_no})`);
-    lines.push(`  Department: ${emp.department}`);
-    lines.push(`  Leave Type: ${emp.leave_type}`);
-    lines.push(`  Entitlement: ${emp.leave_entitlement} days`);
-    lines.push(`  Days Taken: ${emp.days_taken} days`);
-    lines.push(`  Remaining: ${emp.remaining_days} days`);
-    lines.push(`  Pending: ${emp.pending_days} days`);
-    lines.push(`  Status: ${emp.current_status || 'N/A'}`);
-    lines.push('');
   });
   
-  if (employeeLeaveInfo.length > 100) {
-    lines.push(`... and ${employeeLeaveInfo.length - 100} more employees`);
-    lines.push('');
+  y -= 170;
+  
+  // Leave Type Distribution Section
+  page.drawRectangle({
+    x: 40,
+    y: y - 10,
+    width: width - 80,
+    height: 120,
+    color: rgb(1, 1, 1),
+    borderColor: primaryColor,
+    borderWidth: 2,
+  });
+  
+  page.drawText('LEAVE TYPE DISTRIBUTION', {
+    x: 50,
+    y: y - 5,
+    size: 14,
+    font: fontBold,
+    color: primaryColor,
+  });
+  
+  const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
+  leaveByType.slice(0, 5).forEach((item, index) => {
+    const barWidth = ((item.days_taken / maxTypeDays) * 200);
+    const barY = y - 25 - (index * 20);
+    
+    // Label
+    page.drawText(`${item.leave_type}: ${item.days_taken} days`, {
+      x: 50,
+      y: barY,
+      size: 10,
+      font: font,
+      color: textColor,
+    });
+    
+    // Bar background
+    page.drawRectangle({
+      x: 200,
+      y: barY - 5,
+      width: 200,
+      height: 10,
+      color: lightGray,
+    });
+    
+    // Bar
+    page.drawRectangle({
+      x: 200,
+      y: barY - 5,
+      width: barWidth,
+      height: 10,
+      color: accentColor,
+    });
+  });
+  
+  y -= 150;
+  
+  // Department Distribution Section
+  page.drawRectangle({
+    x: 40,
+    y: y - 10,
+    width: width - 80,
+    height: 120,
+    color: rgb(1, 1, 1),
+    borderColor: primaryColor,
+    borderWidth: 2,
+  });
+  
+  page.drawText('DEPARTMENT DISTRIBUTION', {
+    x: 50,
+    y: y - 5,
+    size: 14,
+    font: fontBold,
+    color: primaryColor,
+  });
+  
+  const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
+  leaveByDepartment.slice(0, 5).forEach((item, index) => {
+    const barWidth = ((item.days_taken / maxDeptDays) * 200);
+    const barY = y - 25 - (index * 20);
+    
+    // Label
+    page.drawText(`${item.department}: ${item.days_taken} days`, {
+      x: 50,
+      y: barY,
+      size: 10,
+      font: font,
+      color: textColor,
+    });
+    
+    // Bar background
+    page.drawRectangle({
+      x: 200,
+      y: barY - 5,
+      width: 200,
+      height: 10,
+      color: lightGray,
+    });
+    
+    // Bar
+    page.drawRectangle({
+      x: 200,
+      y: barY - 5,
+      width: barWidth,
+      height: 10,
+      color: primaryColor,
+    });
+  });
+  
+  y -= 150;
+  
+  // Employees Currently on Leave Section
+  if (employeesOnLeave.length > 0) {
+    page.drawRectangle({
+      x: 40,
+      y: y - 10,
+      width: width - 80,
+      height: 80 + (employeesOnLeave.length * 20),
+      color: rgb(1, 1, 1),
+      borderColor: primaryColor,
+      borderWidth: 2,
+    });
+    
+    page.drawText('EMPLOYEES CURRENTLY ON LEAVE', {
+      x: 50,
+      y: y - 5,
+      size: 14,
+      font: fontBold,
+      color: primaryColor,
+    });
+    
+    employeesOnLeave.slice(0, 3).forEach((emp, index) => {
+      const empY = y - 25 - (index * 20);
+      page.drawText(`• ${emp.employee_name} (${emp.employee_no})`, {
+        x: 50,
+        y: empY,
+        size: 10,
+        font: fontBold,
+        color: textColor,
+      });
+      page.drawText(`  ${emp.leave_type}: ${emp.start_date} to ${emp.end_date} (${emp.days_requested} days)`, {
+        x: 50,
+        y: empY - 10,
+        size: 9,
+        font: font,
+        color: textColor,
+      });
+    });
+    
+    y -= 100 + (employeesOnLeave.length * 20);
   }
+  
+  // Employee Leave Information Section
+  page.drawText('EMPLOYEE LEAVE INFORMATION', {
+    x: 50,
+    y: y - 5,
+    size: 14,
+    font: fontBold,
+    color: primaryColor,
+  });
+  
+  y -= 20;
+  
+  employeeLeaveInfo.slice(0, 15).forEach((emp, index) => {
+    if (y < 50) {
+      // Add new page if running out of space
+      const newPage = pdfDoc.addPage([612, 792]);
+      y = newPage.getHeight() - 50;
+    }
+    
+    page.drawRectangle({
+      x: 40,
+      y: y - 45,
+      width: width - 80,
+      height: 45,
+      color: rgb(1, 1, 1),
+      borderColor: borderColor,
+      borderWidth: 1,
+    });
+    
+    page.drawText(`${emp.employee_name} (${emp.employee_no})`, {
+      x: 50,
+      y: y - 10,
+      size: 10,
+      font: fontBold,
+      color: textColor,
+    });
+    
+    page.drawText(`Department: ${emp.department} | Leave Type: ${emp.leave_type}`, {
+      x: 50,
+      y: y - 22,
+      size: 9,
+      font: font,
+      color: textColor,
+    });
+    
+    page.drawText(`Entitlement: ${emp.leave_entitlement} days | Days Taken: ${emp.days_taken} days | Remaining: ${emp.remaining_days} days`, {
+      x: 50,
+      y: y - 34,
+      size: 9,
+      font: font,
+      color: textColor,
+    });
+    
+    y -= 55;
+  });
   
   // Footer
-  lines.push('=====================================');
-  lines.push('End of Report');
-  lines.push('KEREA HRMS - Leave Management System');
-
-  const text = lines.map((line) => `(${escapePdfText(line)}) Tj T*`).join('\n');
-  const stream = `BT /F1 9 Tf 40 790 Td 11 TL\n${text}\nET`;
-  const objects = [
-    '<< /Type /Catalog /Pages 2 0 R >>',
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
-    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
-    `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`
-  ];
-
-  let pdf = '%PDF-1.4\n';
-  const offsets = [0];
-  objects.forEach((object, index) => {
-    offsets.push(Buffer.byteLength(pdf));
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+  const footerY = 30;
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: width,
+    height: 40,
+    color: primaryColor,
   });
-  const xrefOffset = Buffer.byteLength(pdf);
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  offsets.slice(1).forEach((offset) => {
-    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  
+  page.drawText('KEREA HRMS - Leave Management System', {
+    x: 50,
+    y: footerY + 15,
+    size: 10,
+    font: font,
+    color: rgb(1, 1, 1),
   });
-  pdf += `trailer << /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
-  return Buffer.from(pdf);
+  
+  page.drawText('End of Report', {
+    x: width - 100,
+    y: footerY + 15,
+    size: 10,
+    font: font,
+    color: rgb(1, 1, 1),
+  });
+  
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 };
 
 const getLeaveReportData = async (req, res, next) => {
@@ -529,7 +750,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
     console.log('Payload created, generating PDF...');
     
     try {
-      const pdfBuffer = buildLeaveReportPdf(payload);
+      const pdfBuffer = await buildLeaveReportPdf(payload);
       
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="kerea-leave-report-${new Date().toISOString().slice(0, 10)}.pdf"`);

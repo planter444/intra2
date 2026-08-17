@@ -51,7 +51,7 @@ const canUpdateReceiptStatus = (user, receipt) => {
 export default function TravelDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
@@ -248,6 +248,40 @@ export default function TravelDetailPage() {
       setNotice({
         open: true,
         title: 'Unable to download receipt',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleDownloadSupportingDocument = async () => {
+    if (!request.supportingDocumentId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/documents/${request.supportingDocumentId}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to download document');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `supporting-document-${request.id}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to download supporting document',
         description: error.response?.data?.message || 'Please try again.'
       });
     }
@@ -488,13 +522,23 @@ export default function TravelDetailPage() {
         <SectionCard title="Supporting document" subtitle="Supporting document uploaded with this travel booking request.">
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <p className="text-sm font-medium text-slate-900">Supporting document attached</p>
                 <p className="mt-1 text-xs text-slate-500">Uploaded with travel request</p>
               </div>
-              <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
-                Attached
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+                  Attached
+                </span>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                  onClick={() => handleDownloadSupportingDocument()}
+                >
+                  <Download size={16} />
+                  Download
+                </button>
+              </div>
             </div>
           </div>
         </SectionCard>
