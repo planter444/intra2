@@ -9,7 +9,7 @@ import { getLeaveReportData, getLeaveReportFilters } from '../services/leaveRepo
 
 export default function LeaveReportPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [reportData, setReportData] = useState(null);
@@ -58,7 +58,6 @@ export default function LeaveReportPage() {
   };
 
   const handleDownloadPDF = async () => {
-    const token = localStorage.getItem('token');
     if (!token) {
       alert('Authentication required. Please log in again.');
       return;

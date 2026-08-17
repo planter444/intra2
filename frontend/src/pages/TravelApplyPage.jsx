@@ -25,7 +25,7 @@ const getToday = () => new Date().toISOString().split('T')[0];
 
 export default function TravelApplyPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [requests, setRequests] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
@@ -119,7 +119,7 @@ export default function TravelApplyPage() {
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: formData
         });
@@ -141,7 +141,7 @@ export default function TravelApplyPage() {
         const receiptResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           },
           body: formData
         });
