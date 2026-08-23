@@ -382,24 +382,23 @@ export default function LeaveReportPage() {
             </div>
           </SectionCard>
 
-          <SectionCard title="Employee Leave Information" subtitle="Detailed leave information for each employee.">
+          <SectionCard title="Employee Leave Information" subtitle="Recent leave activities (first 25).">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[800px] text-sm">
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Department</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-700">Leave Type</th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-700">Type</th>
                     <th className="px-4 py-3 text-right font-medium text-slate-700">Entitlement</th>
                     <th className="px-4 py-3 text-right font-medium text-slate-700">Days Taken</th>
                     <th className="px-4 py-3 text-right font-medium text-slate-700">Remaining</th>
-                    <th className="px-4 py-3 text-right font-medium text-slate-700">Pending</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {reportData.employeeLeaveInfo.map((emp, index) => (
-                    <tr key={`${emp.employee_id}-${emp.leave_type}-${index}`} className="border-b border-slate-100">
+                  {reportData.employeeLeaveInfo.slice(0, 25).map((emp, index) => (
+                    <tr key={`${emp.request_id}-${index}`} className="border-b border-slate-100">
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-medium text-slate-900">{emp.employee_name}</p>
@@ -407,11 +406,10 @@ export default function LeaveReportPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-slate-600">{emp.department}</td>
-                      <td className="px-4 py-3 text-slate-600">{emp.leave_type}</td>
-                      <td className="px-4 py-3 text-right text-slate-900">{emp.leave_entitlement}</td>
-                      <td className="px-4 py-3 text-right text-slate-900">{emp.days_taken}</td>
-                      <td className="px-4 py-3 text-right text-slate-900">{emp.remaining_days}</td>
-                      <td className="px-4 py-3 text-right text-slate-900">{emp.pending_days}</td>
+                      <td className="px-4 py-3 text-slate-600 font-medium">{(emp.leave_type || 'N/A').substring(0, 2).toUpperCase()}</td>
+                      <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.leave_entitlement)}</td>
+                      <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.days_taken)}</td>
+                      <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.remaining_days)}</td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
                           emp.current_status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
@@ -458,7 +456,7 @@ export default function LeaveReportPage() {
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Department</th>
                     {(() => {
-                      const leaveTypes = [...new Set(reportData.employeeLeaveInfo.map(e => e.leave_type))].sort();
+                      const leaveTypes = [...new Set(reportData.employeeLeaveSummary.map(e => e.leave_type))].sort();
                       return leaveTypes.map(lt => (
                         <th key={lt} className="px-4 py-3 text-center font-medium text-slate-700">{lt.substring(0, 10)}</th>
                       ));
@@ -470,9 +468,9 @@ export default function LeaveReportPage() {
                 <tbody>
                   {(() => {
                     const employeeMap = new Map();
-                    const leaveTypes = [...new Set(reportData.employeeLeaveInfo.map(e => e.leave_type))].sort();
+                    const leaveTypes = [...new Set(reportData.employeeLeaveSummary.map(e => e.leave_type))].sort();
 
-                    reportData.employeeLeaveInfo.forEach((emp) => {
+                    reportData.employeeLeaveSummary.forEach((emp) => {
                       const empId = emp.employee_id;
                       if (!employeeMap.has(empId)) {
                         employeeMap.set(empId, {

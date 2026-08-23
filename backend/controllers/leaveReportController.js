@@ -10,6 +10,7 @@ const buildLeaveReportPdf = async (payload) => {
     const leaveByType = payload.leaveByType || [];
     const leaveByDepartment = payload.leaveByDepartment || [];
     const employeeLeaveInfo = payload.employeeLeaveInfo || [];
+    const employeeLeaveSummary = payload.employeeLeaveSummary || [];
     const employeesOnLeave = payload.employeesOnLeave || [];
 
     const pdfDoc = await PDFDocument.create();
@@ -351,21 +352,22 @@ const buildLeaveReportPdf = async (payload) => {
       // Table header
       page2.drawText('Employee', { x: 50, y: y2, size: 9, font: fontBold, color: primaryColor });
       page2.drawText('Dept', { x: 130, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Entitlement', { x: 180, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Taken', { x: 250, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Remaining', { x: 310, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Pending', { x: 380, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Status', { x: 450, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Type', { x: 180, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Entitlement', { x: 220, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Taken', { x: 290, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Remaining', { x: 350, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Status', { x: 420, y: y2, size: 9, font: fontBold, color: primaryColor });
 
       y2 -= 15;
 
       employeeLeaveInfo.slice(0, 25).forEach((emp) => {
         const empName = (emp.employee_name || 'N/A').substring(0, 15);
         const department = (emp.department || 'N/A').substring(0, 8);
+        const leaveType = emp.leave_type || 'N/A';
+        const typeAbbrev = leaveType.substring(0, 2).toUpperCase();
         const entitlement = Math.round(parseFloat(emp.leave_entitlement) || 0);
         const daysTaken = Math.round(parseFloat(emp.days_taken) || 0);
         const remaining = Math.round(parseFloat(emp.remaining_days) || 0);
-        const pending = Math.round(parseFloat(emp.pending_days) || 0);
         const status = emp.current_status || 'N/A';
 
         // Color code status
@@ -380,11 +382,11 @@ const buildLeaveReportPdf = async (payload) => {
 
         page2.drawText(empName, { x: 50, y: y2, size: 8, font: font, color: textColor });
         page2.drawText(department, { x: 130, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(entitlement), { x: 180, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(daysTaken), { x: 250, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(remaining), { x: 310, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(pending), { x: 380, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(status, { x: 450, y: y2, size: 8, font: font, color: statusColor });
+        page2.drawText(typeAbbrev, { x: 180, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(String(entitlement), { x: 220, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(String(daysTaken), { x: 290, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(String(remaining), { x: 350, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(status, { x: 420, y: y2, size: 8, font: font, color: statusColor });
 
         y2 -= 12;
 
@@ -437,18 +439,17 @@ const buildLeaveReportPdf = async (payload) => {
 
     y3 -= 40;
 
-    // Pivot employee leave info by employee
+    // Pivot employee leave summary by employee
     const employeeMap = new Map();
     const leaveTypes = new Set();
 
-    employeeLeaveInfo.forEach((emp) => {
+    employeeLeaveSummary.forEach((emp) => {
       const empId = emp.employee_id;
       const empName = emp.employee_name || 'N/A';
       const department = emp.department || 'N/A';
       const leaveType = emp.leave_type || 'N/A';
       const entitlement = parseFloat(emp.leave_entitlement) || 0;
       const daysTaken = parseFloat(emp.days_taken) || 0;
-      const remaining = parseFloat(emp.remaining_days) || 0;
 
       leaveTypes.add(leaveType);
 
@@ -740,10 +741,11 @@ const getLeaveReportData = async (req, res, next) => {
       params
     );
     
-    // Get employee leave information
+    // Get employee leave information (individual leave requests, most recent first)
     const employeeLeaveResult = await query(
       `
         SELECT
+          lr.id as request_id,
           u.id as employee_id,
           CONCAT(u.first_name, ' ', u.last_name) as employee_name,
           u.employee_no,
@@ -751,16 +753,40 @@ const getLeaveReportData = async (req, res, next) => {
           lt.label as leave_type,
           COALESCE(lt.default_days, 0) as leave_entitlement,
           COALESCE(lb.balance_days, 0) as remaining_days,
-          COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken,
-          COALESCE(SUM(CASE WHEN lr.status LIKE 'pending%' THEN lr.days_requested ELSE 0 END), 0) as pending_days,
-          MAX(lr.status) as current_status
+          lr.days_requested as days_taken,
+          lr.status as current_status,
+          lr.start_date,
+          lr.end_date
+        FROM leave_requests lr
+        INNER JOIN users u ON u.id = lr.user_id
+        LEFT JOIN departments d ON d.id = u.department_id
+        LEFT JOIN leave_types lt ON lt.id = lr.leave_type_id
+        LEFT JOIN leave_balances lb ON lb.user_id = u.id AND lb.leave_type_id = lt.id
+        WHERE u.is_deleted = FALSE
+          AND lr.status = 'approved'
+        ORDER BY lr.start_date DESC, lr.id DESC
+        LIMIT 25
+      `,
+      []
+    );
+
+    // Get all employee leave data for Employee Leave Summary (includes ongoing leave)
+    const employeeLeaveSummaryResult = await query(
+      `
+        SELECT
+          u.id as employee_id,
+          CONCAT(u.first_name, ' ', u.last_name) as employee_name,
+          COALESCE(d.name, 'Unassigned') as department,
+          lt.label as leave_type,
+          COALESCE(lt.default_days, 0) as leave_entitlement,
+          COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken
         FROM users u
         LEFT JOIN departments d ON d.id = u.department_id
         LEFT JOIN leave_balances lb ON lb.user_id = u.id
         LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
-        LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id
+        LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id AND lr.status = 'approved'
         WHERE u.is_deleted = FALSE
-        GROUP BY u.id, u.first_name, u.last_name, u.employee_no, d.name, lt.label, lt.default_days, lb.balance_days
+        GROUP BY u.id, u.first_name, u.last_name, d.name, lt.label, lt.default_days
         ORDER BY u.last_name, u.first_name
       `,
       []
@@ -813,6 +839,7 @@ const getLeaveReportData = async (req, res, next) => {
       leaveByDepartment: leaveByDeptResult.rows,
       monthlyTrends: monthlyTrendsResult.rows,
       employeeLeaveInfo: employeeLeaveResult.rows,
+      employeeLeaveSummary: employeeLeaveSummaryResult.rows,
       employeesOnLeave: onLeaveResult.rows
     });
   } catch (error) {
@@ -980,6 +1007,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
       employeeLeaveResult = await query(
         `
           SELECT
+            lr.id as request_id,
             u.id as employee_id,
             CONCAT(u.first_name, ' ', u.last_name) as employee_name,
             u.employee_no,
@@ -987,25 +1015,55 @@ const exportLeaveReportPdf = async (req, res, next) => {
             lt.label as leave_type,
             COALESCE(lt.default_days, 0) as leave_entitlement,
             COALESCE(lb.balance_days, 0) as remaining_days,
-            COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken,
-            COALESCE(SUM(CASE WHEN lr.status LIKE 'pending%' THEN lr.days_requested ELSE 0 END), 0) as pending_days,
-            MAX(lr.status) as current_status
-          FROM users u
+            lr.days_requested as days_taken,
+            lr.status as current_status,
+            lr.start_date,
+            lr.end_date
+          FROM leave_requests lr
+          INNER JOIN users u ON u.id = lr.user_id
           LEFT JOIN departments d ON d.id = u.department_id
-          LEFT JOIN leave_balances lb ON lb.user_id = u.id
-          LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
-          LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id
+          LEFT JOIN leave_types lt ON lt.id = lr.leave_type_id
+          LEFT JOIN leave_balances lb ON lb.user_id = u.id AND lb.leave_type_id = lt.id
           WHERE u.is_deleted = FALSE
-          ${conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : ''}
-          GROUP BY u.id, u.first_name, u.last_name, u.employee_no, d.name, lt.label, lt.default_days, lb.balance_days
-          ORDER BY u.last_name, u.first_name
+            AND lr.status = 'approved'
+          ORDER BY lr.start_date DESC, lr.id DESC
+          LIMIT 25
         `,
-        params
+        []
       );
       console.log('Employee leave info fetched successfully');
     } catch (err) {
       console.error('Employee leave info query error:', err);
       employeeLeaveResult = { rows: [] };
+    }
+
+    // Get employee leave summary for PDF
+    let employeeLeaveSummaryResult;
+    try {
+      employeeLeaveSummaryResult = await query(
+        `
+          SELECT
+            u.id as employee_id,
+            CONCAT(u.first_name, ' ', u.last_name) as employee_name,
+            COALESCE(d.name, 'Unassigned') as department,
+            lt.label as leave_type,
+            COALESCE(lt.default_days, 0) as leave_entitlement,
+            COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken
+          FROM users u
+          LEFT JOIN departments d ON d.id = u.department_id
+          LEFT JOIN leave_balances lb ON lb.user_id = u.id
+          LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
+          LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id AND lr.status = 'approved'
+          WHERE u.is_deleted = FALSE
+          GROUP BY u.id, u.first_name, u.last_name, d.name, lt.label, lt.default_days
+          ORDER BY u.last_name, u.first_name
+        `,
+        []
+      );
+      console.log('Employee leave summary fetched successfully');
+    } catch (err) {
+      console.error('Employee leave summary query error:', err);
+      employeeLeaveSummaryResult = { rows: [] };
     }
     
     // Get employees currently on leave
@@ -1050,6 +1108,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
       leaveByType: leaveByTypeResult.rows,
       leaveByDepartment: leaveByDeptResult.rows,
       employeeLeaveInfo: employeeLeaveResult.rows,
+      employeeLeaveSummary: employeeLeaveSummaryResult.rows,
       employeesOnLeave: onLeaveResult.rows
     };
     
