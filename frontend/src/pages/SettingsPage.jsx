@@ -783,7 +783,7 @@ export default function SettingsPage() {
         original: {
           defaultDesktopUrl: String(draft.interface?.backgrounds?.original?.defaultDesktopUrl || draft.interface?.backgrounds?.original?.defaultImageUrl || ''),
           defaultMobileUrl: String(draft.interface?.backgrounds?.original?.defaultMobileUrl || draft.interface?.backgrounds?.original?.defaultImageUrl || ''),
-          perPage: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance'].map((k) => {
+          perPage: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance','travel','leaveReport','payslips'].map((k) => {
             const raw = (draft.interface?.backgrounds?.original?.perPage || {})[k];
             const asObj = typeof raw === 'object' && raw ? raw : { desktop: String(raw || '').trim(), mobile: String(raw || '').trim() };
             return [k, { desktop: String(asObj.desktop || '').trim(), mobile: String(asObj.mobile || '').trim() }];
@@ -792,9 +792,9 @@ export default function SettingsPage() {
         redesigned: {
           defaultDesktopUrl: String(draft.interface?.backgrounds?.redesigned?.defaultDesktopUrl || draft.interface?.backgrounds?.redesigned?.defaultImageUrl || ''),
           defaultMobileUrl: String(draft.interface?.backgrounds?.redesigned?.defaultMobileUrl || draft.interface?.backgrounds?.redesigned?.defaultImageUrl || ''),
-          perPage: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance'].map((k) => {
+          perPage: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance','travel','leaveReport','payslips'].map((k) => {
             const raw = (draft.interface?.backgrounds?.redesigned?.perPage || {})[k];
-            const asObj = typeof raw === 'object' && raw ? raw : { desktop: String(raw || '').trim(), mobile: String(raw || '').trim() };
+            const asObj = typeof raw === 'object' && raw ? raw : { desktop: String(raw || '').trim(), mobile: String(asObj.mobile || '').trim() };
             return [k, { desktop: String(asObj.desktop || '').trim(), mobile: String(asObj.mobile || '').trim() }];
           }))
         },
@@ -1253,7 +1253,7 @@ export default function SettingsPage() {
           <SectionCard title="Per-page overrides" subtitle="Optionally set different Desktop and Mobile backgrounds per page for each UI.">
             <div className="space-y-4">
               <input ref={bgPerPageUploadRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUploadPerPageBackground(bgPendingTarget.variant, bgPendingTarget.pageKey, f, bgPendingTarget.device); e.target.value=''; }} />
-              {(user?.role === 'finance' || user?.role === 'ceo' ? ['kpi','performance'] : ['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance']).map((page) => (
+              {(user?.role === 'finance' || user?.role === 'ceo' ? ['kpi','performance'] : ['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance','travel','leaveReport','payslips']).map((page) => (
                 <div key={page} className="grid gap-3 md:grid-cols-[minmax(0,1fr),minmax(0,1fr)]">
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">{page[0].toUpperCase()+page.slice(1)} - Original UI (Desktop)</label>
