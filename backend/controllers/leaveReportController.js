@@ -6,12 +6,6 @@ const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
 
 const buildLeaveReportPdf = async (payload) => {
   try {
-    const statistics = payload.statistics || {};
-    const leaveByType = payload.leaveByType || [];
-    const leaveByDepartment = payload.leaveByDepartment || [];
-    const employeeLeaveInfo = payload.employeeLeaveInfo || [];
-    const employeesOnLeave = payload.employeesOnLeave || [];
-
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([612, 792]);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -19,154 +13,23 @@ const buildLeaveReportPdf = async (payload) => {
 
     const { width, height } = page.getSize();
 
-    let y = height - 50;
-
-    // Header
     page.drawText('LEAVE REPORT', {
       x: 50,
-      y: y,
+      y: height - 50,
       size: 24,
       font: fontBold,
     });
 
-    y -= 30;
     page.drawText('KEREA', {
       x: 50,
-      y: y,
+      y: height - 80,
       size: 14,
       font: font,
     });
 
-    y -= 30;
-    page.drawText(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, {
+    page.drawText(`Generated: ${new Date().toLocaleDateString()}`, {
       x: 50,
-      y: y,
-      size: 10,
-      font: font,
-    });
-
-    y -= 40;
-
-    // Summary Statistics
-    page.drawText('Summary Statistics', {
-      x: 50,
-      y: y,
-      size: 16,
-      font: fontBold,
-    });
-
-    y -= 25;
-    page.drawText(`Total Employees: ${statistics.totalEmployees || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 20;
-    page.drawText(`Approved Leaves: ${statistics.approvedLeaves || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 20;
-    page.drawText(`Pending Leaves: ${statistics.pendingLeaves || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 20;
-    page.drawText(`Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 30;
-
-    // Leave by Type
-    if (leaveByType && leaveByType.length > 0) {
-      page.drawText('Leave by Type', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-      });
-
-      y -= 25;
-      leaveByType.forEach((item) => {
-        const leaveType = item.leave_type || 'N/A';
-        const daysTaken = item.days_taken || 0;
-        page.drawText(`${leaveType}: ${daysTaken.toFixed(2)} days`, {
-          x: 50,
-          y: y,
-          size: 12,
-          font: font,
-        });
-        y -= 18;
-      });
-      y -= 10;
-    }
-
-    // Leave by Department
-    if (leaveByDepartment && leaveByDepartment.length > 0) {
-      page.drawText('Leave by Department', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-      });
-
-      y -= 25;
-      leaveByDepartment.forEach((item) => {
-        const department = item.department || 'N/A';
-        const daysTaken = item.days_taken || 0;
-        page.drawText(`${department}: ${daysTaken.toFixed(2)} days`, {
-          x: 50,
-          y: y,
-          size: 12,
-          font: font,
-        });
-        y -= 18;
-      });
-      y -= 10;
-    }
-
-    // Employee Leave Information (first 25)
-    if (employeeLeaveInfo && employeeLeaveInfo.length > 0) {
-      page.drawText('Employee Leave Information (First 25)', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-      });
-
-      y -= 25;
-      employeeLeaveInfo.slice(0, 25).forEach((emp) => {
-        const empName = emp.employee_name || 'N/A';
-        const leaveType = emp.leave_type || 'N/A';
-        const daysTaken = emp.days_taken || 0;
-        const status = emp.current_status || 'N/A';
-
-        page.drawText(`${empName} - ${leaveType} - ${daysTaken} days - ${status}`, {
-          x: 50,
-          y: y,
-          size: 10,
-          font: font,
-        });
-        y -= 14;
-      });
-    }
-
-    // Footer
-    page.drawText('KEREA HRMS - Confidential Document', {
-      x: 50,
-      y: 30,
+      y: height - 110,
       size: 10,
       font: font,
     });

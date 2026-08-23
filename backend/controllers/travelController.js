@@ -6,7 +6,7 @@ const { logAction } = require('../services/auditService');
 const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
-const oversightRoles = ['admin', 'ceo', 'finance', 'supervisor'];
+const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer'];
 
 const canViewOversightTravelData = (role) => oversightRoles.includes(role);
 
@@ -59,7 +59,6 @@ const listTravelRequests = async (req, res, next) => {
   try {
     const requests = await travelModel.listTravelRequests({
       viewerId: req.user.id,
-      userId: req.user.role === 'employee' ? req.user.id : canViewOversightTravelData(req.user.role) ? req.query.userId : undefined,
       role: req.user.role,
       status: req.query.status
     });

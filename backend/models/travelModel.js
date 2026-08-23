@@ -143,13 +143,12 @@ const findTravelRequestById = async (id) => {
 const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const clauses = [];
   const params = [];
+  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer'];
 
   if (role === 'employee') {
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
-  }
-
-  if (role === 'supervisor') {
+  } else if (role === 'supervisor') {
     params.push(viewerId);
     clauses.push(`(
       tr.user_id = $${params.length}
@@ -160,9 +159,14 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
           AND is_deleted = FALSE
       )
     )`);
+  } else if (!oversightRoles.includes(role)) {
+    // For any other role not in oversight, only show own requests
+    params.push(viewerId);
+    clauses.push(`tr.user_id = $${params.length}`);
   }
+  // For oversight roles (admin, ceo, finance, it_officer), no user filter - they see all
 
-  if (userId && role !== 'employee') {
+  if (userId && oversightRoles.includes(role)) {
     params.push(userId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
