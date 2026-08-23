@@ -161,7 +161,7 @@ const generateSystemPayslip = async ({ employee, profile, period, values, header
   // ===== Table helper =====
   const drawTable = (x, w, title, icon, leftHeader, rows, yStart) => {
     let ty = sectionBar(title, icon, x, w, yStart);
-    const dividerX = x + w * 0.45;
+    const dividerX = x + w * 0.52;
     rect(x, ty - 15, w, 15, BAR_GREEN);
     text(leftHeader, x + 6, ty - 10.5, 7.5, bold, WHITE);
     textRight('Amount (KES)', x + w - 6, ty - 10.5, 7.5, bold, WHITE);
@@ -194,14 +194,14 @@ const generateSystemPayslip = async ({ employee, profile, period, values, header
     notDash(values.shif) && { label: 'SHIF (Social Health Insurance Fund)', amount: values.shif },
     notDash(values.housingLevy) && { label: 'Housing Levy', amount: values.housingLevy },
     notDash(values.pension) && { label: 'Pension', amount: values.pension },
-    notDash(values.otherDeductions) && { label: 'Other Deductions', amount: values.otherDeductions },
-    // Add custom deductions
+    // Add custom deductions before Other Deductions
     ...(profile.customDeductions || []).map((d) => ({
       label: d.label || 'Custom Deduction',
       amount: Number(d.amount)
         ? Number(d.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
         : DASH
     })),
+    notDash(values.otherDeductions) && { label: 'Other Deductions', amount: values.otherDeductions },
     { label: 'Total Deductions', amount: values.totalDeductions, kind: 'total' }
   ].filter(Boolean);
 

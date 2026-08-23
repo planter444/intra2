@@ -480,9 +480,8 @@ export default function PayslipsPage() {
                     <SlipRow label="SHIF (Social Health Insurance Fund)"><MoneyInput value={profile.shif} onChange={setField('shif')} /></SlipRow>
                     <SlipRow label="Housing Levy" alt><MoneyInput value={profile.housingLevy} onChange={setField('housingLevy')} /></SlipRow>
                     <SlipRow label="Pension"><MoneyInput value={profile.pension} onChange={setField('pension')} /></SlipRow>
-                    <SlipRow label="Other Deductions" alt><MoneyInput value={profile.otherDeductions} onChange={setField('otherDeductions')} /></SlipRow>
                     
-                    {/* Custom Deductions */}
+                    {/* Custom Deductions - appear before Other Deductions */}
                     {(profile.customDeductions || []).map((deduction, index) => (
                       <div key={index} className={`flex items-center gap-2 border-b border-slate-100 px-4 py-2 last:border-b-0 ${index % 2 ? 'bg-emerald-50/40' : ''}`}>
                         <input
@@ -525,6 +524,8 @@ export default function PayslipsPage() {
                         Add deduction
                       </button>
                     </div>
+                    
+                    <SlipRow label="Other Deductions" alt><MoneyInput value={profile.otherDeductions} onChange={setField('otherDeductions')} /></SlipRow>
                     
                     <SlipRow label="Total Deductions"><span className="block text-right text-sm font-bold text-emerald-900">{formatMoney(totals.deductions)}</span></SlipRow>
                   </SlipSection>
