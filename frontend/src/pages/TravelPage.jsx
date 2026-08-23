@@ -18,13 +18,21 @@ const statusConfig = {
 };
 
 const canDecideTravel = (user, request, employeeApprovers) => {
+  // Prevent self-approval unless explicitly designated as own approver
+  if (String(request.userId) === String(user.id)) {
+    const designatedApproverId = employeeApprovers[request.userId];
+    if (!designatedApproverId || String(designatedApproverId) !== String(user.id)) {
+      return false; // Cannot approve own request unless designated as own approver
+    }
+  }
+  
   // Check if user is the designated approver for this employee
   const designatedApproverId = employeeApprovers[request.userId];
   if (designatedApproverId && String(designatedApproverId) === String(user.id)) {
     return ['pending', 'rejected'].includes(request.status);
   }
   
-  // Fallback to role-based approval for admin, ceo, finance
+  // Only allow role-based approval if NOT approving own request
   if (['admin', 'ceo', 'finance'].includes(user.role)) {
     return ['pending', 'rejected'].includes(request.status);
   }
@@ -211,15 +219,13 @@ description: '' });
                           {config.label}
                         </span>
                         <span className="text-sm text-slate-400">{request.employeeName}</span>
-                      </div>
-                      <h3 className="mt-2 text-lg font-semibold text-slate-900">
-                        {request.origin} → {request.destination}
-                      </h3>
-                      <div className="mt-2 flex items-center gap-2">
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${request.travelType === 'booking' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'} border`}>
                           {request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
                         </span>
                       </div>
+                      <h3 className="mt-2 text-lg font-semibold text-slate-900">
+                        {request.origin} → {request.destination}
+                      </h3>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-600">
                         <span className="flex items-center gap-1.5">
                           <Calendar size={16} />

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Filter, Users, Calendar, TrendingUp, FileText } from 'lucide-react';
+import { Download, Filter, Users, Calendar, TrendingUp, FileText, Eye } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
@@ -32,6 +32,12 @@ export default function LeaveReportPage() {
   useEffect(() => {
     loadFilterOptions();
   }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
 
   const loadFilterOptions = async () => {
     try {
@@ -156,7 +162,7 @@ export default function LeaveReportPage() {
             onClick={handlePreviewPDF}
             disabled={!reportData}
           >
-            <Download size={18} />
+            <Eye size={18} />
             Preview PDF
           </button>,
           <button
@@ -433,7 +439,7 @@ export default function LeaveReportPage() {
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium text-slate-900">{emp.leave_type}</p>
-                      <p className="text-xs text-slate-500">{emp.start_date} to {emp.end_date}</p>
+                      <p className="text-xs text-slate-500">{formatDate(emp.start_date)} to {formatDate(emp.end_date)}</p>
                     </div>
                   </div>
                 ))}

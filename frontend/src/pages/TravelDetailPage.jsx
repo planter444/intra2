@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, Download, X, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Upload, Download, X, Plus, Trash2, Edit2, Eye } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -499,28 +499,28 @@ export default function TravelDetailPage() {
               const receiptConfig = receiptStatusConfig[receipt.reimbursementStatus] || receiptStatusConfig.pending;
               return (
                 <div key={receipt.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${receiptConfig.bgColor} ${receiptConfig.color}`}>
                           {receiptConfig.label}
                         </span>
-                        <span className="text-sm text-slate-400">{receipt.fileName}</span>
+                        <span className="text-sm text-slate-400 truncate">{receipt.fileName}</span>
                       </div>
                       {receipt.amount && (
                         <p className="mt-1 text-sm font-medium text-slate-900">Amount: {receipt.amount.toLocaleString()}</p>
                       )}
                       {receipt.description && (
-                        <p className="mt-1 text-sm text-slate-600">{receipt.description}</p>
+                        <p className="mt-1 text-sm text-slate-600 break-words">{receipt.description}</p>
                       )}
                       {receipt.reviewComment && (
-                        <p className="mt-1 text-sm text-slate-500">Review comment: {receipt.reviewComment}</p>
+                        <p className="mt-1 text-sm text-slate-500 break-words">Review comment: {receipt.reviewComment}</p>
                       )}
                       <p className="mt-1 text-xs text-slate-400">Uploaded by {receipt.uploaderName}</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <button type="button" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" onClick={() => handlePreviewReceipt(receipt)} title="Preview">
-                        <Download size={16} />
+                        <Eye size={16} />
                       </button>
                       <button type="button" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" onClick={() => handleDownloadReceipt(receipt)} title="Download">
                         <Download size={16} />

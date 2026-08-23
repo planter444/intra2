@@ -318,6 +318,14 @@ const decideTravelRequest = async (req, res, next) => {
         return res.status(403).json({ message: 'You cannot approve your own travel request unless you are designated as your own approver in employee-specific routing.' });
       }
     }
+    
+    // Additional check: ensure role-based approvers cannot approve their own requests
+    if (['admin', 'ceo', 'finance', 'supervisor'].includes(req.user.role) && String(request.userId) === String(req.user.id)) {
+      const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
+      if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
+        return res.status(403).json({ message: 'You cannot approve your own travel request unless you are designated as your own approver in employee-specific routing.' });
+      }
+    }
 
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
     const nextStatus = decision === 'approve' ? 'approved' : 'rejected';

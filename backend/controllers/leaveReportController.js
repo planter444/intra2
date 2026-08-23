@@ -17,107 +17,82 @@ const buildLeaveReportPdf = async (payload) => {
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
   const { width, height } = page.getSize();
-  let y = height - 50;
   
   // Professional color scheme
-  const primaryColor = rgb(0.13, 0.35, 0.18); // Dark green
-  const secondaryColor = rgb(0.09, 0.25, 0.13); // Even darker green
-  const accentColor = rgb(0.45, 0.75, 0.55); // Medium green
-  const lightAccent = rgb(0.85, 0.95, 0.9); // Very light green
-  const textColor = rgb(0.15, 0.2, 0.3); // Dark blue-gray
-  const lightGray = rgb(0.96, 0.97, 0.98);
-  const borderColor = rgb(0.85, 0.85, 0.9);
+  const primaryColor = rgb(0.13, 0.35, 0.18);
+  const accentColor = rgb(0.45, 0.75, 0.55);
+  const lightAccent = rgb(0.85, 0.95, 0.9);
+  const textColor = rgb(0.15, 0.2, 0.3);
+  const borderColor = rgb(0.75, 0.75, 0.8);
   const white = rgb(1, 1, 1);
   
-  // Header section with gradient-like background
+  // Header section - separate from body
   page.drawRectangle({
     x: 0,
-    y: height - 90,
+    y: height - 60,
     width: width,
-    height: 90,
+    height: 60,
     color: primaryColor,
   });
   
-  // Decorative line
-  page.drawRectangle({
-    x: 0,
-    y: height - 90,
-    width: width,
-    height: 3,
-    color: accentColor,
-  });
-  
-  // Company name
-  page.drawText('KENYA RENEWABLE ENERGY ASSOCIATION', {
+  page.drawText('LEAVE REPORT', {
     x: 50,
     y: height - 25,
-    size: 16,
+    size: 22,
     font: fontBold,
     color: white,
   });
   
-  // Report title
-  page.drawText('EMPLOYEE LEAVE MANAGEMENT REPORT', {
+  page.drawText('KEREA', {
     x: 50,
-    y: height - 50,
+    y: height - 45,
     size: 14,
-    font: fontBold,
+    font: font,
     color: lightAccent,
   });
   
-  // Date
   page.drawText(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, {
-    x: 50,
-    y: height - 75,
+    x: width - 200,
+    y: height - 35,
     size: 10,
     font: font,
     color: lightAccent,
   });
   
-  y -= 50;
+  let y = height - 80;
   
-  // Executive Summary Section with better styling
+  // Executive Summary Section
   page.drawRectangle({
     x: 40,
-    y: y - 15,
+    y: y - 10,
     width: width - 80,
-    height: 160,
+    height: 120,
     color: white,
     borderColor: primaryColor,
-    borderWidth: 2,
-  });
-  
-  // Section header background
-  page.drawRectangle({
-    x: 40,
-    y: y - 15,
-    width: width - 80,
-    height: 30,
-    color: lightAccent,
+    borderWidth: 1.5,
   });
   
   page.drawText('EXECUTIVE SUMMARY', {
     x: 50,
     y: y - 5,
-    size: 12,
+    size: 11,
     font: fontBold,
     color: primaryColor,
   });
   
   const summaryData = [
-    `Total Employees: ${statistics.totalEmployees || 0}`,
-    `Total Leave Applications: ${statistics.totalLeaveApplications || 0}`,
-    `Approved Leaves: ${statistics.approvedLeaves || 0}`,
-    `Pending Leaves: ${statistics.pendingLeaves || 0}`,
-    `Rejected Leaves: ${statistics.rejectedLeaves || 0}`,
-    `Cancelled Leaves: ${statistics.cancelledLeaves || 0}`,
-    `Employees Currently on Leave: ${statistics.employeesOnLeave || 0}`,
-    `Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`,
+    { label: 'Total Employees', value: statistics.totalEmployees || 0 },
+    { label: 'Total Leave Applications', value: statistics.totalLeaveApplications || 0 },
+    { label: 'Approved Leaves', value: statistics.approvedLeaves || 0 },
+    { label: 'Pending Leaves', value: statistics.pendingLeaves || 0 },
+    { label: 'Rejected Leaves', value: statistics.rejectedLeaves || 0 },
+    { label: 'Employees Currently on Leave', value: statistics.employeesOnLeave || 0 },
+    { label: 'Total Leave Days Taken', value: statistics.totalLeaveDaysTaken || 0 },
   ];
   
-  summaryData.forEach((text, index) => {
-    const rowY = y - 55 - (index * 14);
-    page.drawText(text, {
+  summaryData.forEach((item, index) => {
+    const rowY = y - 28 - (index * 13);
+    page.drawText(item.label, {
       x: 50,
       y: rowY,
       size: 9,
@@ -125,55 +100,44 @@ const buildLeaveReportPdf = async (payload) => {
       color: textColor,
     });
     
-    // Add subtle row divider
-    if (index < summaryData.length - 1) {
-      page.drawLine({
-        start: { x: 50, y: rowY - 6 },
-        end: { x: width - 50, y: rowY - 6 },
-        thickness: 0.5,
-        color: borderColor,
-      });
-    }
+    page.drawText(String(item.value), {
+      x: 250,
+      y: rowY,
+      size: 9,
+      font: fontBold,
+      color: primaryColor,
+    });
   });
   
-  y -= 190;
+  y -= 140;
   
   // Leave Type Distribution Section
   page.drawRectangle({
     x: 40,
-    y: y - 15,
+    y: y - 10,
     width: width - 80,
-    height: 140,
+    height: 120,
     color: white,
     borderColor: primaryColor,
-    borderWidth: 2,
-  });
-  
-  page.drawRectangle({
-    x: 40,
-    y: y - 15,
-    width: width - 80,
-    height: 30,
-    color: lightAccent,
+    borderWidth: 1.5,
   });
   
   page.drawText('LEAVE TYPE DISTRIBUTION', {
     x: 50,
     y: y - 5,
-    size: 12,
+    size: 11,
     font: fontBold,
     color: primaryColor,
   });
   
   const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
   leaveByType.slice(0, 5).forEach((item, index) => {
-    const barWidth = ((item.days_taken / maxTypeDays) * 180);
-    const barY = y - 45 - (index * 22);
+    const barWidth = ((item.days_taken / maxTypeDays) * 200);
+    const barY = y - 30 - (index * 18);
     
-    // Label with better formatting
-    page.drawText(`${item.leave_type}:`, {
+    page.drawText(`${item.leave_type}`, {
       x: 50,
-      y: barY + 8,
+      y: barY + 5,
       size: 9,
       font: fontBold,
       color: textColor,
@@ -181,69 +145,58 @@ const buildLeaveReportPdf = async (payload) => {
     
     page.drawText(`${item.days_taken} days`, {
       x: 50,
-      y: barY - 2,
+      y: barY - 4,
       size: 8,
       font: font,
       color: textColor,
     });
     
-    // Bar background with rounded corners effect
     page.drawRectangle({
       x: 200,
       y: barY - 2,
-      width: 180,
-      height: 12,
-      color: lightGray,
+      width: 200,
+      height: 10,
+      color: lightAccent,
     });
     
-    // Bar with gradient-like color
     page.drawRectangle({
       x: 200,
       y: barY - 2,
       width: barWidth,
-      height: 12,
+      height: 10,
       color: accentColor,
     });
   });
   
-  y -= 170;
+  y -= 140;
   
   // Department Distribution Section
   page.drawRectangle({
     x: 40,
-    y: y - 15,
+    y: y - 10,
     width: width - 80,
-    height: 140,
+    height: 120,
     color: white,
     borderColor: primaryColor,
-    borderWidth: 2,
-  });
-  
-  page.drawRectangle({
-    x: 40,
-    y: y - 15,
-    width: width - 80,
-    height: 30,
-    color: lightAccent,
+    borderWidth: 1.5,
   });
   
   page.drawText('DEPARTMENT DISTRIBUTION', {
     x: 50,
     y: y - 5,
-    size: 12,
+    size: 11,
     font: fontBold,
     color: primaryColor,
   });
   
   const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
   leaveByDepartment.slice(0, 5).forEach((item, index) => {
-    const barWidth = ((item.days_taken / maxDeptDays) * 180);
-    const barY = y - 45 - (index * 22);
+    const barWidth = ((item.days_taken / maxDeptDays) * 200);
+    const barY = y - 30 - (index * 18);
     
-    // Label
-    page.drawText(`${item.department}:`, {
+    page.drawText(`${item.department}`, {
       x: 50,
-      y: barY + 8,
+      y: barY + 5,
       size: 9,
       font: fontBold,
       color: textColor,
@@ -251,67 +204,56 @@ const buildLeaveReportPdf = async (payload) => {
     
     page.drawText(`${item.days_taken} days`, {
       x: 50,
-      y: barY - 2,
+      y: barY - 4,
       size: 8,
       font: font,
       color: textColor,
     });
     
-    // Bar background
     page.drawRectangle({
       x: 200,
       y: barY - 2,
-      width: 180,
-      height: 12,
-      color: lightGray,
+      width: 200,
+      height: 10,
+      color: lightAccent,
     });
     
-    // Bar
     page.drawRectangle({
       x: 200,
       y: barY - 2,
       width: barWidth,
-      height: 12,
+      height: 10,
       color: primaryColor,
     });
   });
   
-  y -= 170;
+  y -= 140;
   
   // Employees Currently on Leave Section
   if (employeesOnLeave.length > 0) {
-    const sectionHeight = 90 + (employeesOnLeave.length * 25);
+    const sectionHeight = 70 + (employeesOnLeave.length * 20);
     page.drawRectangle({
       x: 40,
-      y: y - 15,
+      y: y - 10,
       width: width - 80,
       height: sectionHeight,
       color: white,
       borderColor: primaryColor,
-      borderWidth: 2,
-    });
-    
-    page.drawRectangle({
-      x: 40,
-      y: y - 15,
-      width: width - 80,
-      height: 30,
-      color: lightAccent,
+      borderWidth: 1.5,
     });
     
     page.drawText('EMPLOYEES CURRENTLY ON LEAVE', {
       x: 50,
       y: y - 5,
-      size: 12,
+      size: 11,
       font: fontBold,
       color: primaryColor,
     });
     
     employeesOnLeave.slice(0, 3).forEach((emp, index) => {
-      const empY = y - 50 - (index * 25);
+      const empY = y - 30 - (index * 20);
       
-      // Employee name with bullet
-      page.drawText(`• ${emp.employee_name} (${emp.employee_no})`, {
+      page.drawText(`${emp.employee_name} (${emp.employee_no})`, {
         x: 50,
         y: empY,
         size: 9,
@@ -319,126 +261,281 @@ const buildLeaveReportPdf = async (payload) => {
         color: textColor,
       });
       
-      // Leave details
-      page.drawText(`${emp.leave_type}: ${emp.start_date} to ${emp.end_date} (${emp.days_requested} days)`, {
+      page.drawText(`${emp.leave_type}: ${emp.start_date} - ${emp.end_date} (${emp.days_requested}d)`, {
         x: 70,
-        y: empY - 12,
+        y: empY - 9,
         size: 8,
         font: font,
         color: textColor,
       });
     });
     
-    y -= sectionHeight + 20;
+    y -= sectionHeight + 15;
   }
   
   // Employee Leave Information Section
   page.drawText('EMPLOYEE LEAVE INFORMATION', {
     x: 50,
     y: y - 5,
-    size: 12,
+    size: 11,
     font: fontBold,
     color: primaryColor,
   });
   
-  y -= 20;
+  y -= 15;
   
-  employeeLeaveInfo.slice(0, 12).forEach((emp, index) => {
-    if (y < 60) {
-      // Add new page if running out of space
-      const newPage = pdfDoc.addPage([612, 792]);
-      y = newPage.getHeight() - 50;
+  // Table header
+  page.drawRectangle({
+    x: 40,
+    y: y - 18,
+    width: width - 80,
+    height: 18,
+    color: primaryColor,
+  });
+  
+  page.drawText('Employee', {
+    x: 45,
+    y: y - 6,
+    size: 8,
+    font: fontBold,
+    color: white,
+  });
+  
+  page.drawText('Department', {
+    x: 200,
+    y: y - 6,
+    size: 8,
+    font: fontBold,
+    color: white,
+  });
+  
+  page.drawText('Leave Type', {
+    x: 320,
+    y: y - 6,
+    size: 8,
+    font: fontBold,
+    color: white,
+  });
+  
+  page.drawText('Entitlement', {
+    x: 420,
+    y: y - 6,
+    size: 8,
+    font: fontBold,
+    color: white,
+  });
+  
+  page.drawText('Taken', {
+    x: 490,
+    y: y - 6,
+    size: 8,
+    font: fontBold,
+    color: white,
+  });
+  
+  page.drawText('Remaining', {
+    x: 530,
+    y: y - 6,
+    size: 8,
+    font: fontBold,
+    color: white,
+  });
+  
+  y -= 23;
+  
+  let currentPage = page;
+  let currentPageY = y;
+  
+  employeeLeaveInfo.forEach((emp, index) => {
+    if (currentPageY < 50) {
+      // Add new page
+      currentPage = pdfDoc.addPage([612, 792]);
+      currentPageY = currentPage.getHeight() - 70;
       
-      // Add header to new page
-      newPage.drawRectangle({
+      // Header on new page
+      currentPage.drawRectangle({
         x: 0,
-        y: newPage.getHeight() - 50,
+        y: currentPage.getHeight() - 60,
         width: width,
-        height: 50,
+        height: 60,
         color: primaryColor,
       });
       
-      newPage.drawText('EMPLOYEE LEAVE INFORMATION (Continued)', {
+      currentPage.drawText('LEAVE REPORT (CONTINUED)', {
         x: 50,
-        y: newPage.getHeight() - 30,
-        size: 12,
+        y: currentPage.getHeight() - 25,
+        size: 18,
         font: fontBold,
         color: white,
       });
       
-      y -= 30;
+      currentPage.drawText('KEREA', {
+        x: 50,
+        y: currentPage.getHeight() - 45,
+        size: 12,
+        font: font,
+        color: lightAccent,
+      });
+      
+      currentPageY -= 80;
+      
+      // Table header on new page
+      currentPage.drawRectangle({
+        x: 40,
+        y: currentPageY - 18,
+        width: width - 80,
+        height: 18,
+        color: primaryColor,
+      });
+      
+      currentPage.drawText('Employee', {
+        x: 45,
+        y: currentPageY - 6,
+        size: 8,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPage.drawText('Department', {
+        x: 200,
+        y: currentPageY - 6,
+        size: 8,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPage.drawText('Leave Type', {
+        x: 320,
+        y: currentPageY - 6,
+        size: 8,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPage.drawText('Entitlement', {
+        x: 420,
+        y: currentPageY - 6,
+        size: 8,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPage.drawText('Taken', {
+        x: 490,
+        y: currentPageY - 6,
+        size: 8,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPage.drawText('Remaining', {
+        x: 530,
+        y: currentPageY - 6,
+        size: 8,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPageY -= 23;
     }
     
-    // Employee card with better styling
-    page.drawRectangle({
-      x: 40,
-      y: y - 50,
-      width: width - 80,
-      height: 50,
-      color: white,
-      borderColor: borderColor,
-      borderWidth: 1,
-    });
+    // Row background
+    if (index % 2 === 0) {
+      currentPage.drawRectangle({
+        x: 40,
+        y: currentPageY - 16,
+        width: width - 80,
+        height: 16,
+        color: lightAccent,
+      });
+    }
     
     // Employee name
-    page.drawText(`${emp.employee_name} (${emp.employee_no})`, {
-      x: 50,
-      y: y - 12,
-      size: 10,
+    currentPage.drawText(`${emp.employee_name}`, {
+      x: 45,
+      y: currentPageY - 5,
+      size: 8,
       font: fontBold,
       color: textColor,
     });
     
-    // Department and leave type
-    page.drawText(`Dept: ${emp.department} | Type: ${emp.leave_type}`, {
-      x: 50,
-      y: y - 24,
+    currentPage.drawText(`(${emp.employee_no})`, {
+      x: 45,
+      y: currentPageY - 13,
+      size: 7,
+      font: font,
+      color: textColor,
+    });
+    
+    // Department
+    currentPage.drawText(emp.department || 'N/A', {
+      x: 200,
+      y: currentPageY - 8,
       size: 8,
       font: font,
       color: textColor,
     });
     
-    // Leave details
-    page.drawText(`Entitlement: ${emp.leave_entitlement}d | Taken: ${emp.days_taken}d | Remaining: ${emp.remaining_days}d`, {
-      x: 50,
-      y: y - 36,
+    // Leave type
+    currentPage.drawText(emp.leave_type || 'N/A', {
+      x: 320,
+      y: currentPageY - 8,
       size: 8,
       font: font,
       color: textColor,
     });
     
-    y -= 60;
+    // Entitlement
+    currentPage.drawText(String(emp.leave_entitlement || 0), {
+      x: 420,
+      y: currentPageY - 8,
+      size: 8,
+      font: font,
+      color: textColor,
+    });
+    
+    // Taken
+    currentPage.drawText(String(emp.days_taken || 0), {
+      x: 490,
+      y: currentPageY - 8,
+      size: 8,
+      font: font,
+      color: textColor,
+    });
+    
+    // Remaining
+    currentPage.drawText(String(emp.remaining_days || 0), {
+      x: 530,
+      y: currentPageY - 8,
+      size: 8,
+      font: font,
+      color: textColor,
+    });
+    
+    currentPageY -= 20;
   });
   
-  // Footer with professional styling
-  const footerY = 30;
-  page.drawRectangle({
+  // Footer on last page
+  const lastPage = currentPage;
+  lastPage.drawRectangle({
     x: 0,
     y: 0,
     width: width,
-    height: 45,
+    height: 30,
     color: primaryColor,
   });
   
-  page.drawRectangle({
-    x: 0,
-    y: 42,
-    width: width,
-    height: 3,
-    color: accentColor,
-  });
-  
-  page.drawText('KEREA HRMS - Leave Management System', {
+  lastPage.drawText('KEREA HRMS - Leave Management System', {
     x: 50,
-    y: footerY + 20,
+    y: 12,
     size: 9,
     font: font,
     color: white,
   });
   
-  page.drawText('Confidential Document', {
+  lastPage.drawText('Confidential Document', {
     x: width - 140,
-    y: footerY + 20,
+    y: 12,
     size: 9,
     font: font,
     color: lightAccent,
