@@ -54,13 +54,23 @@ export default function TravelPage() {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const [data, usersList] = await Promise.all([
-        fetchTravelRequests(),
-        fetchUsers()
-      ]);
+      const data = await fetchTravelRequests();
       const filteredRequests = data.filter(r => r.status !== 'cancelled');
       setRequests(filteredRequests);
-      setUsers(usersList);
+      
+      // Only fetch users if user has permission (not regular employee)
+      if (user.role !== 'employee') {
+        try {
+          const usersList = await fetchUsers();
+          setUsers(usersList);
+        } catch (error) {
+          console.warn('Failed to load users:', error.message);
+          setUsers([]);
+        }
+      } else {
+        // For employees, only show themselves in the filter
+        setUsers([{ id: user.id, firstName: user.firstName, lastName: user.lastName }]);
+      }
       
       // Load approvers for each unique employee
       const uniqueEmployeeIds = [...new Set(filteredRequests.map(r => r.userId))];
@@ -252,7 +262,7 @@ export default function TravelPage() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-            <div className="flex items-center gap-2 min-w-0 sm:w-62">
+            <div className="flex items-center gap-2 min-w-0 sm:w-42">
               <User size={16} className="text-slate-400 flex-shrink-0" />
               <select
                 value={selectedEmployee}
