@@ -267,6 +267,35 @@ export default function TravelDetailPage() {
     }
   };
 
+  const handlePreviewSupportingDocument = async () => {
+    if (!request.supportingDocumentId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/documents/${request.supportingDocumentId}/download`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to preview document');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to preview supporting document',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
   const handleDownloadSupportingDocument = async () => {
     if (!request.supportingDocumentId) {
       return;
@@ -550,22 +579,32 @@ export default function TravelDetailPage() {
       {request.travelType === 'booking' && request.supportingDocumentId && (
         <SectionCard title="Supporting document" subtitle="Supporting document uploaded with this travel booking request.">
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-900">Supporting document attached</p>
-                <p className="mt-1 text-xs text-slate-500">Uploaded with travel request</p>
+            <div className="flex flex-col gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+                    Attached
+                  </span>
+                  <span className="text-sm text-slate-400 truncate">Supporting document</span>
+                </div>
+                <p className="mt-1 text-sm text-slate-500">Uploaded with travel request</p>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
-                  Attached
-                </span>
+              <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
-                  onClick={() => handleDownloadSupportingDocument()}
+                  className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                  onClick={handlePreviewSupportingDocument}
+                  title="Preview"
+                >
+                  <Eye size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                  onClick={handleDownloadSupportingDocument}
+                  title="Download"
                 >
                   <Download size={16} />
-                  Download
                 </button>
               </div>
             </div>

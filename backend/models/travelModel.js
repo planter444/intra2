@@ -791,6 +791,18 @@ const getApproverForEmployee = async (employeeId) => {
   );
 
   if (result.rows.length === 0) {
+    // Default to CEO if no specific routing exists
+    const ceoResult = await query(
+      `
+        SELECT id
+        FROM users
+        WHERE role = 'ceo'
+        LIMIT 1
+      `
+    );
+    if (ceoResult.rows.length > 0) {
+      return ceoResult.rows[0].id;
+    }
     return null;
   }
 

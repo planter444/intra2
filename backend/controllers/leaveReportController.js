@@ -18,15 +18,20 @@ const buildLeaveReportPdf = async (payload) => {
   
   const { width, height } = page.getSize();
   
-  // Professional color scheme
+  // Professional color scheme matching web page
   const primaryColor = rgb(0.13, 0.35, 0.18);
   const accentColor = rgb(0.45, 0.75, 0.55);
   const lightAccent = rgb(0.85, 0.95, 0.9);
   const textColor = rgb(0.15, 0.2, 0.3);
   const borderColor = rgb(0.75, 0.75, 0.8);
   const white = rgb(1, 1, 1);
+  const blueColor = rgb(0.22, 0.52, 0.96);
+  const emeraldColor = rgb(0.05, 0.64, 0.31);
+  const amberColor = rgb(0.92, 0.6, 0.0);
+  const purpleColor = rgb(0.55, 0.15, 0.82);
+  const bgColor = rgb(0.97, 0.98, 0.99);
   
-  // Header section - separate from body
+  // Header section
   page.drawRectangle({
     x: 0,
     y: height - 60,
@@ -59,295 +64,270 @@ const buildLeaveReportPdf = async (payload) => {
     color: lightAccent,
   });
   
-  let y = height - 80;
+  let y = height - 90;
   
-  // Executive Summary Section
-  page.drawRectangle({
-    x: 40,
-    y: y - 10,
-    width: width - 80,
-    height: 120,
-    color: white,
-    borderColor: primaryColor,
-    borderWidth: 1.5,
-  });
-  
-  page.drawText('EXECUTIVE SUMMARY', {
+  // Summary Statistics Section - matching web page cards
+  page.drawText('Summary Statistics', {
     x: 50,
-    y: y - 5,
-    size: 11,
+    y: y,
+    size: 14,
     font: fontBold,
     color: primaryColor,
   });
   
-  const summaryData = [
-    { label: 'Total Employees', value: statistics.totalEmployees || 0 },
-    { label: 'Total Leave Applications', value: statistics.totalLeaveApplications || 0 },
-    { label: 'Approved Leaves', value: statistics.approvedLeaves || 0 },
-    { label: 'Pending Leaves', value: statistics.pendingLeaves || 0 },
-    { label: 'Rejected Leaves', value: statistics.rejectedLeaves || 0 },
-    { label: 'Employees Currently on Leave', value: statistics.employeesOnLeave || 0 },
-    { label: 'Total Leave Days Taken', value: statistics.totalLeaveDaysTaken || 0 },
+  page.drawText('Overview of leave data across the organization.', {
+    x: 50,
+    y: y - 12,
+    size: 10,
+    font: font,
+    color: textColor,
+  });
+  
+  y -= 25;
+  
+  // Draw 4 summary cards in a grid
+  const cardWidth = (width - 100) / 2;
+  const cardHeight = 60;
+  const cardGap = 15;
+  
+  const summaryCards = [
+    { label: 'Total Employees', value: statistics.totalEmployees || 0, color: blueColor },
+    { label: 'Approved Leaves', value: statistics.approvedLeaves || 0, color: emeraldColor },
+    { label: 'Pending Leaves', value: statistics.pendingLeaves || 0, color: amberColor },
+    { label: 'Days Taken', value: statistics.totalLeaveDaysTaken || 0, color: purpleColor },
   ];
   
-  summaryData.forEach((item, index) => {
-    const rowY = y - 28 - (index * 13);
-    page.drawText(item.label, {
-      x: 50,
-      y: rowY,
+  summaryCards.forEach((card, index) => {
+    const row = Math.floor(index / 2);
+    const col = index % 2;
+    const cardX = 50 + col * (cardWidth + cardGap);
+    const cardY = y - row * (cardHeight + cardGap);
+    
+    // Card background
+    page.drawRectangle({
+      x: cardX,
+      y: cardY - cardHeight,
+      width: cardWidth,
+      height: cardHeight,
+      color: white,
+      borderColor: borderColor,
+      borderWidth: 1,
+    });
+    
+    // Icon circle
+    const iconColor = card.color;
+    page.drawCircle({
+      x: cardX + 25,
+      y: cardY - 30,
+      size: 18,
+      color: iconColor,
+      opacity: 0.1,
+    });
+    
+    // Icon (simple representation)
+    page.drawCircle({
+      x: cardX + 25,
+      y: cardY - 30,
+      size: 8,
+      color: iconColor,
+    });
+    
+    // Label
+    page.drawText(card.label, {
+      x: cardX + 55,
+      y: cardY - 20,
       size: 9,
       font: font,
       color: textColor,
     });
     
-    page.drawText(String(item.value), {
-      x: 250,
-      y: rowY,
-      size: 9,
+    // Value
+    page.drawText(String(card.value), {
+      x: cardX + 55,
+      y: cardY - 40,
+      size: 18,
       font: fontBold,
-      color: primaryColor,
+      color: textColor,
     });
   });
   
-  y -= 140;
+  y -= 2 * (cardHeight + cardGap) + 20;
   
-  // Leave Type Distribution Section
-  page.drawRectangle({
-    x: 40,
-    y: y - 10,
-    width: width - 80,
-    height: 120,
-    color: white,
-    borderColor: primaryColor,
-    borderWidth: 1.5,
-  });
-  
-  page.drawText('LEAVE TYPE DISTRIBUTION', {
+  // Leave by Type Section
+  page.drawText('Leave by Type', {
     x: 50,
-    y: y - 5,
-    size: 11,
+    y: y,
+    size: 14,
     font: fontBold,
     color: primaryColor,
   });
   
+  page.drawText('Leave days taken by leave type.', {
+    x: 50,
+    y: y - 12,
+    size: 10,
+    font: font,
+    color: textColor,
+  });
+  
+  y -= 25;
+  
+  // Leave type bars
   const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
-  leaveByType.slice(0, 5).forEach((item, index) => {
-    const barWidth = ((item.days_taken / maxTypeDays) * 200);
-    const barY = y - 30 - (index * 18);
+  leaveByType.forEach((item, index) => {
+    const barWidth = ((item.days_taken / maxTypeDays) * (width - 200));
+    const barY = y - 20 - (index * 25);
     
+    // Label
     page.drawText(`${item.leave_type}`, {
       x: 50,
-      y: barY + 5,
-      size: 9,
+      y: barY + 8,
+      size: 10,
       font: fontBold,
       color: textColor,
     });
     
-    page.drawText(`${item.days_taken} days`, {
+    // Background bar
+    page.drawRectangle({
       x: 50,
-      y: barY - 4,
-      size: 8,
-      font: font,
+      y: barY - 5,
+      width: width - 100,
+      height: 8,
+      color: rgb(0.94, 0.96, 0.98),
+    });
+    
+    // Progress bar
+    page.drawRectangle({
+      x: 50,
+      y: barY - 5,
+      width: barWidth,
+      height: 8,
+      color: emeraldColor,
+    });
+    
+    // Value
+    page.drawText(`${item.days_taken.toFixed(2)} days`, {
+      x: width - 80,
+      y: barY + 3,
+      size: 10,
+      font: fontBold,
       color: textColor,
     });
-    
-    page.drawRectangle({
-      x: 200,
-      y: barY - 2,
-      width: 200,
-      height: 10,
-      color: lightAccent,
-    });
-    
-    page.drawRectangle({
-      x: 200,
-      y: barY - 2,
-      width: barWidth,
-      height: 10,
-      color: accentColor,
-    });
   });
   
-  y -= 140;
+  y -= leaveByType.length * 25 + 30;
   
-  // Department Distribution Section
-  page.drawRectangle({
-    x: 40,
-    y: y - 10,
-    width: width - 80,
-    height: 120,
-    color: white,
-    borderColor: primaryColor,
-    borderWidth: 1.5,
-  });
-  
-  page.drawText('DEPARTMENT DISTRIBUTION', {
+  // Leave by Department Section
+  page.drawText('Leave by Department', {
     x: 50,
-    y: y - 5,
-    size: 11,
+    y: y,
+    size: 14,
     font: fontBold,
     color: primaryColor,
   });
   
+  page.drawText('Leave utilization across departments.', {
+    x: 50,
+    y: y - 12,
+    size: 10,
+    font: font,
+    color: textColor,
+  });
+  
+  y -= 25;
+  
+  // Department bars
   const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
-  leaveByDepartment.slice(0, 5).forEach((item, index) => {
-    const barWidth = ((item.days_taken / maxDeptDays) * 200);
-    const barY = y - 30 - (index * 18);
+  leaveByDepartment.forEach((item, index) => {
+    const barWidth = ((item.days_taken / maxDeptDays) * (width - 200));
+    const barY = y - 20 - (index * 25);
     
+    // Label
     page.drawText(`${item.department}`, {
       x: 50,
-      y: barY + 5,
-      size: 9,
+      y: barY + 8,
+      size: 10,
       font: fontBold,
       color: textColor,
     });
     
-    page.drawText(`${item.days_taken} days`, {
+    // Background bar
+    page.drawRectangle({
       x: 50,
-      y: barY - 4,
-      size: 8,
-      font: font,
-      color: textColor,
+      y: barY - 5,
+      width: width - 100,
+      height: 8,
+      color: rgb(0.94, 0.96, 0.98),
     });
     
+    // Progress bar
     page.drawRectangle({
-      x: 200,
-      y: barY - 2,
-      width: 200,
-      height: 10,
-      color: lightAccent,
-    });
-    
-    page.drawRectangle({
-      x: 200,
-      y: barY - 2,
+      x: 50,
+      y: barY - 5,
       width: barWidth,
-      height: 10,
-      color: primaryColor,
+      height: 8,
+      color: blueColor,
+    });
+    
+    // Value
+    page.drawText(`${item.days_taken.toFixed(2)} days`, {
+      x: width - 80,
+      y: barY + 3,
+      size: 10,
+      font: fontBold,
+      color: textColor,
     });
   });
   
-  y -= 140;
-  
-  // Employees Currently on Leave Section
-  if (employeesOnLeave.length > 0) {
-    const sectionHeight = 70 + (employeesOnLeave.length * 20);
-    page.drawRectangle({
-      x: 40,
-      y: y - 10,
-      width: width - 80,
-      height: sectionHeight,
-      color: white,
-      borderColor: primaryColor,
-      borderWidth: 1.5,
-    });
-    
-    page.drawText('EMPLOYEES CURRENTLY ON LEAVE', {
-      x: 50,
-      y: y - 5,
-      size: 11,
-      font: fontBold,
-      color: primaryColor,
-    });
-    
-    employeesOnLeave.slice(0, 3).forEach((emp, index) => {
-      const empY = y - 30 - (index * 20);
-      
-      page.drawText(`${emp.employee_name} (${emp.employee_no})`, {
-        x: 50,
-        y: empY,
-        size: 9,
-        font: fontBold,
-        color: textColor,
-      });
-      
-      page.drawText(`${emp.leave_type}: ${emp.start_date} - ${emp.end_date} (${emp.days_requested}d)`, {
-        x: 70,
-        y: empY - 9,
-        size: 8,
-        font: font,
-        color: textColor,
-      });
-    });
-    
-    y -= sectionHeight + 15;
-  }
+  y -= leaveByDepartment.length * 25 + 30;
   
   // Employee Leave Information Section
-  page.drawText('EMPLOYEE LEAVE INFORMATION', {
+  page.drawText('Employee Leave Information', {
     x: 50,
-    y: y - 5,
-    size: 11,
+    y: y,
+    size: 14,
     font: fontBold,
     color: primaryColor,
   });
   
-  y -= 15;
+  page.drawText('Detailed leave information for each employee.', {
+    x: 50,
+    y: y - 12,
+    size: 10,
+    font: font,
+    color: textColor,
+  });
+  
+  y -= 25;
   
   // Table header
   page.drawRectangle({
     x: 40,
-    y: y - 18,
+    y: y - 20,
     width: width - 80,
-    height: 18,
+    height: 20,
     color: primaryColor,
   });
   
-  page.drawText('Employee', {
-    x: 45,
-    y: y - 6,
-    size: 8,
-    font: fontBold,
-    color: white,
+  const headers = ['Employee', 'Department', 'Leave Type', 'Entitlement', 'Days Taken', 'Remaining', 'Pending', 'Status'];
+  const headerX = [45, 130, 220, 310, 380, 450, 510, 560];
+  headers.forEach((header, index) => {
+    page.drawText(header, {
+      x: headerX[index],
+      y: y - 8,
+      size: 8,
+      font: fontBold,
+      color: white,
+    });
   });
   
-  page.drawText('Department', {
-    x: 200,
-    y: y - 6,
-    size: 8,
-    font: fontBold,
-    color: white,
-  });
-  
-  page.drawText('Leave Type', {
-    x: 320,
-    y: y - 6,
-    size: 8,
-    font: fontBold,
-    color: white,
-  });
-  
-  page.drawText('Entitlement', {
-    x: 420,
-    y: y - 6,
-    size: 8,
-    font: fontBold,
-    color: white,
-  });
-  
-  page.drawText('Taken', {
-    x: 490,
-    y: y - 6,
-    size: 8,
-    font: fontBold,
-    color: white,
-  });
-  
-  page.drawText('Remaining', {
-    x: 530,
-    y: y - 6,
-    size: 8,
-    font: fontBold,
-    color: white,
-  });
-  
-  y -= 23;
+  y -= 25;
   
   let currentPage = page;
   let currentPageY = y;
   
   employeeLeaveInfo.forEach((emp, index) => {
-    if (currentPageY < 50) {
+    if (currentPageY < 60) {
       // Add new page
       currentPage = pdfDoc.addPage([612, 792]);
       currentPageY = currentPage.getHeight() - 70;
@@ -382,75 +362,37 @@ const buildLeaveReportPdf = async (payload) => {
       // Table header on new page
       currentPage.drawRectangle({
         x: 40,
-        y: currentPageY - 18,
+        y: currentPageY - 20,
         width: width - 80,
-        height: 18,
+        height: 20,
         color: primaryColor,
       });
       
-      currentPage.drawText('Employee', {
-        x: 45,
-        y: currentPageY - 6,
-        size: 8,
-        font: fontBold,
-        color: white,
+      headers.forEach((header, index) => {
+        currentPage.drawText(header, {
+          x: headerX[index],
+          y: currentPageY - 8,
+          size: 8,
+          font: fontBold,
+          color: white,
+        });
       });
       
-      currentPage.drawText('Department', {
-        x: 200,
-        y: currentPageY - 6,
-        size: 8,
-        font: fontBold,
-        color: white,
-      });
-      
-      currentPage.drawText('Leave Type', {
-        x: 320,
-        y: currentPageY - 6,
-        size: 8,
-        font: fontBold,
-        color: white,
-      });
-      
-      currentPage.drawText('Entitlement', {
-        x: 420,
-        y: currentPageY - 6,
-        size: 8,
-        font: fontBold,
-        color: white,
-      });
-      
-      currentPage.drawText('Taken', {
-        x: 490,
-        y: currentPageY - 6,
-        size: 8,
-        font: fontBold,
-        color: white,
-      });
-      
-      currentPage.drawText('Remaining', {
-        x: 530,
-        y: currentPageY - 6,
-        size: 8,
-        font: fontBold,
-        color: white,
-      });
-      
-      currentPageY -= 23;
+      currentPageY -= 25;
     }
     
     // Row background
     if (index % 2 === 0) {
       currentPage.drawRectangle({
         x: 40,
-        y: currentPageY - 16,
+        y: currentPageY - 18,
         width: width - 80,
-        height: 16,
-        color: lightAccent,
+        height: 18,
+        color: bgColor,
       });
     }
     
-    // Employee name
+    // Employee name and number
     currentPage.drawText(`${emp.employee_name}`, {
       x: 45,
       y: currentPageY - 5,
@@ -459,7 +401,7 @@ const buildLeaveReportPdf = async (payload) => {
       color: textColor,
     });
     
-    currentPage.drawText(`(${emp.employee_no})`, {
+    currentPage.drawText(`${emp.employee_no}`, {
       x: 45,
       y: currentPageY - 13,
       size: 7,
@@ -468,8 +410,8 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Department
-    currentPage.drawText(emp.department || 'N/A', {
-      x: 200,
+    currentPage.drawText(emp.department || 'Unassigned', {
+      x: 130,
       y: currentPageY - 8,
       size: 8,
       font: font,
@@ -478,7 +420,7 @@ const buildLeaveReportPdf = async (payload) => {
     
     // Leave type
     currentPage.drawText(emp.leave_type || 'N/A', {
-      x: 320,
+      x: 220,
       y: currentPageY - 8,
       size: 8,
       font: font,
@@ -487,16 +429,16 @@ const buildLeaveReportPdf = async (payload) => {
     
     // Entitlement
     currentPage.drawText(String(emp.leave_entitlement || 0), {
-      x: 420,
+      x: 310,
       y: currentPageY - 8,
       size: 8,
       font: font,
       color: textColor,
     });
     
-    // Taken
-    currentPage.drawText(String(emp.days_taken || 0), {
-      x: 490,
+    // Days taken
+    currentPage.drawText(String(emp.days_taken || 0).padEnd(5, '0').slice(0, 5), {
+      x: 380,
       y: currentPageY - 8,
       size: 8,
       font: font,
@@ -504,16 +446,142 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Remaining
-    currentPage.drawText(String(emp.remaining_days || 0), {
-      x: 530,
+    currentPage.drawText(String(emp.remaining_days || 0).padEnd(5, '0').slice(0, 5), {
+      x: 450,
       y: currentPageY - 8,
       size: 8,
       font: font,
       color: textColor,
     });
     
+    // Pending
+    currentPage.drawText(String(emp.pending || 0), {
+      x: 510,
+      y: currentPageY - 8,
+      size: 8,
+      font: font,
+      color: textColor,
+    });
+    
+    // Status
+    const statusColor = emp.status === 'approved' ? emeraldColor : emp.status === 'pending' ? amberColor : rgb(0.94, 0.23, 0.23);
+    currentPage.drawText(emp.status || 'N/A', {
+      x: 560,
+      y: currentPageY - 8,
+      size: 8,
+      font: fontBold,
+      color: statusColor,
+    });
+    
     currentPageY -= 20;
   });
+  
+  // Employees Currently on Leave Section
+  if (employeesOnLeave.length > 0) {
+    if (currentPageY < 100) {
+      currentPage = pdfDoc.addPage([612, 792]);
+      currentPageY = currentPage.getHeight() - 70;
+      
+      currentPage.drawRectangle({
+        x: 0,
+        y: currentPage.getHeight() - 60,
+        width: width,
+        height: 60,
+        color: primaryColor,
+      });
+      
+      currentPage.drawText('LEAVE REPORT (CONTINUED)', {
+        x: 50,
+        y: currentPage.getHeight() - 25,
+        size: 18,
+        font: fontBold,
+        color: white,
+      });
+      
+      currentPage.drawText('KEREA', {
+        x: 50,
+        y: currentPage.getHeight() - 45,
+        size: 12,
+        font: font,
+        color: lightAccent,
+      });
+      
+      currentPageY -= 80;
+    }
+    
+    currentPage.drawText('Employees Currently on Leave', {
+      x: 50,
+      y: currentPageY,
+      size: 14,
+      font: fontBold,
+      color: primaryColor,
+    });
+    
+    currentPage.drawText('Employees who are currently on leave.', {
+      x: 50,
+      y: currentPageY - 12,
+      size: 10,
+      font: font,
+      color: textColor,
+    });
+    
+    currentPageY -= 25;
+    
+    employeesOnLeave.forEach((emp, index) => {
+      const empY = currentPageY - 20 - (index * 40);
+      
+      // Card
+      currentPage.drawRectangle({
+        x: 40,
+        y: empY - 35,
+        width: width - 80,
+        height: 35,
+        color: white,
+        borderColor: borderColor,
+        borderWidth: 1,
+      });
+      
+      // Employee name
+      currentPage.drawText(emp.employee_name, {
+        x: 50,
+        y: empY - 10,
+        size: 10,
+        font: fontBold,
+        color: textColor,
+      });
+      
+      // Employee number
+      currentPage.drawText(emp.employee_no, {
+        x: 50,
+        y: empY - 22,
+        size: 8,
+        font: font,
+        color: textColor,
+      });
+      
+      // Leave type
+      currentPage.drawText(emp.leave_type, {
+        x: 200,
+        y: empY - 10,
+        size: 10,
+        font: fontBold,
+        color: textColor,
+      });
+      
+      // Date range
+      const startDate = new Date(emp.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const endDate = new Date(emp.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      currentPage.drawText(`${startDate} to ${endDate}`, {
+        x: 200,
+        y: empY - 22,
+        size: 8,
+        font: font,
+        color: textColor,
+      });
+      
+      currentPageY -= 40;
+    });
+  }
   
   // Footer on last page
   const lastPage = currentPage;
