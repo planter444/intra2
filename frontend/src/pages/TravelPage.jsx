@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users, Eye } from 'lucide-react';
+import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users, Eye, Search, ArrowUpDown } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
@@ -18,31 +18,16 @@ const statusConfig = {
 };
 
 const canDecideTravel = (user, request, employeeApprovers) => {
-  // Prevent self-approval unless explicitly designated as own approver
-  if (String(request.userId) === String(user.id)) {
-    const designatedApproverId = employeeApprovers[request.userId];
-    if (!designatedApproverId || String(designatedApproverId) !== String(user.id)) {
-      return false; // Cannot approve own request unless designated as own approver
-    }
-  }
-  
-  // Check if user is the designated approver for this employee
+  // ONLY check employee-specific routing - this is the only approval strategy
   const designatedApproverId = employeeApprovers[request.userId];
-  if (designatedApproverId && String(designatedApproverId) === String(user.id)) {
-    return ['pending', 'rejected'].includes(request.status);
-  }
   
-  // Only allow role-based approval if NOT approving own request
-  if (['admin', 'ceo', 'finance'].includes(user.role)) {
-    return ['pending', 'rejected'].includes(request.status);
-  }
-  
-  // Supervisors can only approve if they are the designated approver
-  if (user.role === 'supervisor') {
+  // User must be the designated approver for this employee
+  if (!designatedApproverId || String(designatedApproverId) !== String(user.id)) {
     return false;
   }
   
-  return false;
+  // Can only approve pending or rejected requests
+  return ['pending', 'rejected'].includes(request.status);
 };
 
 const canDeleteTravel = (user, request) => {
@@ -55,10 +40,12 @@ export default function TravelPage() {
   const [requests, setRequests] = useState([]);
   const [employeeApprovers, setEmployeeApprovers] = useState({});
   const [loading, setLoading] = useState(true);
-  const [notice, setNotice] = useState({ open: false, title: '',
-description: '' });
+  const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [actionModal, setActionModal] = useState({ open: false, request: null, action: null });
   const [deleteModal, setDeleteModal] = useState({ open: false, request: null });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('date');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   const loadRequests = async () => {
     try {
@@ -161,6 +148,44 @@ description: '' });
       return String(request.userId) === String(user.id);
     }
     return true;
+  }).filter((request) => {
+    // Search filter
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        request.employeeName?.toLowerCase().includes(searchLower) ||
+        request.origin?.toLowerCase().includes(searchLower) ||
+        request.destination?.toLowerCase().includes(searchLower) ||
+        request.travelType?.toLowerCase().includes(searchLower) ||
+        request.status?.toLowerCase().includes(searchLower)
+      );
+    }
+    return true;
+  }).sort((a, b) => {
+    // Sorting logic
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case 'date':
+        comparison = new Date(a.createdAt) - new Date(b.createdAt);
+        break;
+      case 'employee':
+        comparison = (a.employeeName || '').localeCompare(b.employeeName || '');
+        break;
+      case 'destination':
+        comparison = (a.destination || '').localeCompare(b.destination || '');
+        break;
+      case 'status':
+        comparison = (a.status || '').localeCompare(b.status || '');
+        break;
+      case 'type':
+        comparison = (a.travelType || '').localeCompare(b.travelType || '');
+        break;
+      default:
+        comparison = 0;
+    }
+    
+    return sortOrder === 'asc' ? comparison : -comparison;
   });
 
   const teamRequests = requests.filter((request) => {
@@ -190,7 +215,43 @@ description: '' });
         ]}
       />
 
-      <SectionCard title="Travel requests" subtitle="All travel requests with their current status and details.">
+      <SectionCard 
+        title="Travel requests" 
+        subtitle="All travel requests with their current status and details."
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-64 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              />
+            </div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+            >
+              <option value="date">Sort by Date</option>
+              <option value="employee">Sort by Employee</option>
+              <option value="destination">Sort by Destination</option>
+              <option value="status">Sort by Status</option>
+              <option value="type">Sort by Type</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-slate-100"
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              <ArrowUpDown size={16} />
+            </button>
+          </div>
+        }
+      >
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="text-slate-400">Loading travel requests...</div>

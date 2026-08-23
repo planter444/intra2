@@ -437,7 +437,7 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Days taken
-    currentPage.drawText(String(emp.days_taken || 0).padEnd(5, '0').slice(0, 5), {
+    currentPage.drawText(String(emp.days_taken || 0), {
       x: 380,
       y: currentPageY - 8,
       size: 8,
@@ -446,7 +446,7 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Remaining
-    currentPage.drawText(String(emp.remaining_days || 0).padEnd(5, '0').slice(0, 5), {
+    currentPage.drawText(String(emp.remaining_days || 0), {
       x: 450,
       y: currentPageY - 8,
       size: 8,
@@ -455,7 +455,7 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Pending
-    currentPage.drawText(String(emp.pending || 0), {
+    currentPage.drawText(String(emp.pending_days || 0), {
       x: 510,
       y: currentPageY - 8,
       size: 8,
@@ -464,8 +464,8 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Status
-    const statusColor = emp.status === 'approved' ? emeraldColor : emp.status === 'pending' ? amberColor : rgb(0.94, 0.23, 0.23);
-    currentPage.drawText(emp.status || 'N/A', {
+    const statusColor = emp.current_status === 'approved' ? emeraldColor : emp.current_status && emp.current_status.includes('pending') ? amberColor : rgb(0.94, 0.23, 0.23);
+    currentPage.drawText(emp.current_status || 'N/A', {
       x: 560,
       y: currentPageY - 8,
       size: 8,

@@ -310,21 +310,12 @@ const decideTravelRequest = async (req, res, next) => {
       return res.status(400).json({ message: 'Only pending or rejected travel requests can be actioned.' });
     }
 
-    // Check if user is trying to approve their own request
-    if (String(request.userId) === String(req.user.id)) {
-      // Check if employee-specific routing allows self-approval
-      const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
-      if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
-        return res.status(403).json({ message: 'You cannot approve your own travel request unless you are designated as your own approver in employee-specific routing.' });
-      }
-    }
+    // ONLY check employee-specific routing - this is the only approval strategy
+    const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
     
-    // Additional check: ensure role-based approvers cannot approve their own requests
-    if (['admin', 'ceo', 'finance', 'supervisor'].includes(req.user.role) && String(request.userId) === String(req.user.id)) {
-      const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
-      if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
-        return res.status(403).json({ message: 'You cannot approve your own travel request unless you are designated as your own approver in employee-specific routing.' });
-      }
+    // User must be the designated approver for this employee
+    if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
+      return res.status(403).json({ message: 'You are not authorized to approve this travel request. Only the designated approver in employee-specific routing can approve.' });
     }
 
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';

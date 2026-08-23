@@ -213,7 +213,7 @@ export default function TravelSettingsPage() {
                 className="bg-slate-50"
               >
                 <option value="">Select approver</option>
-                {users.filter(u => ['supervisor', 'admin', 'ceo', 'finance'].includes(u.role)).map((u) => (
+                {users.map((u) => (
                   <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.role})</option>
                 ))}
               </select>
