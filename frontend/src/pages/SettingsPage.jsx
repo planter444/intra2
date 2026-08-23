@@ -801,7 +801,7 @@ export default function SettingsPage() {
         imageOpacity: Math.min(1, Math.max(0, Number(draft.interface?.backgrounds?.imageOpacity ?? 1)))
       },
       navigationActiveColor: String(draft.interface?.navigationActiveColor || '#fef08a').trim() || '#fef08a',
-      pageHeaderColors: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance'].map((k) => {
+      pageHeaderColors: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance','travel','leaveReport','payslips'].map((k) => {
         const v = (draft.interface?.pageHeaderColors || {})[k] || {};
         return [k, { title: String(v.title || '').trim(), subtitle: String(v.subtitle || '').trim() }];
       })),
@@ -1149,7 +1149,7 @@ export default function SettingsPage() {
 
           <SectionCard title="Page header colors per page" subtitle="Set distinct title and subtitle colors for each page header.">
             <div className="grid gap-4 md:grid-cols-2">
-              {(user?.role === 'finance' || user?.role === 'ceo' ? ['kpi','performance'] : ['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance']).map((page) => (
+              {(user?.role === 'finance' || user?.role === 'ceo' ? ['kpi','performance'] : ['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance','travel','leaveReport','payslips']).map((page) => (
                 <div key={page} className="rounded-2xl border border-slate-200 bg-white p-4">
                   <h4 className="text-sm font-semibold text-slate-900">{page[0].toUpperCase()+page.slice(1)}</h4>
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">

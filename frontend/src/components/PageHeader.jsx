@@ -1,4 +1,4 @@
-import { usePagePresentation } from '../hooks/usePagePresentation';
+import { usePagePresentation, resolvePagePresentationKey } from '../hooks/usePagePresentation';
 import { useAuth } from '../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 
@@ -6,19 +6,7 @@ export default function PageHeader({ title, subtitle, actions, animationOrder = 
   const { animationStyle } = usePagePresentation({ animationOrder });
   const { settings } = useAuth();
   const location = useLocation();
-  const path = location?.pathname || '';
-  const pageKey = (
-    path.startsWith('/employees') ? 'employees'
-    : path.startsWith('/profile') ? 'profile'
-    : path.startsWith('/documents') ? 'documents'
-    : path.startsWith('/leaves') ? 'leave'
-    : path.startsWith('/leave-status') ? 'leave'
-    : path.startsWith('/kpi-matrix') ? 'kpi'
-    : path.startsWith('/performance-dashboard') ? 'performance'
-    : path.startsWith('/settings') ? 'settings'
-    : path.startsWith('/audit-logs') ? 'audit'
-    : 'dashboard'
-  );
+  const pageKey = resolvePagePresentationKey(location?.pathname || '');
   const perPage = settings?.interface?.pageHeaderColors || {};
   const titleColor = perPage?.[pageKey]?.title || '';
   const subtitleColor = perPage?.[pageKey]?.subtitle || '';
