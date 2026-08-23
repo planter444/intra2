@@ -5,31 +5,31 @@ const { PDFDocument, rgb, StandardFonts } = require('pdf-lib');
 const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
 
 const buildLeaveReportPdf = async (payload) => {
-  const statistics = payload.statistics || {};
-  const leaveByType = payload.leaveByType || [];
-  const leaveByDepartment = payload.leaveByDepartment || [];
-  const employeeLeaveInfo = payload.employeeLeaveInfo || [];
-  const employeesOnLeave = payload.employeesOnLeave || [];
-  
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([612, 792]);
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  
-  const { width, height } = page.getSize();
-  
-  // Professional color scheme matching web page
-  const primaryColor = rgb(0.13, 0.35, 0.18);
-  const accentColor = rgb(0.45, 0.75, 0.55);
-  const lightAccent = rgb(0.85, 0.95, 0.9);
-  const textColor = rgb(0.15, 0.2, 0.3);
-  const borderColor = rgb(0.75, 0.75, 0.8);
-  const white = rgb(1, 1, 1);
-  const blueColor = rgb(0.22, 0.52, 0.96);
-  const emeraldColor = rgb(0.05, 0.64, 0.31);
-  const amberColor = rgb(0.92, 0.6, 0.0);
-  const purpleColor = rgb(0.55, 0.15, 0.82);
-  const bgColor = rgb(0.97, 0.98, 0.99);
+  try {
+    const statistics = payload.statistics || {};
+    const leaveByType = payload.leaveByType || [];
+    const leaveByDepartment = payload.leaveByDepartment || [];
+    const employeeLeaveInfo = payload.employeeLeaveInfo || [];
+    const employeesOnLeave = payload.employeesOnLeave || [];
+
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([612, 792]);
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    const { width, height } = page.getSize();
+
+    const textColor = rgb(0.15, 0.2, 0.3);
+    const borderColor = rgb(0.75, 0.75, 0.8);
+    const white = rgb(1, 1, 1);
+    const blueColor = rgb(0.22, 0.52, 0.96);
+    const emeraldColor = rgb(0.05, 0.64, 0.31);
+    const amberColor = rgb(0.92, 0.6, 0.0);
+    const purpleColor = rgb(0.55, 0.15, 0.82);
+    const bgColor = rgb(0.97, 0.98, 0.99);
+    const primaryColor = rgb(0.13, 0.35, 0.18);
+    const accentColor = rgb(0.45, 0.75, 0.55);
+    const lightAccent = rgb(0.85, 0.95, 0.9);
   
   // Header section
   page.drawRectangle({
@@ -173,13 +173,14 @@ const buildLeaveReportPdf = async (payload) => {
   y -= 25;
   
   // Leave type bars
-  const maxTypeDays = Math.max(...leaveByType.map(d => d.days_taken), 1);
+  const maxTypeDays = Math.max(...leaveByType.map(t => t.days_taken || 0), 1);
   leaveByType.forEach((item, index) => {
-    const barWidth = ((item.days_taken / maxTypeDays) * (width - 200));
+    const daysTaken = item.days_taken || 0;
+    const barWidth = ((daysTaken / maxTypeDays) * (width - 200));
     const barY = y - 20 - (index * 25);
     
     // Label
-    page.drawText(`${item.leave_type}`, {
+    page.drawText(`${item.leave_type || 'N/A'}`, {
       x: 50,
       y: barY + 8,
       size: 10,
@@ -206,7 +207,7 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Value
-    page.drawText(`${item.days_taken.toFixed(2)} days`, {
+    page.drawText(`${daysTaken.toFixed(2)} days`, {
       x: width - 80,
       y: barY + 3,
       size: 10,
@@ -237,13 +238,14 @@ const buildLeaveReportPdf = async (payload) => {
   y -= 25;
   
   // Department bars
-  const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken), 1);
+  const maxDeptDays = Math.max(...leaveByDepartment.map(d => d.days_taken || 0), 1);
   leaveByDepartment.forEach((item, index) => {
-    const barWidth = ((item.days_taken / maxDeptDays) * (width - 200));
+    const daysTaken = item.days_taken || 0;
+    const barWidth = ((daysTaken / maxDeptDays) * (width - 200));
     const barY = y - 20 - (index * 25);
     
     // Label
-    page.drawText(`${item.department}`, {
+    page.drawText(`${item.department || 'N/A'}`, {
       x: 50,
       y: barY + 8,
       size: 10,
@@ -270,7 +272,7 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Value
-    page.drawText(`${item.days_taken.toFixed(2)} days`, {
+    page.drawText(`${daysTaken.toFixed(2)} days`, {
       x: width - 80,
       y: barY + 3,
       size: 10,
@@ -616,6 +618,10 @@ const buildLeaveReportPdf = async (payload) => {
   
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);
+  } catch (error) {
+    console.error('PDF build error:', error);
+    throw new Error(`Failed to build PDF: ${error.message}`);
+  }
 };
 
 const getLeaveReportData = async (req, res, next) => {
@@ -1025,6 +1031,8 @@ const exportLeaveReportPdf = async (req, res, next) => {
     };
     
     console.log('Payload created, generating PDF...');
+    console.log('Employee leave info count:', employeeLeaveResult.rows.length);
+    console.log('Employees on leave count:', onLeaveResult.rows.length);
     
     try {
       const pdfBuffer = await buildLeaveReportPdf(payload);
@@ -1034,7 +1042,8 @@ const exportLeaveReportPdf = async (req, res, next) => {
       res.send(pdfBuffer);
     } catch (pdfError) {
       console.error('PDF generation error:', pdfError);
-      return res.status(500).json({ message: 'Failed to generate PDF', error: pdfError.message });
+      console.error('Error stack:', pdfError.stack);
+      return res.status(500).json({ message: 'Failed to generate PDF', error: pdfError.message, stack: pdfError.stack });
     }
     
     await logAction({
