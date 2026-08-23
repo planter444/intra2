@@ -195,8 +195,9 @@ const buildPayslipValues = ({ employee, profile, period }) => {
   const totalEarnings = (profile.grossSalary || 0) + (profile.allowances || 0) + (profile.bonuses || 0)
     + (profile.overtime || 0) + (profile.gratuity || 0);
   const preTaxDeductions = (profile.nssf || 0) + (profile.shif || 0) + (profile.housingLevy || 0) + (profile.pension || 0);
+  const customDeductionsTotal = (profile.customDeductions || []).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
   const taxablePay = totalEarnings - preTaxDeductions;
-  const totalDeductions = (profile.paye || 0) + preTaxDeductions + (profile.otherDeductions || 0);
+  const totalDeductions = (profile.paye || 0) + preTaxDeductions + (profile.otherDeductions || 0) + customDeductionsTotal;
   const netPay = totalEarnings - totalDeductions;
 
   const periodDate = new Date(`${period}-01T00:00:00`);
@@ -252,6 +253,12 @@ const buildPayslipValues = ({ employee, profile, period }) => {
   (profile.otherContributions || []).slice(0, 5).forEach((entry, index) => {
     values[`contribution${index + 1}Label`] = entry.label || '';
     values[`contribution${index + 1}Amount`] = formatAmount(entry.amount);
+  });
+
+  // Add custom deductions to values
+  (profile.customDeductions || []).slice(0, 5).forEach((deduction, index) => {
+    values[`customDeduction${index + 1}Label`] = deduction.label || '';
+    values[`customDeduction${index + 1}Amount`] = formatAmount(deduction.amount);
   });
 
   return values;

@@ -472,9 +472,17 @@ export default function LeaveReportPage() {
 
                     reportData.employeeLeaveSummary.forEach((emp) => {
                       const empId = emp.employee_id;
+                      const empGender = emp.gender?.toLowerCase() || '';
+                      const leaveType = emp.leave_type?.toLowerCase() || '';
+                      
+                      // Skip gender-inappropriate leave types
+                      if (empGender === 'male' && leaveType.includes('maternity')) return;
+                      if (empGender === 'female' && leaveType.includes('paternity')) return;
+
                       if (!employeeMap.has(empId)) {
                         employeeMap.set(empId, {
                           name: emp.employee_name,
+                          gender: emp.gender,
                           department: emp.department,
                           leaveTypes: {},
                           totalEntitlement: 0,
@@ -506,6 +514,17 @@ export default function LeaveReportPage() {
                           <td className="px-4 py-3 font-medium text-slate-900">{emp.name.substring(0, 15)}</td>
                           <td className="px-4 py-3 text-slate-600">{emp.department.substring(0, 10)}</td>
                           {leaveTypes.map(lt => {
+                            const empGender = emp.gender?.toLowerCase() || '';
+                            const leaveTypeLower = lt.toLowerCase();
+                            
+                            // Show dash for gender-inappropriate leave types
+                            if (empGender === 'male' && leaveTypeLower.includes('maternity')) {
+                              return <td key={lt} className="px-4 py-3 text-center text-slate-400">—</td>;
+                            }
+                            if (empGender === 'female' && leaveTypeLower.includes('paternity')) {
+                              return <td key={lt} className="px-4 py-3 text-center text-slate-400">—</td>;
+                            }
+                            
                             const ltData = emp.leaveTypes[lt];
                             if (ltData) {
                               const taken = Math.round(ltData.taken);

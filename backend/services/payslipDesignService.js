@@ -195,6 +195,13 @@ const generateSystemPayslip = async ({ employee, profile, period, values, header
     notDash(values.housingLevy) && { label: 'Housing Levy', amount: values.housingLevy },
     notDash(values.pension) && { label: 'Pension', amount: values.pension },
     notDash(values.otherDeductions) && { label: 'Other Deductions', amount: values.otherDeductions },
+    // Add custom deductions
+    ...(profile.customDeductions || []).map((d) => ({
+      label: d.label || 'Custom Deduction',
+      amount: Number(d.amount)
+        ? Number(d.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : DASH
+    })),
     { label: 'Total Deductions', amount: values.totalDeductions, kind: 'total' }
   ].filter(Boolean);
 

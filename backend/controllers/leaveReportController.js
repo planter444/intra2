@@ -253,68 +253,162 @@ const buildLeaveReportPdf = async (payload) => {
 
     // Leave by Department - progress bars
     if (leaveByDepartment && leaveByDepartment.length > 0) {
-      page.drawText('Leave by Department', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-        color: primaryColor,
-      });
+      // Check if there's enough space on page 1, otherwise move to page 2
+      const spaceNeeded = 25 + (leaveByDepartment.length * 32) + 20; // Title + each item + spacing
+      if (y - spaceNeeded < 70) {
+        // Not enough space, move to page 2
+        page.drawText('KEREA HRMS - Confidential Document', {
+          x: 50,
+          y: 50,
+          size: 10,
+          font: font,
+          color: primaryColor,
+        });
 
-      y -= 25;
+        const page2 = pdfDoc.addPage([612, 792]);
+        let y2 = height - 50;
 
-      const maxDays = Math.max(...leaveByDepartment.map(d => parseFloat(d.days_taken) || 0), 1);
+        page2.drawText('LEAVE REPORT', {
+          x: 50,
+          y: y2,
+          size: 24,
+          font: fontBold,
+          color: primaryColor,
+        });
 
-      leaveByDepartment.forEach((item) => {
-        const department = item.department || 'N/A';
-        const daysTaken = Math.round(parseFloat(item.days_taken) || 0);
-        const barWidth = ((daysTaken / maxDays) * (width - 200));
+        page2.drawText('KEREA', {
+          x: 50,
+          y: y2 - 20,
+          size: 14,
+          font: font,
+          color: primaryColor,
+        });
 
-        // Label
-        page.drawText(department, {
+        y2 -= 60;
+
+        page2.drawText('Leave by Department', {
+          x: 50,
+          y: y2,
+          size: 16,
+          font: fontBold,
+          color: primaryColor,
+        });
+
+        y2 -= 25;
+
+        const maxDays = Math.max(...leaveByDepartment.map(d => parseFloat(d.days_taken) || 0), 1);
+
+        leaveByDepartment.forEach((item) => {
+          const department = item.department || 'N/A';
+          const daysTaken = Math.round(parseFloat(item.days_taken) || 0);
+          const barWidth = ((daysTaken / maxDays) * (width - 200));
+
+          page2.drawText(department, {
+            x: 50,
+            y: y2,
+            size: 10,
+            font: fontBold,
+            color: textColor,
+          });
+
+          y2 -= 12;
+
+          page2.drawRectangle({
+            x: 50,
+            y: y2 - 8,
+            width: width - 100,
+            height: 8,
+            color: lightGray,
+          });
+
+          page2.drawRectangle({
+            x: 50,
+            y: y2 - 8,
+            width: barWidth,
+            height: 8,
+            color: blueColor,
+          });
+
+          page2.drawText(`${daysTaken} days`, {
+            x: width - 80,
+            y: y2 + 5,
+            size: 10,
+            font: fontBold,
+            color: textColor,
+          });
+
+          y2 -= 20;
+        });
+
+        y2 -= 20;
+
+        page2.drawText('KEREA HRMS - Confidential Document', {
+          x: 50,
+          y: 50,
+          size: 10,
+          font: font,
+          color: primaryColor,
+        });
+      } else {
+        // Draw on page 1
+        page.drawText('Leave by Department', {
           x: 50,
           y: y,
-          size: 10,
+          size: 16,
           font: fontBold,
-          color: textColor,
+          color: primaryColor,
         });
 
-        y -= 12;
+        y -= 25;
 
-        // Background bar
-        page.drawRectangle({
-          x: 50,
-          y: y - 8,
-          width: width - 100,
-          height: 8,
-          color: lightGray,
-        });
+        const maxDays = Math.max(...leaveByDepartment.map(d => parseFloat(d.days_taken) || 0), 1);
 
-        // Progress bar
-        page.drawRectangle({
-          x: 50,
-          y: y - 8,
-          width: barWidth,
-          height: 8,
-          color: blueColor,
-        });
+        leaveByDepartment.forEach((item) => {
+          const department = item.department || 'N/A';
+          const daysTaken = Math.round(parseFloat(item.days_taken) || 0);
+          const barWidth = ((daysTaken / maxDays) * (width - 200));
 
-        // Value
-        page.drawText(`${daysTaken} days`, {
-          x: width - 80,
-          y: y + 5,
-          size: 10,
-          font: fontBold,
-          color: textColor,
+          page.drawText(department, {
+            x: 50,
+            y: y,
+            size: 10,
+            font: fontBold,
+            color: textColor,
+          });
+
+          y -= 12;
+
+          page.drawRectangle({
+            x: 50,
+            y: y - 8,
+            width: width - 100,
+            height: 8,
+            color: lightGray,
+          });
+
+          page.drawRectangle({
+            x: 50,
+            y: y - 8,
+            width: barWidth,
+            height: 8,
+            color: blueColor,
+          });
+
+          page.drawText(`${daysTaken} days`, {
+            x: width - 80,
+            y: y + 5,
+            size: 10,
+            font: fontBold,
+            color: textColor,
+          });
+
+          y -= 20;
         });
 
         y -= 20;
-      });
-
-      y -= 20;
+      }
     }
 
-    // Employee Leave Information - table (moved to page 2)
     // Footer for page 1
     page.drawText('KEREA HRMS - Confidential Document', {
       x: 50,
@@ -446,8 +540,15 @@ const buildLeaveReportPdf = async (payload) => {
     employeeLeaveSummary.forEach((emp) => {
       const empId = emp.employee_id;
       const empName = emp.employee_name || 'N/A';
+      const empGender = emp.gender?.toLowerCase() || '';
       const department = emp.department || 'N/A';
       const leaveType = emp.leave_type || 'N/A';
+      const leaveTypeLower = leaveType.toLowerCase();
+      
+      // Skip gender-inappropriate leave types
+      if (empGender === 'male' && leaveTypeLower.includes('maternity')) return;
+      if (empGender === 'female' && leaveTypeLower.includes('paternity')) return;
+
       const entitlement = parseFloat(emp.leave_entitlement) || 0;
       const daysTaken = parseFloat(emp.days_taken) || 0;
 
@@ -456,6 +557,7 @@ const buildLeaveReportPdf = async (payload) => {
       if (!employeeMap.has(empId)) {
         employeeMap.set(empId, {
           name: empName,
+          gender: emp.gender,
           department: department,
           leaveTypes: {},
           totalEntitlement: 0,
@@ -519,14 +621,24 @@ const buildLeaveReportPdf = async (payload) => {
       rowX += colWidths.department;
 
       leaveTypesArray.forEach((lt) => {
-        const ltData = emp.leaveTypes[lt];
-        if (ltData) {
-          const taken = Math.round(ltData.taken);
-          const entitlement = Math.round(ltData.entitlement);
-          const label = `${taken}/${entitlement}`;
-          page3.drawText(label, { x: rowX, y: y3, size: 7, font: font, color: textColor });
+        const empGender = emp.gender?.toLowerCase() || '';
+        const leaveTypeLower = lt.toLowerCase();
+        
+        // Show dash for gender-inappropriate leave types
+        if (empGender === 'male' && leaveTypeLower.includes('maternity')) {
+          page3.drawText('—', { x: rowX, y: y3, size: 7, font: font, color: textColor });
+        } else if (empGender === 'female' && leaveTypeLower.includes('paternity')) {
+          page3.drawText('—', { x: rowX, y: y3, size: 7, font: font, color: textColor });
         } else {
-          page3.drawText('-', { x: rowX, y: y3, size: 7, font: font, color: textColor });
+          const ltData = emp.leaveTypes[lt];
+          if (ltData) {
+            const taken = Math.round(ltData.taken);
+            const entitlement = Math.round(ltData.entitlement);
+            const label = `${taken}/${entitlement}`;
+            page3.drawText(label, { x: rowX, y: y3, size: 7, font: font, color: textColor });
+          } else {
+            page3.drawText('-', { x: rowX, y: y3, size: 7, font: font, color: textColor });
+          }
         }
         rowX += colWidths.leaveType;
       });
@@ -776,6 +888,7 @@ const getLeaveReportData = async (req, res, next) => {
         SELECT
           u.id as employee_id,
           CONCAT(u.first_name, ' ', u.last_name) as employee_name,
+          u.gender,
           COALESCE(d.name, 'Unassigned') as department,
           lt.label as leave_type,
           COALESCE(lt.default_days, 0) as leave_entitlement,
@@ -786,7 +899,7 @@ const getLeaveReportData = async (req, res, next) => {
         LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
         LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id AND lr.status = 'approved'
         WHERE u.is_deleted = FALSE
-        GROUP BY u.id, u.first_name, u.last_name, d.name, lt.label, lt.default_days
+        GROUP BY u.id, u.first_name, u.last_name, u.gender, d.name, lt.label, lt.default_days
         ORDER BY u.last_name, u.first_name
       `,
       []
@@ -1045,6 +1158,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
           SELECT
             u.id as employee_id,
             CONCAT(u.first_name, ' ', u.last_name) as employee_name,
+            u.gender,
             COALESCE(d.name, 'Unassigned') as department,
             lt.label as leave_type,
             COALESCE(lt.default_days, 0) as leave_entitlement,
@@ -1055,7 +1169,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
           LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
           LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id AND lr.status = 'approved'
           WHERE u.is_deleted = FALSE
-          GROUP BY u.id, u.first_name, u.last_name, d.name, lt.label, lt.default_days
+          GROUP BY u.id, u.first_name, u.last_name, u.gender, d.name, lt.label, lt.default_days
           ORDER BY u.last_name, u.first_name
         `,
         []
