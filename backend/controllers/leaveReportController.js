@@ -19,101 +19,97 @@ const buildLeaveReportPdf = async (payload) => {
 
     const { width, height } = page.getSize();
 
-    const textColor = rgb(0.15, 0.2, 0.3);
-    const primaryColor = rgb(0.13, 0.35, 0.18);
-    const lightAccent = rgb(0.85, 0.95, 0.9);
-    const white = rgb(1, 1, 1);
-
     // Header
-    page.drawRectangle({
-      x: 0,
-      y: height - 60,
-      width: width,
-      height: 60,
-      color: primaryColor,
-    });
-
     page.drawText('LEAVE REPORT', {
       x: 50,
-      y: height - 25,
-      size: 22,
+      y: height - 50,
+      size: 24,
       font: fontBold,
-      color: white,
     });
 
     page.drawText('KEREA', {
       x: 50,
-      y: height - 45,
+      y: height - 70,
       size: 14,
       font: font,
-      color: lightAccent,
     });
 
-    page.drawText(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, {
-      x: width - 200,
-      y: height - 35,
+    page.drawText(`Generated: ${new Date().toLocaleDateString()}`, {
+      x: 50,
+      y: height - 90,
       size: 10,
       font: font,
-      color: lightAccent,
     });
 
-    let y = height - 90;
+    let y = height - 120;
 
     // Summary Statistics
     page.drawText('Summary Statistics', {
       x: 50,
       y: y,
-      size: 14,
+      size: 16,
       font: fontBold,
-      color: primaryColor,
     });
 
     y -= 25;
 
-    const stats = [
-      `Total Employees: ${statistics.totalEmployees || 0}`,
-      `Approved Leaves: ${statistics.approvedLeaves || 0}`,
-      `Pending Leaves: ${statistics.pendingLeaves || 0}`,
-      `Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`
-    ];
-
-    stats.forEach((stat, index) => {
-      page.drawText(stat, {
-        x: 50,
-        y: y - (index * 20),
-        size: 10,
-        font: font,
-        color: textColor,
-      });
+    page.drawText(`Total Employees: ${statistics.totalEmployees || 0}`, {
+      x: 50,
+      y: y,
+      size: 12,
+      font: font,
     });
 
-    y -= stats.length * 20 + 30;
+    y -= 20;
+    page.drawText(`Approved Leaves: ${statistics.approvedLeaves || 0}`, {
+      x: 50,
+      y: y,
+      size: 12,
+      font: font,
+    });
+
+    y -= 20;
+    page.drawText(`Pending Leaves: ${statistics.pendingLeaves || 0}`, {
+      x: 50,
+      y: y,
+      size: 12,
+      font: font,
+    });
+
+    y -= 20;
+    page.drawText(`Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`, {
+      x: 50,
+      y: y,
+      size: 12,
+      font: font,
+    });
+
+    y -= 40;
 
     // Leave by Type
     if (leaveByType && leaveByType.length > 0) {
       page.drawText('Leave by Type', {
         x: 50,
         y: y,
-        size: 14,
+        size: 16,
         font: fontBold,
-        color: primaryColor,
       });
 
       y -= 25;
 
-      leaveByType.forEach((item, index) => {
+      leaveByType.forEach((item) => {
         const leaveType = item.leave_type || 'N/A';
         const daysTaken = item.days_taken || 0;
         page.drawText(`${leaveType}: ${daysTaken.toFixed(2)} days`, {
           x: 50,
-          y: y - (index * 15),
-          size: 10,
+          y: y,
+          size: 12,
           font: font,
-          color: textColor,
         });
+        y -= 18;
       });
 
-      y -= leaveByType.length * 15 + 30;
+      y -= 20;
     }
 
     // Leave by Department
@@ -121,120 +117,60 @@ const buildLeaveReportPdf = async (payload) => {
       page.drawText('Leave by Department', {
         x: 50,
         y: y,
-        size: 14,
+        size: 16,
         font: fontBold,
-        color: primaryColor,
       });
 
       y -= 25;
 
-      leaveByDepartment.forEach((item, index) => {
+      leaveByDepartment.forEach((item) => {
         const department = item.department || 'N/A';
         const daysTaken = item.days_taken || 0;
         page.drawText(`${department}: ${daysTaken.toFixed(2)} days`, {
           x: 50,
-          y: y - (index * 15),
-          size: 10,
+          y: y,
+          size: 12,
           font: font,
-          color: textColor,
         });
+        y -= 18;
       });
 
-      y -= leaveByDepartment.length * 15 + 30;
+      y -= 20;
     }
 
-    // Employee Leave Information
+    // Employee Leave Information (simplified - first 20 only)
     if (employeeLeaveInfo && employeeLeaveInfo.length > 0) {
-      page.drawText('Employee Leave Information', {
+      page.drawText('Employee Leave Information (First 20)', {
         x: 50,
         y: y,
-        size: 14,
+        size: 16,
         font: fontBold,
-        color: primaryColor,
       });
 
       y -= 25;
 
-      // Table header
-      page.drawText('Employee', { x: 50, y: y, size: 9, font: fontBold, color: textColor });
-      page.drawText('Department', { x: 150, y: y, size: 9, font: fontBold, color: textColor });
-      page.drawText('Leave Type', { x: 230, y: y, size: 9, font: fontBold, color: textColor });
-      page.drawText('Days Taken', { x: 320, y: y, size: 9, font: fontBold, color: textColor });
-      page.drawText('Remaining', { x: 390, y: y, size: 9, font: fontBold, color: textColor });
-      page.drawText('Status', { x: 460, y: y, size: 9, font: fontBold, color: textColor });
-
-      y -= 15;
-
-      employeeLeaveInfo.forEach((emp, index) => {
+      employeeLeaveInfo.slice(0, 20).forEach((emp) => {
         const empName = emp.employee_name || 'N/A';
-        const department = emp.department || 'N/A';
         const leaveType = emp.leave_type || 'N/A';
         const daysTaken = emp.days_taken || 0;
-        const remaining = emp.remaining_days || 0;
         const status = emp.current_status || 'N/A';
 
-        page.drawText(empName.substring(0, 20), { x: 50, y: y - (index * 12), size: 8, font: font, color: textColor });
-        page.drawText(department.substring(0, 15), { x: 150, y: y - (index * 12), size: 8, font: font, color: textColor });
-        page.drawText(leaveType.substring(0, 15), { x: 230, y: y - (index * 12), size: 8, font: font, color: textColor });
-        page.drawText(String(daysTaken), { x: 320, y: y - (index * 12), size: 8, font: font, color: textColor });
-        page.drawText(String(remaining), { x: 390, y: y - (index * 12), size: 8, font: font, color: textColor });
-        page.drawText(status, { x: 460, y: y - (index * 12), size: 8, font: font, color: textColor });
-      });
-
-      y -= employeeLeaveInfo.length * 12 + 30;
-    }
-
-    // Employees Currently on Leave
-    if (employeesOnLeave && employeesOnLeave.length > 0) {
-      page.drawText('Employees Currently on Leave', {
-        x: 50,
-        y: y,
-        size: 14,
-        font: fontBold,
-        color: primaryColor,
-      });
-
-      y -= 25;
-
-      employeesOnLeave.forEach((emp, index) => {
-        const empName = emp.employee_name || 'N/A';
-        const leaveType = emp.leave_type || 'N/A';
-        const startDate = emp.start_date ? new Date(emp.start_date).toLocaleDateString() : 'N/A';
-        const endDate = emp.end_date ? new Date(emp.end_date).toLocaleDateString() : 'N/A';
-
-        page.drawText(`${empName} - ${leaveType} (${startDate} to ${endDate})`, {
+        page.drawText(`${empName} - ${leaveType} - ${daysTaken} days - ${status}`, {
           x: 50,
-          y: y - (index * 12),
-          size: 9,
+          y: y,
+          size: 10,
           font: font,
-          color: textColor,
         });
+        y -= 14;
       });
     }
 
     // Footer
-    page.drawRectangle({
-      x: 0,
-      y: 0,
-      width: width,
-      height: 30,
-      color: primaryColor,
-    });
-
-    page.drawText('KEREA HRMS - Leave Report', {
+    page.drawText('KEREA HRMS - Confidential Document', {
       x: 50,
-      y: 12,
-      size: 9,
+      y: 30,
+      size: 10,
       font: font,
-      color: white,
-    });
-
-    page.drawText('Confidential Document', {
-      x: width - 140,
-      y: 12,
-      size: 9,
-      font: font,
-      color: lightAccent,
     });
 
     const pdfBytes = await pdfDoc.save();

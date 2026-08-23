@@ -241,7 +241,7 @@ export default function TravelPage() {
         actions={null}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full mb-4">
-          <div className="relative w-full sm:w-48">
+          <div className="relative w-full sm:w-48 flex-shrink-0">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
@@ -251,13 +251,13 @@ export default function TravelPage() {
               className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
             />
           </div>
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-0">
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
               <User size={16} className="text-slate-400 flex-shrink-0" />
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none"
               >
                 <option value="">All Employees</option>
                 {users.map((u) => (
@@ -268,7 +268,7 @@ export default function TravelPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="flex-1 sm:flex-none min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none"
             >
               <option value="date">Sort by Date</option>
               <option value="employee">Sort by Employee</option>
@@ -323,12 +323,12 @@ export default function TravelPage() {
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-3 text-xs sm:text-sm text-slate-600">
                         <span className="flex items-center gap-1.5">
-                          <Calendar size={12} className="sm:size-14" />
+                          <Calendar size={10} className="sm:size-12" />
                           {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
                         </span>
                         {request.estimatedCost && (
                           <span className="flex items-center gap-1.5">
-                            <DollarSign size={12} className="sm:size-14" />
+                            <DollarSign size={10} className="sm:size-12" />
                             {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
                           </span>
                         )}
