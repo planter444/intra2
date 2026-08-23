@@ -701,11 +701,10 @@ const getLeaveReportData = async (req, res, next) => {
         FROM leave_types lt
         LEFT JOIN leave_requests lr ON lr.leave_type_id = lt.id
         LEFT JOIN users u ON u.id = lr.user_id
-        ${whereClause}
         GROUP BY lt.id, lt.label
         ORDER BY days_taken DESC
       `,
-      params
+      []
     );
     
     // Get leave utilization by department
@@ -718,11 +717,10 @@ const getLeaveReportData = async (req, res, next) => {
         FROM departments d
         LEFT JOIN users u ON u.department_id = d.id
         LEFT JOIN leave_requests lr ON lr.user_id = u.id
-        ${whereClause}
         GROUP BY d.id, d.name
         ORDER BY days_taken DESC
       `,
-      params
+      []
     );
     
     // Get monthly leave trends
@@ -762,11 +760,10 @@ const getLeaveReportData = async (req, res, next) => {
         LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
         LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id
         WHERE u.is_deleted = FALSE
-        ${conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : ''}
         GROUP BY u.id, u.first_name, u.last_name, u.employee_no, d.name, lt.label, lt.default_days, lb.balance_days
         ORDER BY u.last_name, u.first_name
       `,
-      params
+      []
     );
     
     // Get employees currently on leave
