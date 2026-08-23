@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-primary: #166534;
+  --brand-secondary: #22c55e;
+  --brand-accent: #86efac;
+  --brand-gradient-from: #14532d;
+  --brand-gradient-to: #22c55e;
+  --surface-page: #f4fbf6;
+  --surface-card: #ffffff;
+  --text-primary: #0f172a;
+}
+
+/* Deployed no-gap layout attempt: force the browser shell to fill the viewport edge-to-edge. */
+html,
+body,
+#root {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100%;
+  min-height: 100%;
+}
+
+html {
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--surface-page);
+  color: var(--text-primary);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+/* Deployed no-gap layout attempt: keep the React root stretched across the viewport width. */
+#root {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Mobile fixed background layer: sized to the LARGEST possible viewport (100lvh) instead of
+   the dynamic viewport (which shrinks/grows as the mobile browser's address bar shows/hides
+   at the top/bottom scroll boundaries). This keeps background-size: cover from recalculating
+   and visually "zooming" during that browser-chrome transition. Falls back to 100vh on
+   browsers without lvh support. */
+.app-mobile-bg-fixed {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100lvh;
+}
+
+@media (min-width: 768px) {
+  .app-layout-desktop-offset {
+    padding-left: 18rem;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  @apply w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200;
+}
+
+button {
+  @apply transition;
+}
+
+/* Hide number input spin buttons (up/down arrows) everywhere so typing over a
+   pre-filled 0 (e.g. payslip amount fields) doesn't accidentally increment/decrement it. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(22, 101, 52, 0.25);
+  border-radius: 999px;
+}

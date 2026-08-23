@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: kerea-hrms-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 12h
+      - key: CEO_SEED_EMAIL
+        value: ceo@kerea.org
+      - key: CEO_SEED_PASSWORD
+        sync: false
+      - key: MEDIA_STORAGE
+        value: cloudinary
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: kerea-hrms
+      - key: FILES_ROOT
+        value: uploads/private
+      - key: MAX_FILE_SIZE_MB
+        value: 10

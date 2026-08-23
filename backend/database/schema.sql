@@ -1,0 +1,422 @@
+CREATE TABLE IF NOT EXISTS departments (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(120) UNIQUE NOT NULL,
+  description TEXT,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS users (
+  id BIGSERIAL PRIMARY KEY,
+  employee_no VARCHAR(50),
+  first_name VARCHAR(120) NOT NULL,
+  last_name VARCHAR(120) NOT NULL,
+  email VARCHAR(180) NOT NULL,
+  phone VARCHAR(40),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('employee', 'supervisor', 'admin', 'ceo', 'finance')),
+  role_title VARCHAR(120),
+  gender VARCHAR(20) CHECK (gender IN ('male', 'female', 'other')),
+  department_id BIGINT REFERENCES departments(id) ON DELETE SET NULL,
+  joined_at DATE,
+  position_title VARCHAR(120),
+  password_hash TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
+  deleted_at TIMESTAMPTZ,
+  last_login_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+  id BIGSERIAL PRIMARY KEY,
+  scope VARCHAR(50) UNIQUE NOT NULL DEFAULT 'global',
+  payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS leave_types (
+  id BIGSERIAL PRIMARY KEY,
+  code VARCHAR(50) UNIQUE NOT NULL,
+  label VARCHAR(100) NOT NULL,
+  default_days INTEGER NOT NULL DEFAULT 0,
+  requires_ceo_approval BOOLEAN NOT NULL DEFAULT FALSE,
+  is_paid BOOLEAN NOT NULL DEFAULT TRUE,
+  requires_document BOOLEAN NOT NULL DEFAULT FALSE,
+  can_carry_forward BOOLEAN NOT NULL DEFAULT FALSE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS leave_balances (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  leave_type_id BIGINT NOT NULL REFERENCES leave_types(id) ON DELETE CASCADE,
+  balance_days NUMERIC(8,2) NOT NULL DEFAULT 0,
+  used_days NUMERIC(8,2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, leave_type_id)
+);
+
+CREATE TABLE IF NOT EXISTS leave_requests (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  leave_type_id BIGINT NOT NULL REFERENCES leave_types(id) ON DELETE RESTRICT,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  days_requested NUMERIC(8,2) NOT NULL,
+  reason TEXT,
+  supporting_document_name VARCHAR(255),
+  supporting_document_stored_name VARCHAR(255),
+  supporting_document_mime_type VARCHAR(120),
+  supporting_document_size BIGINT,
+  supporting_document_path TEXT,
+  status VARCHAR(20) NOT NULL DEFAULT 'pending_hr' CHECK (status IN ('pending_supervisor', 'pending_hr', 'pending_ceo', 'approved', 'rejected', 'cancelled')),
+  requires_supervisor_review BOOLEAN NOT NULL DEFAULT FALSE,
+  supervisor_approver_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  hr_approver_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  ceo_approver_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  supervisor_comment TEXT,
+  hr_comment TEXT,
+  ceo_comment TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  uploaded_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  folder_type VARCHAR(30) NOT NULL CHECK (CHAR_LENGTH(TRIM(folder_type)) > 0),
+  file_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT NOT NULL,
+  storage_path TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS payroll_profiles (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  id_number VARCHAR(50),
+  kra_pin VARCHAR(50),
+  nssf_number VARCHAR(50),
+  shif_number VARCHAR(50),
+  payment_mode VARCHAR(80) DEFAULT 'Bank Transfer',
+  gross_salary NUMERIC(14,2) NOT NULL DEFAULT 0,
+  allowances NUMERIC(14,2) NOT NULL DEFAULT 0,
+  bonuses NUMERIC(14,2) NOT NULL DEFAULT 0,
+  overtime NUMERIC(14,2) NOT NULL DEFAULT 0,
+  gratuity NUMERIC(14,2) NOT NULL DEFAULT 0,
+  paye NUMERIC(14,2) NOT NULL DEFAULT 0,
+  nssf NUMERIC(14,2) NOT NULL DEFAULT 0,
+  shif NUMERIC(14,2) NOT NULL DEFAULT 0,
+  housing_levy NUMERIC(14,2) NOT NULL DEFAULT 0,
+  pension NUMERIC(14,2) NOT NULL DEFAULT 0,
+  other_deductions NUMERIC(14,2) NOT NULL DEFAULT 0,
+  personal_relief NUMERIC(14,2) NOT NULL DEFAULT 2400,
+  insurance_relief NUMERIC(14,2) NOT NULL DEFAULT 0,
+  other_contributions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS payslip_templates (
+  id BIGSERIAL PRIMARY KEY,
+  version INTEGER NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  file_data BYTEA NOT NULL,
+  field_map JSONB NOT NULL DEFAULT '{}'::jsonb,
+  is_active BOOLEAN NOT NULL DEFAULT FALSE,
+  uploaded_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS payslips (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  period VARCHAR(7) NOT NULL,
+  template_id BIGINT REFERENCES payslip_templates(id) ON DELETE SET NULL,
+  data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  pdf_data BYTEA NOT NULL,
+  generated_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, period)
+);
+
+CREATE INDEX IF NOT EXISTS idx_payslips_user ON payslips(user_id);
+CREATE INDEX IF NOT EXISTS idx_payslips_period ON payslips(period);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  actor_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  actor_role VARCHAR(20),
+  action VARCHAR(120) NOT NULL,
+  entity_type VARCHAR(80) NOT NULL,
+  entity_id VARCHAR(80),
+  description TEXT NOT NULL,
+  metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ip_address VARCHAR(80),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS supervisor_id BIGINT REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS role_title VARCHAR(120);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS joined_at DATE;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS basic_salary NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS housing_allowance NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS transport_allowance NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS medical_allowance NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS other_allowances NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS paye_tax NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS nssf_contribution NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS nhif_contribution NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS other_deductions NUMERIC(12,2) DEFAULT 0;
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS bank_name VARCHAR(120);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(50);
+
+ALTER TABLE users
+ADD COLUMN IF NOT EXISTS bank_branch VARCHAR(120);
+
+UPDATE users
+SET role = 'ceo'
+WHERE role = 'hr';
+
+UPDATE users
+SET role_title = CASE
+  WHEN role = 'ceo' THEN 'CEO'
+  WHEN role = 'admin' THEN 'IT Officer'
+  WHEN role = 'finance' THEN 'Finance Officer'
+  WHEN role = 'supervisor' THEN 'Supervisor'
+  ELSE COALESCE(NULLIF(role_title, ''), 'Employee')
+END
+WHERE role_title IS NULL OR CHAR_LENGTH(TRIM(role_title)) = 0;
+
+ALTER TABLE users
+DROP CONSTRAINT IF EXISTS users_role_check;
+
+ALTER TABLE users
+ADD CONSTRAINT users_role_check CHECK (role IN ('employee', 'supervisor', 'admin', 'ceo', 'finance'));
+
+ALTER TABLE users
+DROP CONSTRAINT IF EXISTS users_gender_check;
+
+ALTER TABLE users
+ADD CONSTRAINT users_gender_check CHECK (gender IN ('male', 'female', 'other') OR gender IS NULL);
+
+ALTER TABLE users
+DROP CONSTRAINT IF EXISTS users_email_key;
+
+ALTER TABLE users
+DROP CONSTRAINT IF EXISTS users_employee_no_key;
+
+UPDATE users
+SET email = CONCAT('deleted+', id, '-', EXTRACT(EPOCH FROM COALESCE(deleted_at, NOW()))::BIGINT, '@deleted.local')
+WHERE is_deleted = TRUE
+  AND email NOT LIKE 'deleted+%@deleted.local';
+
+UPDATE users
+SET employee_no = CONCAT('DEL-', id, '-', LPAD(MOD(EXTRACT(EPOCH FROM COALESCE(deleted_at, NOW()))::BIGINT, 100000000)::text, 8, '0'))
+WHERE is_deleted = TRUE
+  AND employee_no IS NOT NULL
+  AND employee_no NOT LIKE 'DEL-%';
+
+DELETE FROM documents d
+USING users u
+WHERE d.user_id = u.id
+  AND u.is_deleted = TRUE;
+
+DELETE FROM leave_requests lr
+USING users u
+WHERE lr.user_id = u.id
+  AND u.is_deleted = TRUE;
+
+DELETE FROM leave_balances lb
+USING users u
+WHERE lb.user_id = u.id
+  AND u.is_deleted = TRUE;
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supervisor_approver_id BIGINT REFERENCES users(id) ON DELETE SET NULL;
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supporting_document_name VARCHAR(255);
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supporting_document_stored_name VARCHAR(255);
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supporting_document_mime_type VARCHAR(120);
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supporting_document_size BIGINT;
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supporting_document_path TEXT;
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS supervisor_comment TEXT;
+
+ALTER TABLE leave_requests
+ADD COLUMN IF NOT EXISTS requires_supervisor_review BOOLEAN NOT NULL DEFAULT FALSE;
+
+UPDATE leave_requests
+SET requires_supervisor_review = TRUE
+WHERE status = 'pending_supervisor'
+   OR supervisor_comment IS NOT NULL;
+
+ALTER TABLE leave_requests
+DROP CONSTRAINT IF EXISTS leave_requests_status_check;
+
+ALTER TABLE leave_requests
+ADD CONSTRAINT leave_requests_status_check CHECK (status IN ('pending_supervisor', 'pending_hr', 'pending_ceo', 'approved', 'rejected', 'cancelled'));
+
+ALTER TABLE leave_types
+ADD COLUMN IF NOT EXISTS is_paid BOOLEAN NOT NULL DEFAULT TRUE;
+
+ALTER TABLE leave_types
+ADD COLUMN IF NOT EXISTS requires_document BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE leave_types
+ADD COLUMN IF NOT EXISTS can_carry_forward BOOLEAN NOT NULL DEFAULT FALSE;
+
+ALTER TABLE documents
+DROP CONSTRAINT IF EXISTS documents_folder_type_check;
+
+ALTER TABLE documents
+ADD CONSTRAINT documents_folder_type_check CHECK (CHAR_LENGTH(TRIM(folder_type)) > 0);
+
+ALTER TABLE payroll_profiles
+ADD COLUMN IF NOT EXISTS nssf_tier VARCHAR(20) NOT NULL DEFAULT 'I_II';
+
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_department ON users(department_id);
+CREATE INDEX IF NOT EXISTS idx_users_supervisor ON users(supervisor_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_active_unique ON users (LOWER(email)) WHERE is_deleted = FALSE;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_employee_no_active_unique ON users (employee_no) WHERE employee_no IS NOT NULL AND is_deleted = FALSE;
+CREATE INDEX IF NOT EXISTS idx_leave_requests_user ON leave_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_status ON leave_requests(status);
+CREATE INDEX IF NOT EXISTS idx_leave_requests_supervisor ON leave_requests(supervisor_approver_id);
+CREATE INDEX IF NOT EXISTS idx_documents_user ON documents(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_actor ON audit_logs(actor_user_id);
+
+ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leave_balances ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leave_types ENABLE ROW LEVEL SECURITY;
+ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leave_requests ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS travel_requests (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  travel_type VARCHAR(30) NOT NULL DEFAULT 'booking' CHECK (travel_type IN ('booking', 'reimbursement')),
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  origin VARCHAR(255) NOT NULL,
+  destination VARCHAR(255) NOT NULL,
+  reason TEXT NOT NULL,
+  estimated_cost NUMERIC(14,2),
+  currency VARCHAR(10) NOT NULL DEFAULT 'KES',
+  supporting_document_id BIGINT REFERENCES documents(id) ON DELETE SET NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')),
+  approved_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  approved_at TIMESTAMPTZ,
+  rejection_reason TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS travel_receipts (
+  id BIGSERIAL PRIMARY KEY,
+  travel_request_id BIGINT NOT NULL REFERENCES travel_requests(id) ON DELETE CASCADE,
+  uploaded_by BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  file_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  file_size BIGINT NOT NULL,
+  storage_path TEXT NOT NULL,
+  amount NUMERIC(14,2),
+  description TEXT,
+  reimbursement_status VARCHAR(30) NOT NULL DEFAULT 'pending' CHECK (reimbursement_status IN ('pending', 'submitted', 'under_review', 'approved', 'rejected', 'settled', 'not_settled')),
+  reviewed_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  review_comment TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS travel_notification_settings (
+  id BIGSERIAL PRIMARY KEY,
+  recipient_ids BIGINT[] NOT NULL DEFAULT '{}',
+  updated_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS travel_routing_settings (
+  id BIGSERIAL PRIMARY KEY,
+  route_to_supervisor BOOLEAN NOT NULL DEFAULT TRUE,
+  route_to_ceo BOOLEAN NOT NULL DEFAULT FALSE,
+  route_to_admin BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS travel_employee_routing (
+  id BIGSERIAL PRIMARY KEY,
+  employee_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  approver_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(employee_id, approver_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_travel_requests_user ON travel_requests(user_id);
+CREATE INDEX IF NOT EXISTS idx_travel_requests_status ON travel_requests(status);
+CREATE INDEX IF NOT EXISTS idx_travel_receipts_travel ON travel_receipts(travel_request_id);
+CREATE INDEX IF NOT EXISTS idx_travel_receipts_status ON travel_receipts(reimbursement_status);
+CREATE INDEX IF NOT EXISTS idx_travel_receipts_uploaded_by ON travel_receipts(uploaded_by);
+
+ALTER TABLE travel_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_receipts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_notification_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_routing_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_employee_routing ENABLE ROW LEVEL SECURITY;
