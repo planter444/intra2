@@ -99,14 +99,72 @@ const buildLeaveReportPdf = async (payload) => {
         borderWidth: 1,
       });
 
-      // Color indicator square (icon placeholder)
-      page.drawRectangle({
-        x: cardX + 5,
-        y: cardY - 35,
-        width: 15,
-        height: 15,
-        color: stat.color,
-      });
+      // Draw icon based on index
+      const iconX = cardX + 5;
+      const iconY = cardY - 35;
+      const iconSize = 15;
+
+      if (index === 0) {
+        // User icon (circle with body)
+        page.drawEllipse({
+          x: iconX + iconSize / 2,
+          y: iconY + iconSize / 2 + 5,
+          xScale: iconSize / 2.5,
+          yScale: iconSize / 2.5,
+          color: stat.color,
+        });
+        page.drawEllipse({
+          x: iconX + iconSize / 2,
+          y: iconY - 3,
+          xScale: iconSize / 1.8,
+          yScale: iconSize / 3,
+          color: stat.color,
+        });
+      } else if (index === 1) {
+        // Checkmark icon
+        page.drawSvgPath('M2 12l5 5 9-9', {
+          x: iconX,
+          y: iconY + 5,
+          scale: iconSize / 14,
+          color: stat.color,
+        });
+      } else if (index === 2) {
+        // Clock icon (circle with hands)
+        page.drawEllipse({
+          x: iconX + iconSize / 2,
+          y: iconY + iconSize / 2,
+          xScale: iconSize / 2,
+          yScale: iconSize / 2,
+          color: stat.color,
+        });
+        page.drawLine({
+          start: { x: iconX + iconSize / 2, y: iconY + iconSize / 2 },
+          end: { x: iconX + iconSize / 2, y: iconY + iconSize / 3 },
+          thickness: 1.5,
+          color: white,
+        });
+        page.drawLine({
+          start: { x: iconX + iconSize / 2, y: iconY + iconSize / 2 },
+          end: { x: iconX + iconSize / 1.5, y: iconY + iconSize / 2 },
+          thickness: 1.5,
+          color: white,
+        });
+      } else {
+        // Calendar icon (rectangle with lines)
+        page.drawRectangle({
+          x: iconX,
+          y: iconY,
+          width: iconSize,
+          height: iconSize,
+          color: stat.color,
+        });
+        page.drawLine({
+          start: { x: iconX, y: iconY + iconSize / 3 },
+          end: { x: iconX + iconSize, y: iconY + iconSize / 3 },
+          thickness: 1,
+          color: white,
+        });
+      }
 
       // Label
       page.drawText(stat.label, {
@@ -156,6 +214,8 @@ const buildLeaveReportPdf = async (payload) => {
           font: fontBold,
           color: textColor,
         });
+
+        y -= 12;
 
         // Background bar
         page.drawRectangle({
@@ -217,6 +277,8 @@ const buildLeaveReportPdf = async (payload) => {
           font: fontBold,
           color: textColor,
         });
+
+        y -= 12;
 
         // Background bar
         page.drawRectangle({
@@ -338,6 +400,137 @@ const buildLeaveReportPdf = async (payload) => {
 
     // Footer
     page.drawText('KEREA HRMS - Confidential Document', {
+      x: 50,
+      y: 30,
+      size: 10,
+      font: font,
+      color: primaryColor,
+    });
+
+    // Add new page for Employee Leave Summary
+    const page2 = pdfDoc.addPage([612, 792]);
+    let y2 = height - 50;
+
+    // Header for page 2
+    page2.drawText('Employee Leave Summary', {
+      x: 50,
+      y: y2,
+      size: 24,
+      font: fontBold,
+      color: primaryColor,
+    });
+
+    y2 -= 30;
+    page2.drawText('KEREA', {
+      x: 50,
+      y: y2,
+      size: 14,
+      font: font,
+      color: primaryColor,
+    });
+
+    y2 -= 40;
+
+    // Pivot employee leave info by employee
+    const employeeMap = new Map();
+    const leaveTypes = new Set();
+
+    employeeLeaveInfo.forEach((emp) => {
+      const empId = emp.employee_id;
+      const empName = emp.employee_name || 'N/A';
+      const department = emp.department || 'N/A';
+      const leaveType = emp.leave_type || 'N/A';
+      const entitlement = emp.leave_entitlement || 0;
+      const daysTaken = emp.days_taken || 0;
+      const remaining = emp.remaining_days || 0;
+
+      leaveTypes.add(leaveType);
+
+      if (!employeeMap.has(empId)) {
+        employeeMap.set(empId, {
+          name: empName,
+          department: department,
+          leaveTypes: {},
+          totalEntitlement: 0,
+          totalTaken: 0,
+          totalRemaining: 0
+        });
+      }
+
+      const empData = employeeMap.get(empId);
+      empData.leaveTypes[leaveType] = {
+        entitlement: entitlement,
+        taken: daysTaken,
+        remaining: remaining,
+        percentage: entitlement > 0 ? ((daysTaken / entitlement) * 100).toFixed(1) : 0
+      };
+      empData.totalEntitlement += entitlement;
+      empData.totalTaken += daysTaken;
+      empData.totalRemaining += remaining;
+    });
+
+    const leaveTypesArray = Array.from(leaveTypes).sort();
+    const employeesArray = Array.from(employeeMap.values());
+
+    // Table header
+    const colWidths = {
+      name: 80,
+      department: 70,
+      leaveType: 70,
+      remaining: 50,
+      percentage: 50
+    };
+
+    let headerX = 50;
+    page2.drawText('Employee', { x: headerX, y: y2, size: 8, font: fontBold, color: primaryColor });
+    headerX += colWidths.name;
+    page2.drawText('Department', { x: headerX, y: y2, size: 8, font: fontBold, color: primaryColor });
+    headerX += colWidths.department;
+
+    leaveTypesArray.forEach((lt) => {
+      const label = lt.substring(0, 10);
+      page2.drawText(label, { x: headerX, y: y2, size: 8, font: fontBold, color: primaryColor });
+      headerX += colWidths.leaveType;
+    });
+
+    page2.drawText('Remaining', { x: headerX, y: y2, size: 8, font: fontBold, color: primaryColor });
+    headerX += colWidths.remaining;
+    page2.drawText('% Taken', { x: headerX, y: y2, size: 8, font: fontBold, color: primaryColor });
+
+    y2 -= 15;
+
+    // Table rows (first 30 employees)
+    employeesArray.slice(0, 30).forEach((emp) => {
+      let rowX = 50;
+      const empName = emp.name.substring(0, 12);
+      const dept = emp.department.substring(0, 10);
+
+      page2.drawText(empName, { x: rowX, y: y2, size: 7, font: font, color: textColor });
+      rowX += colWidths.name;
+      page2.drawText(dept, { x: rowX, y: y2, size: 7, font: font, color: textColor });
+      rowX += colWidths.department;
+
+      leaveTypesArray.forEach((lt) => {
+        const ltData = emp.leaveTypes[lt];
+        if (ltData) {
+          const label = `${ltData.taken}/${ltData.entitlement}`;
+          page2.drawText(label, { x: rowX, y: y2, size: 7, font: font, color: textColor });
+        } else {
+          page2.drawText('-', { x: rowX, y: y2, size: 7, font: font, color: textColor });
+        }
+        rowX += colWidths.leaveType;
+      });
+
+      page2.drawText(String(emp.totalRemaining), { x: rowX, y: y2, size: 7, font: font, color: textColor });
+      rowX += colWidths.remaining;
+      const totalPercentage = emp.totalEntitlement > 0 ? ((emp.totalTaken / emp.totalEntitlement) * 100).toFixed(1) : 0;
+      page2.drawText(`${totalPercentage}%`, { x: rowX, y: y2, size: 7, font: font, color: textColor });
+
+      y2 -= 12;
+    });
+
+    // Footer for page 2
+    page2.drawText('KEREA HRMS - Confidential Document', {
       x: 50,
       y: 30,
       size: 10,
