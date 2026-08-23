@@ -310,6 +310,15 @@ const decideTravelRequest = async (req, res, next) => {
       return res.status(400).json({ message: 'Only pending or rejected travel requests can be actioned.' });
     }
 
+    // Check if user is trying to approve their own request
+    if (String(request.userId) === String(req.user.id)) {
+      // Check if employee-specific routing allows self-approval
+      const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
+      if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
+        return res.status(403).json({ message: 'You cannot approve your own travel request unless you are designated as your own approver in employee-specific routing.' });
+      }
+    }
+
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
     const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
 

@@ -253,6 +253,20 @@ export default function TravelDetailPage() {
     }
   };
 
+  const handlePreviewReceipt = async (receipt) => {
+    try {
+      const blob = await downloadTravelReceipt(receipt.id);
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to preview receipt',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
   const handleDownloadSupportingDocument = async () => {
     if (!request.supportingDocumentId) {
       return;
@@ -305,6 +319,7 @@ export default function TravelDetailPage() {
   const canDecide = ['admin', 'ceo', 'finance', 'supervisor'].includes(user.role) && ['pending', 'rejected'].includes(request.status);
   const canDelete = user.role === 'admin' && ['approved', 'rejected'].includes(request.status);
   const canUploadReceipt = String(request.userId) === String(user.id) && request.status === 'approved';
+  const isApprover = String(request.userId) !== String(user.id) && ['admin', 'ceo', 'finance', 'supervisor'].includes(user.role);
 
   return (
     <div className="space-y-6">
@@ -373,6 +388,14 @@ export default function TravelDetailPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-3">
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
+                  {config.label}
+                </span>
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${request.travelType === 'booking' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'} border`}>
+                  {request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
+                </span>
+              </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <p className="text-sm text-slate-500">Employee</p>
@@ -455,9 +478,9 @@ export default function TravelDetailPage() {
 
       <SectionCard
         title="Travel receipts"
-        subtitle="Upload receipts for reimbursement after your travel is approved."
+        subtitle={isApprover ? "Receipts uploaded by the employee for reimbursement." : "Upload receipts for reimbursement after your travel is approved."}
         actions={
-          canUploadReceipt && (
+          !isApprover && canUploadReceipt && (
             <button type="button" className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white" onClick={() => setUploadModal({ open: true, file: null, amount: '', description: '' })}>
               <Plus size={18} />
               Upload Receipt
@@ -466,7 +489,10 @@ export default function TravelDetailPage() {
         }
       >
         {!request.receipts || request.receipts.length === 0 ? (
-          <EmptyState title="No receipts uploaded" description="Upload your travel receipts here for reimbursement processing." />
+          <EmptyState 
+            title={isApprover ? "No receipts uploaded" : "No receipts uploaded"} 
+            description={isApprover ? "The employee has not uploaded any receipts yet." : "Upload your travel receipts here for reimbursement processing."} 
+          />
         ) : (
           <div className="space-y-3">
             {request.receipts && request.receipts.map((receipt) => {
@@ -493,7 +519,10 @@ export default function TravelDetailPage() {
                       <p className="mt-1 text-xs text-slate-400">Uploaded by {receipt.uploaderName}</p>
                     </div>
                     <div className="flex gap-2">
-                      <button type="button" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" onClick={() => handleDownloadReceipt(receipt)}>
+                      <button type="button" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" onClick={() => handlePreviewReceipt(receipt)} title="Preview">
+                        <Download size={16} />
+                      </button>
+                      <button type="button" className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" onClick={() => handleDownloadReceipt(receipt)} title="Download">
                         <Download size={16} />
                       </button>
                       {canUpdateReceiptStatus(user, receipt) && (

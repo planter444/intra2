@@ -4,18 +4,13 @@ import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { fetchTravelNotificationSettings, updateTravelNotificationSettings, fetchTravelRoutingSettings, updateTravelRoutingSettings, fetchAllEmployeeRouting, addEmployeeRouting, removeEmployeeRouting } from '../services/travelService';
+import { fetchTravelNotificationSettings, updateTravelNotificationSettings, fetchAllEmployeeRouting, addEmployeeRouting, removeEmployeeRouting } from '../services/travelService';
 import { fetchUsers } from '../services/userService';
 
 export default function TravelSettingsPage() {
   const { user } = useAuth();
   const [notificationSettings, setNotificationSettings] = useState({
     recipientIds: []
-  });
-  const [routingSettings, setRoutingSettings] = useState({
-    routeToSupervisor: true,
-    routeToCeo: false,
-    routeToAdmin: false
   });
   const [employeeRouting, setEmployeeRouting] = useState([]);
   const [users, setUsers] = useState([]);
@@ -33,14 +28,12 @@ export default function TravelSettingsPage() {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const [notificationData, routingData, routingList, usersList] = await Promise.all([
+      const [notificationData, routingList, usersList] = await Promise.all([
         fetchTravelNotificationSettings(),
-        fetchTravelRoutingSettings(),
         fetchAllEmployeeRouting(),
         fetchUsers()
       ]);
       setNotificationSettings(notificationData);
-      setRoutingSettings(routingData);
       setEmployeeRouting(routingList);
       setUsers(usersList);
       setSelectedNotificationRecipients(notificationData.recipientIds || []);
@@ -58,10 +51,7 @@ export default function TravelSettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await Promise.all([
-        updateTravelNotificationSettings({ recipientIds: selectedNotificationRecipients }),
-        updateTravelRoutingSettings(routingSettings)
-      ]);
+      await updateTravelNotificationSettings({ recipientIds: selectedNotificationRecipients });
       setNotificationSettings({ ...notificationSettings, recipientIds: selectedNotificationRecipients });
       setNotice({
         open: true,
@@ -103,15 +93,6 @@ export default function TravelSettingsPage() {
         open: true,
         title: 'Missing selection',
         description: 'Please select both an employee and an approver.'
-      });
-      return;
-    }
-
-    if (selectedEmployee === selectedApprover) {
-      setNotice({
-        open: true,
-        title: 'Invalid selection',
-        description: 'Employee and approver cannot be the same person.'
       });
       return;
     }
@@ -208,59 +189,7 @@ export default function TravelSettingsPage() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Travel routing settings" subtitle="Configure how travel requests are routed for approval.">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">Route to Supervisor</p>
-              <p className="text-sm text-slate-500">Send travel requests to the employee's supervisor for approval</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={routingSettings.routeToSupervisor}
-                onChange={(e) => setRoutingSettings({ ...routingSettings, routeToSupervisor: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">Route to CEO</p>
-              <p className="text-sm text-slate-500">Send travel requests to the CEO for approval</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={routingSettings.routeToCeo}
-                onChange={(e) => setRoutingSettings({ ...routingSettings, routeToCeo: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-            <div>
-              <p className="font-medium text-slate-900">Route to IT Officer (Admin)</p>
-              <p className="text-sm text-slate-500">Send travel requests to IT officers for approval</p>
-            </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                className="peer sr-only"
-                checked={routingSettings.routeToAdmin}
-                onChange={(e) => setRoutingSettings({ ...routingSettings, routeToAdmin: e.target.checked })}
-              />
-              <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-emerald-600 peer-checked:after:translate-x-full peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300" />
-            </label>
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Employee-specific routing" subtitle="Configure specific approvers for individual employees.">
+      <SectionCard title="Employee-specific routing" subtitle="Configure specific approvers for individual employees. This is the only approval routing method - approvers will receive notifications for their assigned employees.">
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -288,6 +217,7 @@ export default function TravelSettingsPage() {
                   <option key={u.id} value={u.id}>{u.firstName} {u.lastName} ({u.role})</option>
                 ))}
               </select>
+              <p className="mt-1 text-xs text-slate-500">Note: You can select the same person as both employee and approver if self-approval is needed.</p>
             </div>
           </div>
           <button

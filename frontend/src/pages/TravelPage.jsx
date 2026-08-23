@@ -215,6 +215,11 @@ description: '' });
                       <h3 className="mt-2 text-lg font-semibold text-slate-900">
                         {request.origin} → {request.destination}
                       </h3>
+                      <div className="mt-2 flex items-center gap-2">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${request.travelType === 'booking' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'} border`}>
+                          {request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
+                        </span>
+                      </div>
                       <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-600">
                         <span className="flex items-center gap-1.5">
                           <Calendar size={16} />

@@ -57,7 +57,44 @@ export default function LeaveReportPage() {
     }
   };
 
+  const handlePreviewPDF = async () => {
+    const token = localStorage.getItem('kerea_hrms_auth') ? JSON.parse(localStorage.getItem('kerea_hrms_auth')).token : null;
+    if (!token) {
+      alert('Authentication required. Please log in again.');
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.employeeId) params.append('employeeId', filters.employeeId);
+    if (filters.departmentId) params.append('departmentId', filters.departmentId);
+    if (filters.leaveTypeId) params.append('leaveTypeId', filters.leaveTypeId);
+    if (filters.status) params.append('status', filters.status);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}&preview=true`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to generate PDF' }));
+        throw new Error(errorData.message || 'Failed to generate PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Failed to preview PDF:', error);
+      alert(`Failed to preview PDF: ${error.message}. Please try again.`);
+    }
+  };
+
   const handleDownloadPDF = async () => {
+    const token = localStorage.getItem('kerea_hrms_auth') ? JSON.parse(localStorage.getItem('kerea_hrms_auth')).token : null;
     if (!token) {
       alert('Authentication required. Please log in again.');
       return;
@@ -113,9 +150,19 @@ export default function LeaveReportPage() {
         subtitle="Generate comprehensive leave reports for the organization."
         actions={[
           <button
-            key="download"
+            key="preview"
             type="button"
             className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            onClick={handlePreviewPDF}
+            disabled={!reportData}
+          >
+            <Download size={18} />
+            Preview PDF
+          </button>,
+          <button
+            key="download"
+            type="button"
+            className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg disabled:opacity-60"
             onClick={handleDownloadPDF}
             disabled={!reportData}
           >
