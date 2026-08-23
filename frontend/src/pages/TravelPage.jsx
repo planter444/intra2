@@ -232,23 +232,23 @@ export default function TravelPage() {
         title="Travel requests" 
         subtitle="All travel requests with their current status and details."
         actions={
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative">
+          <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2 sm:gap-3 w-full">
+            <div className="relative w-full sm:w-48">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-64 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <User size={16} className="text-slate-400" />
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                className="flex-1 sm:flex-none rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none sm:px-3"
               >
                 <option value="">All Employees</option>
                 {users.map((u) => (
@@ -259,7 +259,7 @@ export default function TravelPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              className="flex-1 sm:flex-none rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none sm:px-3"
             >
               <option value="date">Sort by Date</option>
               <option value="employee">Sort by Employee</option>
@@ -270,7 +270,7 @@ export default function TravelPage() {
             <button
               type="button"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-              className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-slate-100"
+              className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-600 hover:bg-slate-100"
               title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
             >
               <ArrowUpDown size={16} />
@@ -333,7 +333,7 @@ export default function TravelPage() {
                       {String(request.userId) === String(user.id) && request.status === 'pending' && (
                         <button
                           type="button"
-                          className="w-full sm:w-auto rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                          className="flex-1 sm:flex-none rounded-lg border border-slate-200 px-2 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:px-3 sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleCancel(request);
@@ -345,25 +345,26 @@ export default function TravelPage() {
                       {canDecideTravel(user, request, employeeApprovers) && (
                         <button
                           type="button"
-                          className="w-full sm:w-auto rounded-xl bg-brand-gradient px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+                          className="flex-1 sm:flex-none rounded-lg bg-brand-gradient px-2 py-1.5 text-xs font-medium text-white hover:opacity-90 sm:px-3 sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/travel/${request.id}`);
                           }}
                         >
-                          <Eye size={16} className="inline mr-1" />
+                          <Eye size={14} className="inline mr-1 sm:size-16" />
                           View
                         </button>
                       )}
                       {canDeleteTravel(user, request) && (
                         <button
                           type="button"
-                          className="rounded-xl border border-rose-200 px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                          className="flex-1 sm:flex-none rounded-lg border border-rose-200 px-2 py-1.5 text-xs font-medium text-rose-600 hover:bg-rose-50 sm:px-3 sm:text-sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             setDeleteModal({ open: true, request });
                           }}
                         >
+                          <Trash2 size={14} className="inline mr-1 sm:size-16" />
                           Delete
                         </button>
                       )}

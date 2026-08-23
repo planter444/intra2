@@ -383,7 +383,7 @@ export default function LeaveReportPage() {
 
           <SectionCard title="Employee Leave Information" subtitle="Detailed leave information for each employee.">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[800px] text-sm">
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
@@ -430,19 +430,21 @@ export default function LeaveReportPage() {
 
           {reportData.employeesOnLeave.length > 0 && (
             <SectionCard title="Employees Currently on Leave" subtitle="Employees who are currently on leave.">
-              <div className="space-y-3">
-                {reportData.employeesOnLeave.map((emp) => (
-                  <div key={emp.employee_no} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
-                    <div>
-                      <p className="font-medium text-slate-900">{emp.employee_name}</p>
-                      <p className="text-sm text-slate-500">{emp.employee_no}</p>
+              <div className="overflow-x-auto">
+                <div className="min-w-[500px] space-y-3">
+                  {reportData.employeesOnLeave.map((emp) => (
+                    <div key={emp.employee_no} className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-4">
+                      <div>
+                        <p className="font-medium text-slate-900">{emp.employee_name}</p>
+                        <p className="text-sm text-slate-500">{emp.employee_no}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-medium text-slate-900">{emp.leave_type}</p>
+                        <p className="text-xs text-slate-500">{formatDate(emp.start_date)} to {formatDate(emp.end_date)}</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium text-slate-900">{emp.leave_type}</p>
-                      <p className="text-xs text-slate-500">{formatDate(emp.start_date)} to {formatDate(emp.end_date)}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </SectionCard>
           )}

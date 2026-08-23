@@ -393,7 +393,7 @@ const buildLeaveReportPdf = async (payload) => {
     }
     
     // Employee name and number
-    currentPage.drawText(`${emp.employee_name}`, {
+    currentPage.drawText(`${emp.employee_name || 'N/A'}`, {
       x: 45,
       y: currentPageY - 5,
       size: 8,
@@ -401,7 +401,7 @@ const buildLeaveReportPdf = async (payload) => {
       color: textColor,
     });
     
-    currentPage.drawText(`${emp.employee_no}`, {
+    currentPage.drawText(`${emp.employee_no || 'N/A'}`, {
       x: 45,
       y: currentPageY - 13,
       size: 7,
@@ -428,7 +428,8 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Entitlement
-    currentPage.drawText(String(emp.leave_entitlement || 0), {
+    const entitlement = emp.leave_entitlement !== null && emp.leave_entitlement !== undefined ? emp.leave_entitlement : 0;
+    currentPage.drawText(String(entitlement), {
       x: 310,
       y: currentPageY - 8,
       size: 8,
@@ -437,7 +438,8 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Days taken
-    currentPage.drawText(String(emp.days_taken || 0), {
+    const daysTaken = emp.days_taken !== null && emp.days_taken !== undefined ? emp.days_taken : 0;
+    currentPage.drawText(String(daysTaken), {
       x: 380,
       y: currentPageY - 8,
       size: 8,
@@ -446,7 +448,8 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Remaining
-    currentPage.drawText(String(emp.remaining_days || 0), {
+    const remaining = emp.remaining_days !== null && emp.remaining_days !== undefined ? emp.remaining_days : 0;
+    currentPage.drawText(String(remaining), {
       x: 450,
       y: currentPageY - 8,
       size: 8,
@@ -455,7 +458,8 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Pending
-    currentPage.drawText(String(emp.pending_days || 0), {
+    const pending = emp.pending_days !== null && emp.pending_days !== undefined ? emp.pending_days : 0;
+    currentPage.drawText(String(pending), {
       x: 510,
       y: currentPageY - 8,
       size: 8,
@@ -464,8 +468,9 @@ const buildLeaveReportPdf = async (payload) => {
     });
     
     // Status
-    const statusColor = emp.current_status === 'approved' ? emeraldColor : emp.current_status && emp.current_status.includes('pending') ? amberColor : rgb(0.94, 0.23, 0.23);
-    currentPage.drawText(emp.current_status || 'N/A', {
+    const status = emp.current_status || 'N/A';
+    const statusColor = status === 'approved' ? emeraldColor : status && status.includes('pending') ? amberColor : rgb(0.94, 0.23, 0.23);
+    currentPage.drawText(status, {
       x: 560,
       y: currentPageY - 8,
       size: 8,
@@ -542,7 +547,7 @@ const buildLeaveReportPdf = async (payload) => {
       });
       
       // Employee name
-      currentPage.drawText(emp.employee_name, {
+      currentPage.drawText(emp.employee_name || 'N/A', {
         x: 50,
         y: empY - 10,
         size: 10,
@@ -551,7 +556,7 @@ const buildLeaveReportPdf = async (payload) => {
       });
       
       // Employee number
-      currentPage.drawText(emp.employee_no, {
+      currentPage.drawText(emp.employee_no || 'N/A', {
         x: 50,
         y: empY - 22,
         size: 8,
@@ -560,7 +565,7 @@ const buildLeaveReportPdf = async (payload) => {
       });
       
       // Leave type
-      currentPage.drawText(emp.leave_type, {
+      currentPage.drawText(emp.leave_type || 'N/A', {
         x: 200,
         y: empY - 10,
         size: 10,
@@ -569,8 +574,8 @@ const buildLeaveReportPdf = async (payload) => {
       });
       
       // Date range
-      const startDate = new Date(emp.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      const endDate = new Date(emp.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const startDate = emp.start_date ? new Date(emp.start_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+      const endDate = emp.end_date ? new Date(emp.end_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
       currentPage.drawText(`${startDate} to ${endDate}`, {
         x: 200,
         y: empY - 22,

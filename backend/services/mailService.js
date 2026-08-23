@@ -275,6 +275,24 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   }
 
   const requestUrl = buildTravelRequestUrl(travelRequest.id);
+  
+  // Format dates without time
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+  
+  // Handle both camelCase and snake_case field names
+  const travelType = travelRequest.travelType || travelRequest.travel_type || 'Not specified';
+  const origin = travelRequest.origin || 'Not specified';
+  const destination = travelRequest.destination || 'Not specified';
+  const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
+  const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+  const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost;
+  const currency = travelRequest.currency || 'KES';
+  const reason = travelRequest.reason || 'Not specified';
 
   await sendBrevoEmail({
     to,
@@ -284,13 +302,13 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
         <h2 style="color: #166534;">New Travel Request Submitted</h2>
         <p style="margin: 0 0 18px;">${applicantName} has submitted a new travel request for your review.</p>
         <p style="margin: 0 0 18px;">
-          <strong>Travel Type:</strong> ${travelRequest.travel_type}<br>
-          <strong>Origin:</strong> ${travelRequest.origin}<br>
-          <strong>Destination:</strong> ${travelRequest.destination}<br>
-          <strong>Start Date:</strong> ${new Date(travelRequest.start_date).toLocaleDateString()}<br>
-          <strong>End Date:</strong> ${new Date(travelRequest.end_date).toLocaleDateString()}<br>
-          <strong>Estimated Cost:</strong> ${travelRequest.estimated_cost ? `${travelRequest.currency} ${travelRequest.estimated_cost.toLocaleString()}` : 'Not specified'}<br>
-          <strong>Reason:</strong> ${travelRequest.reason}
+          <strong>Travel Type:</strong> ${travelType}<br>
+          <strong>Origin:</strong> ${origin}<br>
+          <strong>Destination:</strong> ${destination}<br>
+          <strong>Start Date:</strong> ${startDate}<br>
+          <strong>End Date:</strong> ${endDate}<br>
+          <strong>Estimated Cost:</strong> ${estimatedCost ? `${currency} ${Number(estimatedCost).toLocaleString()}` : 'Not specified'}<br>
+          <strong>Reason:</strong> ${reason}
         </p>
         <p style="margin: 0 0 18px;">
           <a href="${requestUrl}" style="background-color: #166534; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Review Travel Request</a>

@@ -640,19 +640,19 @@ export default function PayslipsPage() {
                     <td className="px-3 py-3">{payslip.data?.summary ? formatMoney(payslip.data.summary.netPay) : '\u2014'}</td>
                     <td className="px-3 py-3 text-slate-500">{new Date(payslip.updatedAt || payslip.createdAt).toLocaleDateString()}</td>
                     <td className="px-3 py-3">
-                      <div className="flex justify-end gap-2">
-                        <button type="button" title="Preview" onClick={() => openPayslip(payslip)} className="rounded-xl bg-slate-100 p-2 text-slate-700">
-                          <Eye size={15} />
+                      <div className="flex flex-wrap justify-end gap-1 sm:gap-2">
+                        <button type="button" title="Preview" onClick={() => openPayslip(payslip)} className="rounded-lg bg-slate-100 p-1.5 text-slate-700 sm:p-2">
+                          <Eye size={14} className="sm:size-[15px]" />
                         </button>
-                        <button type="button" title="Download" onClick={() => downloadPayslip(payslip)} className="rounded-xl bg-emerald-50 p-2 text-emerald-700">
-                          <Download size={15} />
+                        <button type="button" title="Download" onClick={() => downloadPayslip(payslip)} className="rounded-lg bg-emerald-50 p-1.5 text-emerald-700 sm:p-2">
+                          <Download size={14} className="sm:size-[15px]" />
                         </button>
-                        <button type="button" title="Print" onClick={() => openPayslip(payslip, true)} className="rounded-xl bg-slate-100 p-2 text-slate-700">
-                          <Printer size={15} />
+                        <button type="button" title="Print" onClick={() => openPayslip(payslip, true)} className="rounded-lg bg-slate-100 p-1.5 text-slate-700 sm:p-2">
+                          <Printer size={14} className="sm:size-[15px]" />
                         </button>
                         {privileged ? (
-                          <button type="button" title="Delete" onClick={() => handleDeletePayslip(payslip)} className="rounded-xl bg-rose-50 p-2 text-rose-600">
-                            <Trash2 size={15} />
+                          <button type="button" title="Delete" onClick={() => handleDeletePayslip(payslip)} className="rounded-lg bg-rose-50 p-1.5 text-rose-600 sm:p-2">
+                            <Trash2 size={14} className="sm:size-[15px]" />
                           </button>
                         ) : null}
                       </div>
