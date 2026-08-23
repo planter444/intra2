@@ -321,8 +321,8 @@ const buildLeaveReportPdf = async (payload) => {
       employeesOnLeave.slice(0, 10).forEach((emp) => {
         const empName = emp.employee_name || 'N/A';
         const leaveType = emp.leave_type || 'N/A';
-        const startDate = emp.start_date ? emp.start_date.split('T')[0] : 'N/A';
-        const endDate = emp.end_date ? emp.end_date.split('T')[0] : 'N/A';
+        const startDate = emp.start_date ? new Date(emp.start_date).toISOString().split('T')[0] : 'N/A';
+        const endDate = emp.end_date ? new Date(emp.end_date).toISOString().split('T')[0] : 'N/A';
 
         page.drawText(`${empName} - ${leaveType} (${startDate} to ${endDate})`, {
           x: 50,
