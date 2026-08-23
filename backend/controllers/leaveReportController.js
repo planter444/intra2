@@ -6,12 +6,6 @@ const escapePdfText = (value) => String(value ?? '').replace(/[\\()]/g, '\\$&');
 
 const buildLeaveReportPdf = async (payload) => {
   try {
-    const statistics = payload.statistics || {};
-    const leaveByType = payload.leaveByType || [];
-    const leaveByDepartment = payload.leaveByDepartment || [];
-    const employeeLeaveInfo = payload.employeeLeaveInfo || [];
-    const employeesOnLeave = payload.employeesOnLeave || [];
-
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([612, 792]);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -19,158 +13,23 @@ const buildLeaveReportPdf = async (payload) => {
 
     const { width, height } = page.getSize();
 
-    let y = height - 50;
-
-    // Header
     page.drawText('LEAVE REPORT', {
       x: 50,
-      y: y,
+      y: height - 50,
       size: 24,
       font: fontBold,
     });
 
-    y -= 30;
     page.drawText('KEREA', {
       x: 50,
-      y: y,
+      y: height - 80,
       size: 14,
       font: font,
     });
 
-    y -= 30;
-    page.drawText(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, {
+    page.drawText(`Generated: ${new Date().toLocaleDateString()}`, {
       x: 50,
-      y: y,
-      size: 10,
-      font: font,
-    });
-
-    y -= 40;
-
-    // Summary Statistics
-    page.drawText('Summary Statistics', {
-      x: 50,
-      y: y,
-      size: 16,
-      font: fontBold,
-    });
-
-    y -= 25;
-    page.drawText(`Total Employees: ${statistics.totalEmployees || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 20;
-    page.drawText(`Approved Leaves: ${statistics.approvedLeaves || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 20;
-    page.drawText(`Pending Leaves: ${statistics.pendingLeaves || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 20;
-    page.drawText(`Total Leave Days Taken: ${statistics.totalLeaveDaysTaken || 0}`, {
-      x: 50,
-      y: y,
-      size: 12,
-      font: font,
-    });
-
-    y -= 30;
-
-    // Leave by Type
-    if (leaveByType && leaveByType.length > 0) {
-      page.drawText('Leave by Type', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-      });
-
-      y -= 25;
-      leaveByType.forEach((item) => {
-        const leaveType = item.leave_type || 'N/A';
-        const daysTaken = item.days_taken || 0;
-        page.drawText(`${leaveType}: ${daysTaken.toFixed(2)} days`, {
-          x: 50,
-          y: y,
-          size: 12,
-          font: font,
-        });
-        y -= 18;
-      });
-      y -= 10;
-    }
-
-    y -= 10;
-
-    // Leave by Department
-    if (leaveByDepartment && leaveByDepartment.length > 0) {
-      page.drawText('Leave by Department', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-      });
-
-      y -= 25;
-      leaveByDepartment.forEach((item) => {
-        const department = item.department || 'N/A';
-        const daysTaken = item.days_taken || 0;
-        page.drawText(`${department}: ${daysTaken.toFixed(2)} days`, {
-          x: 50,
-          y: y,
-          size: 12,
-          font: font,
-        });
-        y -= 18;
-      });
-      y -= 10;
-    }
-
-    y -= 10;
-
-    // Employee Leave Information (first 20)
-    if (employeeLeaveInfo && employeeLeaveInfo.length > 0) {
-      page.drawText('Employee Leave Information (First 20)', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-      });
-
-      y -= 25;
-      employeeLeaveInfo.slice(0, 20).forEach((emp) => {
-        const empName = emp.employee_name || 'N/A';
-        const leaveType = emp.leave_type || 'N/A';
-        const daysTaken = emp.days_taken || 0;
-        const status = emp.current_status || 'N/A';
-
-        page.drawText(`${empName} - ${leaveType} - ${daysTaken} days - ${status}`, {
-          x: 50,
-          y: y,
-          size: 10,
-          font: font,
-        });
-        y -= 14;
-      });
-    }
-
-    // Footer
-    page.drawText('KEREA HRMS - Confidential Document', {
-      x: 50,
-      y: 30,
+      y: height - 110,
       size: 10,
       font: font,
     });
@@ -421,52 +280,45 @@ const exportLeaveReportPdf = async (req, res, next) => {
   try {
     const { startDate, endDate, employeeId, departmentId, leaveTypeId, status } = req.query;
     
-    console.log('Leave report PDF export request:', { startDate, endDate, employeeId, departmentId, leaveTypeId, status });
+    console.log('Starting PDF export with filters:', { startDate, endDate, employeeId, departmentId, leaveTypeId, status });
     
-    // Build WHERE clauses for filters
+    // Build WHERE clause
     const conditions = [];
     const params = [];
-    let paramIndex = 1;
     
     if (startDate) {
-      conditions.push(`lr.start_date >= $${paramIndex}`);
       params.push(startDate);
-      paramIndex++;
+      conditions.push(`lr.start_date >= $${params.length}`);
     }
     
     if (endDate) {
-      conditions.push(`lr.end_date <= $${paramIndex}`);
       params.push(endDate);
-      paramIndex++;
+      conditions.push(`lr.end_date <= $${params.length}`);
     }
     
     if (employeeId) {
-      conditions.push(`lr.user_id = $${paramIndex}`);
       params.push(employeeId);
-      paramIndex++;
+      conditions.push(`lr.user_id = $${params.length}`);
     }
     
     if (departmentId) {
-      conditions.push(`u.department_id = $${paramIndex}`);
       params.push(departmentId);
-      paramIndex++;
+      conditions.push(`u.department_id = $${params.length}`);
     }
     
     if (leaveTypeId) {
-      conditions.push(`lr.leave_type_id = $${paramIndex}`);
       params.push(leaveTypeId);
-      paramIndex++;
+      conditions.push(`lr.leave_type_id = $${params.length}`);
     }
     
     if (status) {
-      conditions.push(`lr.status = $${paramIndex}`);
       params.push(status);
-      paramIndex++;
+      conditions.push(`lr.status = $${params.length}`);
     }
     
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
     
-    console.log('Where clause:', whereClause);
+    console.log('WHERE clause built, executing queries...');
     
     // Get summary statistics
     const statsResult = await query(
@@ -488,110 +340,19 @@ const exportLeaveReportPdf = async (req, res, next) => {
     );
     
     const stats = statsResult.rows[0];
-    console.log('Statistics:', stats);
+    console.log('Statistics fetched:', stats);
     
-    // Get leave days by type
-    const leaveByTypeResult = await query(
-      `
-        SELECT
-          lt.label as leave_type,
-          COUNT(lr.id) as request_count,
-          COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken
-        FROM leave_types lt
-        LEFT JOIN leave_requests lr ON lr.leave_type_id = lt.id
-        LEFT JOIN users u ON u.id = lr.user_id
-        ${whereClause}
-        GROUP BY lt.id, lt.label
-        ORDER BY days_taken DESC
-      `,
-      params
-    );
-    
-    // Get leave utilization by department
-    const leaveByDeptResult = await query(
-      `
-        SELECT
-          COALESCE(d.name, 'Unassigned') as department,
-          COUNT(lr.id) as request_count,
-          COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken
-        FROM departments d
-        LEFT JOIN users u ON u.department_id = d.id
-        LEFT JOIN leave_requests lr ON lr.user_id = u.id
-        ${whereClause}
-        GROUP BY d.id, d.name
-        ORDER BY days_taken DESC
-      `,
-      params
-    );
-    
-    // Get employee leave information
-    const employeeLeaveResult = await query(
-      `
-        SELECT
-          u.id as employee_id,
-          CONCAT(u.first_name, ' ', u.last_name) as employee_name,
-          u.employee_no,
-          COALESCE(d.name, 'Unassigned') as department,
-          lt.label as leave_type,
-          COALESCE(lt.default_days, 0) as leave_entitlement,
-          COALESCE(lb.balance_days, 0) as remaining_days,
-          COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken,
-          COALESCE(SUM(CASE WHEN lr.status LIKE 'pending%' THEN lr.days_requested ELSE 0 END), 0) as pending_days,
-          MAX(lr.status) as current_status
-        FROM users u
-        LEFT JOIN departments d ON d.id = u.department_id
-        LEFT JOIN leave_balances lb ON lb.user_id = u.id
-        LEFT JOIN leave_types lt ON lt.id = lb.leave_type_id
-        LEFT JOIN leave_requests lr ON lr.user_id = u.id AND lr.leave_type_id = lt.id
-        WHERE u.is_deleted = FALSE
-        ${conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : ''}
-        GROUP BY u.id, u.first_name, u.last_name, u.employee_no, d.name, lt.label, lt.default_days, lb.balance_days
-        ORDER BY u.last_name, u.first_name
-      `,
-      params
-    );
-    
-    // Get employees currently on leave
-    const onLeaveResult = await query(
-      `
-        SELECT
-          CONCAT(u.first_name, ' ', u.last_name) as employee_name,
-          u.employee_no,
-          lt.label as leave_type,
-          lr.start_date,
-          lr.end_date,
-          lr.days_requested
-        FROM leave_requests lr
-        INNER JOIN users u ON u.id = lr.user_id
-        INNER JOIN leave_types lt ON lt.id = lr.leave_type_id
-        WHERE lr.status = 'approved'
-          AND lr.start_date <= CURRENT_DATE
-          AND lr.end_date >= CURRENT_DATE
-          AND u.is_deleted = FALSE
-        ORDER BY lr.end_date ASC
-      `
-    );
-    
+    // Simple payload with just statistics
     const payload = {
       statistics: {
         totalEmployees: parseInt(stats.total_employees) || 0,
-        totalLeaveApplications: parseInt(stats.total_leave_applications) || 0,
         approvedLeaves: parseInt(stats.approved_leaves) || 0,
         pendingLeaves: parseInt(stats.pending_leaves) || 0,
-        rejectedLeaves: parseInt(stats.rejected_leaves) || 0,
-        cancelledLeaves: parseInt(stats.cancelled_leaves) || 0,
-        employeesOnLeave: parseInt(stats.employees_on_leave) || 0,
         totalLeaveDaysTaken: parseFloat(stats.total_leave_days_taken) || 0
-      },
-      leaveByType: leaveByTypeResult.rows,
-      leaveByDepartment: leaveByDeptResult.rows,
-      employeeLeaveInfo: employeeLeaveResult.rows,
-      employeesOnLeave: onLeaveResult.rows
+      }
     };
     
     console.log('Payload created, generating PDF...');
-    console.log('Employee leave info count:', employeeLeaveResult.rows.length);
-    console.log('Employees on leave count:', onLeaveResult.rows.length);
     
     try {
       const pdfBuffer = await buildLeaveReportPdf(payload);
@@ -617,6 +378,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Leave report PDF export error:', error);
+    console.error('Error stack:', error.stack);
     next(error);
   }
 };
