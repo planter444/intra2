@@ -486,14 +486,15 @@ export default function LeaveReportPage() {
                       }
 
                       const empData = employeeMap.get(empId);
+                      const calculatedRemaining = Math.max(0, emp.leave_entitlement - emp.days_taken);
                       empData.leaveTypes[emp.leave_type] = {
                         entitlement: emp.leave_entitlement,
                         taken: emp.days_taken,
-                        remaining: emp.remaining_days
+                        remaining: calculatedRemaining
                       };
                       empData.totalEntitlement += emp.leave_entitlement;
                       empData.totalTaken += emp.days_taken;
-                      empData.totalRemaining += emp.remaining_days;
+                      empData.totalRemaining += calculatedRemaining;
                     });
 
                     return Array.from(employeeMap.values()).slice(0, 30).map((emp, index) => {

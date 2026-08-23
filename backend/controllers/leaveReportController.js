@@ -427,15 +427,16 @@ const buildLeaveReportPdf = async (payload) => {
       }
 
       const empData = employeeMap.get(empId);
+      const calculatedRemaining = Math.max(0, entitlement - daysTaken);
       empData.leaveTypes[leaveType] = {
         entitlement: entitlement,
         taken: daysTaken,
-        remaining: remaining,
+        remaining: calculatedRemaining,
         percentage: entitlement > 0 ? Math.round((daysTaken / entitlement) * 100) : 0
       };
       empData.totalEntitlement += entitlement;
       empData.totalTaken += daysTaken;
-      empData.totalRemaining += remaining;
+      empData.totalRemaining += calculatedRemaining;
     });
 
     const leaveTypesArray = Array.from(leaveTypes).sort();
