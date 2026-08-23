@@ -252,7 +252,7 @@ export default function TravelPage() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 sm:w-40">
               <User size={16} className="text-slate-400 flex-shrink-0" />
               <select
                 value={selectedEmployee}
@@ -323,12 +323,12 @@ export default function TravelPage() {
                       </h3>
                       <div className="mt-2 flex flex-wrap gap-3 text-xs sm:text-sm text-slate-600">
                         <span className="flex items-center gap-1.5">
-                          <Calendar size={10} className="sm:size-12" />
+                          <Calendar size={10} className="sm:size-10" />
                           {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
                         </span>
                         {request.estimatedCost && (
                           <span className="flex items-center gap-1.5">
-                            <DollarSign size={10} className="sm:size-12" />
+                            <DollarSign size={10} className="sm:size-10" />
                             {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
                           </span>
                         )}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Download, Filter, Users, Calendar, TrendingUp, FileText, Eye } from 'lucide-react';
+import { Filter, Users, Calendar, TrendingUp, FileText, Download, Eye } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
@@ -63,43 +63,7 @@ export default function LeaveReportPage() {
     }
   };
 
-  const handlePreviewPDF = async () => {
-    const token = localStorage.getItem('kerea_hrms_auth') ? JSON.parse(localStorage.getItem('kerea_hrms_auth')).token : null;
-    if (!token) {
-      alert('Authentication required. Please log in again.');
-      return;
-    }
-
-    const params = new URLSearchParams();
-    if (filters.startDate) params.append('startDate', filters.startDate);
-    if (filters.endDate) params.append('endDate', filters.endDate);
-    if (filters.employeeId) params.append('employeeId', filters.employeeId);
-    if (filters.departmentId) params.append('departmentId', filters.departmentId);
-    if (filters.leaveTypeId) params.append('leaveTypeId', filters.leaveTypeId);
-    if (filters.status) params.append('status', filters.status);
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}&preview=true`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to generate PDF' }));
-        throw new Error(errorData.message || 'Failed to generate PDF');
-      }
-      
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    } catch (error) {
-      console.error('Failed to preview PDF:', error);
-      alert(`Failed to preview PDF: ${error.message}. Please try again.`);
-    }
-  };
-
-  const handleDownloadPDF = async () => {
+  const handleExportPDF = async () => {
     const token = localStorage.getItem('kerea_hrms_auth') ? JSON.parse(localStorage.getItem('kerea_hrms_auth')).token : null;
     if (!token) {
       alert('Authentication required. Please log in again.');
@@ -122,8 +86,8 @@ export default function LeaveReportPage() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to download PDF' }));
-        throw new Error(errorData.message || 'Failed to download PDF');
+        const errorData = await response.json().catch(() => ({ message: 'Failed to export PDF' }));
+        throw new Error(errorData.message || 'Failed to export PDF');
       }
       
       const blob = await response.blob();
@@ -136,8 +100,44 @@ export default function LeaveReportPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download PDF:', error);
-      alert(`Failed to download PDF: ${error.message}. Please try again.`);
+      console.error('Failed to export PDF:', error);
+      alert(`Failed to export PDF: ${error.message}. Please try again.`);
+    }
+  };
+
+  const handlePreviewPDF = async () => {
+    const token = localStorage.getItem('kerea_hrms_auth') ? JSON.parse(localStorage.getItem('kerea_hrms_auth')).token : null;
+    if (!token) {
+      alert('Authentication required. Please log in again.');
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.employeeId) params.append('employeeId', filters.employeeId);
+    if (filters.departmentId) params.append('departmentId', filters.departmentId);
+    if (filters.leaveTypeId) params.append('leaveTypeId', filters.leaveTypeId);
+    if (filters.status) params.append('status', filters.status);
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/leave-report/export/pdf?${params.toString()}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Failed to preview PDF' }));
+        throw new Error(errorData.message || 'Failed to preview PDF');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Failed to preview PDF:', error);
+      alert(`Failed to preview PDF: ${error.message}. Please try again.`);
     }
   };
 
@@ -154,28 +154,6 @@ export default function LeaveReportPage() {
       <PageHeader
         title="Leave Report"
         subtitle="Generate comprehensive leave reports for the organization."
-        actions={[
-          <button
-            key="preview"
-            type="button"
-            className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            onClick={handlePreviewPDF}
-            disabled={!reportData}
-          >
-            <Eye size={18} />
-            Preview PDF
-          </button>,
-          <button
-            key="download"
-            type="button"
-            className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg disabled:opacity-60"
-            onClick={handleDownloadPDF}
-            disabled={!reportData}
-          >
-            <Download size={18} />
-            Download PDF
-          </button>
-        ]}
       />
 
       <SectionCard
@@ -294,7 +272,30 @@ export default function LeaveReportPage() {
 
       {reportData && (
         <>
-          <SectionCard title="Summary Statistics" subtitle="Overview of leave data across the organization.">
+          <SectionCard 
+            title="Summary Statistics" 
+            subtitle="Overview of leave data across the organization."
+            actions={
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  onClick={handlePreviewPDF}
+                >
+                  <Eye size={18} />
+                  Preview PDF
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg hover:opacity-90"
+                  onClick={handleExportPDF}
+                >
+                  <Download size={18} />
+                  Download PDF
+                </button>
+              </div>
+            }
+          >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-3">
