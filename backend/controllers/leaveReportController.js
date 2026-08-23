@@ -101,7 +101,7 @@ const buildLeaveReportPdf = async (payload) => {
       y -= 25;
       leaveByType.forEach((item) => {
         const leaveType = item.leave_type || 'N/A';
-        const daysTaken = item.days_taken || 0;
+        const daysTaken = parseFloat(item.days_taken) || 0;
         page.drawText(`${leaveType}: ${daysTaken.toFixed(2)} days`, {
           x: 50,
           y: y,
@@ -127,7 +127,7 @@ const buildLeaveReportPdf = async (payload) => {
       y -= 25;
       leaveByDepartment.forEach((item) => {
         const department = item.department || 'N/A';
-        const daysTaken = item.days_taken || 0;
+        const daysTaken = parseFloat(item.days_taken) || 0;
         page.drawText(`${department}: ${daysTaken.toFixed(2)} days`, {
           x: 50,
           y: y,
