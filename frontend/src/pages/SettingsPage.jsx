@@ -1700,98 +1700,90 @@ export default function SettingsPage() {
       ) : null}
 
       {activePage === 'kpi' ? (
-        <div className="grid gap-6 xl:grid-cols-[320px,minmax(0,1fr)]">
+        <div className="space-y-6">
           <SectionCard title="Employees" subtitle="Choose an employee to set their core roles, KPI description, and scores.">
-            <div className="space-y-3">
-              {kpiEmployees.length ? kpiEmployees.map((employee) => {
-                const employeeEntry = getNormalizedKpiEntry(draft.kpi?.records?.[String(employee.id)] || draft.kpi?.matrix?.[String(employee.id)] || {});
-                const employeeAverage = getAverageKpiScore(employeeEntry);
-                const isSelected = String(employee.id) === String(selectedKpiEmployee?.id);
-
-                return (
-                  <button
-                    key={employee.id}
-                    type="button"
-                    onClick={() => setSelectedKpiEmployeeId(String(employee.id))}
-                    className={`w-full rounded-2xl border px-4 py-3 text-left transition ${isSelected ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-slate-900">{employee.fullName}</p>
-                        <p className="mt-1 text-sm text-slate-500">{employee.positionTitle || employee.roleTitle || 'No designation'}</p>
-                      </div>
-                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${employeeAverage === null ? 'bg-slate-100 text-slate-600' : 'bg-emerald-100 text-emerald-700'}`}>{employeeAverage ?? '—'}</span>
-                    </div>
-                  </button>
-                );
-              }) : <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-sm text-slate-500">No employees available for KPI setup yet.</div>}
+            <div className="max-w-md">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Select Employee</label>
+              <select
+                value={selectedKpiEmployeeId}
+                onChange={(event) => setSelectedKpiEmployeeId(event.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+              >
+                {kpiEmployees.length ? kpiEmployees.map((employee) => {
+                  const employeeEntry = getNormalizedKpiEntry(draft.kpi?.records?.[String(employee.id)] || draft.kpi?.matrix?.[String(employee.id)] || {});
+                  const employeeAverage = getAverageKpiScore(employeeEntry);
+                  return (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.fullName} - {employee.positionTitle || employee.roleTitle || 'No designation'} (Avg: {employeeAverage ?? '—'})
+                    </option>
+                  );
+                }) : <option value="">No employees available</option>}
+              </select>
             </div>
           </SectionCard>
 
-          <div className="space-y-6">
-            <SectionCard
-              title={selectedKpiEmployee ? selectedKpiEmployee.fullName : 'KPI details'}
-              subtitle={selectedKpiEmployee ? `${selectedKpiEmployee.positionTitle || selectedKpiEmployee.roleTitle || 'No designation'} · Average ${selectedKpiAverage ?? '—'}` : 'Choose an employee to edit their KPI details.'}
-            >
-              {!selectedKpiEmployee ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-sm text-slate-500">Select an employee on the left to begin editing KPI details.</div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <StatCard title="Employee" value={selectedKpiEmployee.fullName} helper="Selected employee record" accent="from-emerald-700 to-green-500" />
-                    <StatCard title="Designation" value={selectedKpiEmployee.positionTitle || selectedKpiEmployee.roleTitle || 'Not set'} helper="Shown on KPI and performance pages" accent="from-sky-700 to-cyan-500" />
-                    <StatCard title="Average score" value={selectedKpiAverage ?? '--'} helper="Average across the scored KPIs" accent="from-violet-700 to-fuchsia-500" />
-                  </div>
+          <SectionCard
+            title={selectedKpiEmployee ? selectedKpiEmployee.fullName : 'KPI details'}
+            subtitle={selectedKpiEmployee ? `${selectedKpiEmployee.positionTitle || selectedKpiEmployee.roleTitle || 'No designation'} · Average ${selectedKpiAverage ?? '—'}` : 'Choose an employee to edit their KPI details.'}
+          >
+            {!selectedKpiEmployee ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-sm text-slate-500">Select an employee above to begin editing KPI details.</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <StatCard title="Employee" value={selectedKpiEmployee.fullName} helper="Selected employee record" accent="from-emerald-700 to-green-500" />
+                  <StatCard title="Designation" value={selectedKpiEmployee.positionTitle || selectedKpiEmployee.roleTitle || 'Not set'} helper="Shown on KPI and performance pages" accent="from-sky-700 to-cyan-500" />
+                  <StatCard title="Average score" value={selectedKpiAverage ?? '--'} helper="Average across the scored KPIs" accent="from-violet-700 to-fuchsia-500" />
+                </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <h3 className="text-base font-semibold text-slate-900">Core roles</h3>
-                    <p className="mt-1 text-sm text-slate-500">Add the employee’s responsibilities here. You can append more role fields whenever needed.</p>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      {selectedKpiEntry.coreRoles.map((role, index) => (
-                        <div key={`core-role-${index}`}>
-                          <label className="mb-2 block text-sm font-medium text-slate-700">Core role {index + 1}</label>
-                          <div className="flex gap-3">
-                            <input value={role || ''} onChange={(event) => updateSelectedKpiCoreRole(index, event.target.value)} placeholder="Enter core role" />
-                            {selectedKpiEntry.coreRoles.length > 5 ? <button type="button" onClick={() => removeSelectedKpiCoreRole(index)} className="shrink-0 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">Remove</button> : null}
-                          </div>
+                <div className="rounded-3xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-base font-semibold text-slate-900">Core roles</h3>
+                  <p className="mt-1 text-sm text-slate-500">Add the employee's responsibilities here. You can append more role fields whenever needed.</p>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    {selectedKpiEntry.coreRoles.map((role, index) => (
+                      <div key={`core-role-${index}`}>
+                        <label className="mb-2 block text-sm font-medium text-slate-700">Core role {index + 1}</label>
+                        <div className="flex gap-3">
+                          <input value={role || ''} onChange={(event) => updateSelectedKpiCoreRole(index, event.target.value)} placeholder="Enter core role" />
+                          {selectedKpiEntry.coreRoles.length > 5 ? <button type="button" onClick={() => removeSelectedKpiCoreRole(index)} className="shrink-0 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">Remove</button> : null}
                         </div>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <button type="button" onClick={addSelectedKpiCoreRole} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Add core role</button>
-                    </div>
+                      </div>
+                    ))}
                   </div>
-
-                  <div className="rounded-3xl border border-slate-200 bg-white p-5">
-                    <h3 className="text-base font-semibold text-slate-900">KPIs</h3>
-                    <p className="mt-1 text-sm text-slate-500">Set the KPI description and the employee’s current score for each item, then add more KPI rows when needed.</p>
-                    <div className="mt-4 space-y-4">
-                      {selectedKpiEntry.indicators.map((indicator, index) => (
-                        <div key={`indicator-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr),140px,auto]">
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-700">KPI {index + 1} description</label>
-                              <input value={indicator.label || ''} onChange={(event) => updateSelectedKpiIndicator(index, 'label', event.target.value)} placeholder="Enter KPI" />
-                            </div>
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-700">Score</label>
-                              <input type="number" min="0" max="100" value={indicator.score ?? ''} onChange={(event) => updateSelectedKpiIndicator(index, 'score', event.target.value)} placeholder="0-100" />
-                            </div>
-                            <div className="flex items-end">
-                              {selectedKpiEntry.indicators.length > 5 ? <button type="button" onClick={() => removeSelectedKpiIndicator(index)} className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">Remove</button> : null}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4">
-                      <button type="button" onClick={addSelectedKpiIndicator} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Add KPI</button>
-                    </div>
+                  <div className="mt-4">
+                    <button type="button" onClick={addSelectedKpiCoreRole} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Add core role</button>
                   </div>
                 </div>
-              )}
-            </SectionCard>
-          </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-white p-5">
+                  <h3 className="text-base font-semibold text-slate-900">KPIs</h3>
+                  <p className="mt-1 text-sm text-slate-500">Set the KPI description and the employee's current score for each item, then add more KPI rows when needed.</p>
+                  <div className="mt-4 space-y-4">
+                    {selectedKpiEntry.indicators.map((indicator, index) => (
+                      <div key={`indicator-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="grid gap-4 md:grid-cols-[minmax(0,1fr),140px,auto]">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">KPI {index + 1} description</label>
+                            <input value={indicator.label || ''} onChange={(event) => updateSelectedKpiIndicator(index, 'label', event.target.value)} placeholder="Enter KPI" />
+                          </div>
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-700">Score</label>
+                            <input type="number" min="0" max="100" value={indicator.score ?? ''} onChange={(event) => updateSelectedKpiIndicator(index, 'score', event.target.value)} placeholder="0-100" />
+                          </div>
+                          <div className="flex items-end">
+                            {selectedKpiEntry.indicators.length > 5 ? <button type="button" onClick={() => removeSelectedKpiIndicator(index)} className="w-full rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700">Remove</button> : null}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <button type="button" onClick={addSelectedKpiIndicator} className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Add KPI</button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </SectionCard>
         </div>
       ) : null}
 
