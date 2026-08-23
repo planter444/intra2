@@ -203,7 +203,7 @@ const buildLeaveReportPdf = async (payload) => {
 
       leaveByType.forEach((item) => {
         const leaveType = item.leave_type || 'N/A';
-        const daysTaken = parseFloat(item.days_taken) || 0;
+        const daysTaken = Math.round(parseFloat(item.days_taken) || 0);
         const barWidth = ((daysTaken / maxDays) * (width - 200));
 
         // Label
@@ -236,7 +236,7 @@ const buildLeaveReportPdf = async (payload) => {
         });
 
         // Value
-        page.drawText(`${daysTaken.toFixed(2)} days`, {
+        page.drawText(`${daysTaken} days`, {
           x: width - 80,
           y: y + 5,
           size: 10,
@@ -266,7 +266,7 @@ const buildLeaveReportPdf = async (payload) => {
 
       leaveByDepartment.forEach((item) => {
         const department = item.department || 'N/A';
-        const daysTaken = parseFloat(item.days_taken) || 0;
+        const daysTaken = Math.round(parseFloat(item.days_taken) || 0);
         const barWidth = ((daysTaken / maxDays) * (width - 200));
 
         // Label
@@ -299,7 +299,7 @@ const buildLeaveReportPdf = async (payload) => {
         });
 
         // Value
-        page.drawText(`${daysTaken.toFixed(2)} days`, {
+        page.drawText(`${daysTaken} days`, {
           x: width - 80,
           y: y + 5,
           size: 10,
@@ -362,10 +362,10 @@ const buildLeaveReportPdf = async (payload) => {
       employeeLeaveInfo.slice(0, 25).forEach((emp) => {
         const empName = (emp.employee_name || 'N/A').substring(0, 15);
         const department = (emp.department || 'N/A').substring(0, 8);
-        const entitlement = emp.leave_entitlement || 0;
-        const daysTaken = emp.days_taken || 0;
-        const remaining = emp.remaining_days || 0;
-        const pending = emp.pending_days || 0;
+        const entitlement = Math.round(parseFloat(emp.leave_entitlement) || 0);
+        const daysTaken = Math.round(parseFloat(emp.days_taken) || 0);
+        const remaining = Math.round(parseFloat(emp.remaining_days) || 0);
+        const pending = Math.round(parseFloat(emp.pending_days) || 0);
         const status = emp.current_status || 'N/A';
 
         // Color code status
@@ -446,9 +446,9 @@ const buildLeaveReportPdf = async (payload) => {
       const empName = emp.employee_name || 'N/A';
       const department = emp.department || 'N/A';
       const leaveType = emp.leave_type || 'N/A';
-      const entitlement = emp.leave_entitlement || 0;
-      const daysTaken = emp.days_taken || 0;
-      const remaining = emp.remaining_days || 0;
+      const entitlement = parseFloat(emp.leave_entitlement) || 0;
+      const daysTaken = parseFloat(emp.days_taken) || 0;
+      const remaining = parseFloat(emp.remaining_days) || 0;
 
       leaveTypes.add(leaveType);
 
@@ -481,11 +481,11 @@ const buildLeaveReportPdf = async (payload) => {
 
     // Table header
     const colWidths = {
-      name: 80,
-      department: 70,
-      leaveType: 70,
-      remaining: 50,
-      percentage: 50
+      name: 70,
+      department: 60,
+      leaveType: 55,
+      remaining: 45,
+      percentage: 45
     };
 
     let headerX = 50;

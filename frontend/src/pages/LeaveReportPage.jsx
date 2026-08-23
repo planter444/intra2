@@ -357,7 +357,7 @@ export default function LeaveReportPage() {
                       }}
                     />
                   </div>
-                  <div className="w-24 text-right text-sm font-semibold text-slate-900">{item.days_taken} days</div>
+                  <div className="w-24 text-right text-sm font-semibold text-slate-900">{Math.round(item.days_taken)} days</div>
                 </div>
               ))}
             </div>
@@ -376,7 +376,7 @@ export default function LeaveReportPage() {
                       }}
                     />
                   </div>
-                  <div className="w-24 text-right text-sm font-semibold text-slate-900">{item.days_taken} days</div>
+                  <div className="w-24 text-right text-sm font-semibold text-slate-900">{Math.round(item.days_taken)} days</div>
                 </div>
               ))}
             </div>
@@ -486,14 +486,16 @@ export default function LeaveReportPage() {
                       }
 
                       const empData = employeeMap.get(empId);
-                      const calculatedRemaining = Math.max(0, emp.leave_entitlement - emp.days_taken);
+                      const entitlement = parseFloat(emp.leave_entitlement) || 0;
+                      const daysTaken = parseFloat(emp.days_taken) || 0;
+                      const calculatedRemaining = Math.max(0, entitlement - daysTaken);
                       empData.leaveTypes[emp.leave_type] = {
-                        entitlement: emp.leave_entitlement,
-                        taken: emp.days_taken,
+                        entitlement: entitlement,
+                        taken: daysTaken,
                         remaining: calculatedRemaining
                       };
-                      empData.totalEntitlement += emp.leave_entitlement;
-                      empData.totalTaken += emp.days_taken;
+                      empData.totalEntitlement += entitlement;
+                      empData.totalTaken += daysTaken;
                       empData.totalRemaining += calculatedRemaining;
                     });
 
