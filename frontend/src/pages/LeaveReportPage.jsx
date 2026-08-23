@@ -296,7 +296,7 @@ export default function LeaveReportPage() {
               </div>
             }
           >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <div className="flex items-center gap-3">
                   <div className="rounded-full bg-blue-50 p-3">
