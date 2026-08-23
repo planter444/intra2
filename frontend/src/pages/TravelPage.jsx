@@ -252,7 +252,7 @@ export default function TravelPage() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto flex-shrink-0">
-            <div className="flex items-center gap-2 min-w-0 sm:w-40">
+            <div className="flex items-center gap-2 min-w-0 sm:w-52">
               <User size={16} className="text-slate-400 flex-shrink-0" />
               <select
                 value={selectedEmployee}
