@@ -449,6 +449,80 @@ export default function LeaveReportPage() {
               </div>
             </SectionCard>
           )}
+
+          <SectionCard title="Employee Leave Summary" subtitle="Summary of leave balances across all leave types for each employee.">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200">
+                    <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-700">Department</th>
+                    {(() => {
+                      const leaveTypes = [...new Set(reportData.employeeLeaveInfo.map(e => e.leave_type))].sort();
+                      return leaveTypes.map(lt => (
+                        <th key={lt} className="px-4 py-3 text-center font-medium text-slate-700">{lt.substring(0, 10)}</th>
+                      ));
+                    })()}
+                    <th className="px-4 py-3 text-right font-medium text-slate-700">Remaining</th>
+                    <th className="px-4 py-3 text-right font-medium text-slate-700">% Taken</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    const employeeMap = new Map();
+                    const leaveTypes = [...new Set(reportData.employeeLeaveInfo.map(e => e.leave_type))].sort();
+
+                    reportData.employeeLeaveInfo.forEach((emp) => {
+                      const empId = emp.employee_id;
+                      if (!employeeMap.has(empId)) {
+                        employeeMap.set(empId, {
+                          name: emp.employee_name,
+                          department: emp.department,
+                          leaveTypes: {},
+                          totalEntitlement: 0,
+                          totalTaken: 0,
+                          totalRemaining: 0
+                        });
+                      }
+
+                      const empData = employeeMap.get(empId);
+                      empData.leaveTypes[emp.leave_type] = {
+                        entitlement: emp.leave_entitlement,
+                        taken: emp.days_taken,
+                        remaining: emp.remaining_days
+                      };
+                      empData.totalEntitlement += emp.leave_entitlement;
+                      empData.totalTaken += emp.days_taken;
+                      empData.totalRemaining += emp.remaining_days;
+                    });
+
+                    return Array.from(employeeMap.values()).slice(0, 30).map((emp, index) => {
+                      const totalPercentage = emp.totalEntitlement > 0 ? Math.round((emp.totalTaken / emp.totalEntitlement) * 100) : 0;
+                      return (
+                        <tr key={index} className="border-b border-slate-100">
+                          <td className="px-4 py-3 font-medium text-slate-900">{emp.name.substring(0, 15)}</td>
+                          <td className="px-4 py-3 text-slate-600">{emp.department.substring(0, 10)}</td>
+                          {leaveTypes.map(lt => {
+                            const ltData = emp.leaveTypes[lt];
+                            if (ltData) {
+                              const taken = Math.round(ltData.taken);
+                              const entitlement = Math.round(ltData.entitlement);
+                              return (
+                                <td key={lt} className="px-4 py-3 text-center text-slate-900">{taken}/{entitlement}</td>
+                              );
+                            }
+                            return <td key={lt} className="px-4 py-3 text-center text-slate-400">-</td>;
+                          })}
+                          <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.totalRemaining)}</td>
+                          <td className="px-4 py-3 text-right text-slate-900">{totalPercentage}%</td>
+                        </tr>
+                      );
+                    });
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </SectionCard>
         </>
       )}
 

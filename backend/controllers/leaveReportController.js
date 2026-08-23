@@ -238,7 +238,7 @@ const buildLeaveReportPdf = async (payload) => {
         // Value
         page.drawText(`${daysTaken.toFixed(2)} days`, {
           x: width - 80,
-          y: y,
+          y: y + 5,
           size: 10,
           font: fontBold,
           color: textColor,
@@ -301,7 +301,7 @@ const buildLeaveReportPdf = async (payload) => {
         // Value
         page.drawText(`${daysTaken.toFixed(2)} days`, {
           x: width - 80,
-          y: y,
+          y: y + 5,
           size: 10,
           font: fontBold,
           color: textColor,
@@ -313,9 +313,9 @@ const buildLeaveReportPdf = async (payload) => {
       y -= 20;
     }
 
-    // Employee Leave Information - table (first 25)
+    // Employee Leave Information - table (first 15)
     if (employeeLeaveInfo && employeeLeaveInfo.length > 0) {
-      page.drawText('Employee Leave Information (First 25)', {
+      page.drawText('Employee Leave Information (First 15)', {
         x: 50,
         y: y,
         size: 16,
@@ -336,7 +336,7 @@ const buildLeaveReportPdf = async (payload) => {
 
       y -= 15;
 
-      employeeLeaveInfo.slice(0, 25).forEach((emp) => {
+      employeeLeaveInfo.slice(0, 15).forEach((emp) => {
         const empName = (emp.employee_name || 'N/A').substring(0, 15);
         const department = (emp.department || 'N/A').substring(0, 8);
         const entitlement = emp.leave_entitlement || 0;
@@ -367,41 +367,10 @@ const buildLeaveReportPdf = async (payload) => {
       });
     }
 
-    // Employees Currently on Leave
-    if (employeesOnLeave && employeesOnLeave.length > 0) {
-      y -= 10;
-      page.drawText('Employees Currently on Leave', {
-        x: 50,
-        y: y,
-        size: 16,
-        font: fontBold,
-        color: primaryColor,
-      });
-
-      y -= 25;
-
-      employeesOnLeave.slice(0, 10).forEach((emp) => {
-        const empName = emp.employee_name || 'N/A';
-        const leaveType = emp.leave_type || 'N/A';
-        const startDate = emp.start_date ? new Date(emp.start_date).toISOString().split('T')[0] : 'N/A';
-        const endDate = emp.end_date ? new Date(emp.end_date).toISOString().split('T')[0] : 'N/A';
-
-        page.drawText(`${empName} - ${leaveType} (${startDate} to ${endDate})`, {
-          x: 50,
-          y: y,
-          size: 9,
-          font: font,
-          color: textColor,
-        });
-
-        y -= 14;
-      });
-    }
-
     // Footer
     page.drawText('KEREA HRMS - Confidential Document', {
       x: 50,
-      y: 30,
+      y: 50,
       size: 10,
       font: font,
       color: primaryColor,
@@ -462,7 +431,7 @@ const buildLeaveReportPdf = async (payload) => {
         entitlement: entitlement,
         taken: daysTaken,
         remaining: remaining,
-        percentage: entitlement > 0 ? ((daysTaken / entitlement) * 100).toFixed(1) : 0
+        percentage: entitlement > 0 ? Math.round((daysTaken / entitlement) * 100) : 0
       };
       empData.totalEntitlement += entitlement;
       empData.totalTaken += daysTaken;
@@ -513,7 +482,9 @@ const buildLeaveReportPdf = async (payload) => {
       leaveTypesArray.forEach((lt) => {
         const ltData = emp.leaveTypes[lt];
         if (ltData) {
-          const label = `${ltData.taken}/${ltData.entitlement}`;
+          const taken = Math.round(ltData.taken);
+          const entitlement = Math.round(ltData.entitlement);
+          const label = `${taken}/${entitlement}`;
           page2.drawText(label, { x: rowX, y: y2, size: 7, font: font, color: textColor });
         } else {
           page2.drawText('-', { x: rowX, y: y2, size: 7, font: font, color: textColor });
@@ -521,9 +492,9 @@ const buildLeaveReportPdf = async (payload) => {
         rowX += colWidths.leaveType;
       });
 
-      page2.drawText(String(emp.totalRemaining), { x: rowX, y: y2, size: 7, font: font, color: textColor });
+      page2.drawText(String(Math.round(emp.totalRemaining)), { x: rowX, y: y2, size: 7, font: font, color: textColor });
       rowX += colWidths.remaining;
-      const totalPercentage = emp.totalEntitlement > 0 ? ((emp.totalTaken / emp.totalEntitlement) * 100).toFixed(1) : 0;
+      const totalPercentage = emp.totalEntitlement > 0 ? Math.round((emp.totalTaken / emp.totalEntitlement) * 100) : 0;
       page2.drawText(`${totalPercentage}%`, { x: rowX, y: y2, size: 7, font: font, color: textColor });
 
       y2 -= 12;
@@ -531,6 +502,72 @@ const buildLeaveReportPdf = async (payload) => {
 
     // Footer for page 2
     page2.drawText('KEREA HRMS - Confidential Document', {
+      x: 50,
+      y: 30,
+      size: 10,
+      font: font,
+      color: primaryColor,
+    });
+
+    // Add page 3 for Employees Currently on Leave
+    const page3 = pdfDoc.addPage([612, 792]);
+    let y3 = height - 50;
+
+    // Header for page 3
+    page3.drawText('Employees Currently on Leave', {
+      x: 50,
+      y: y3,
+      size: 24,
+      font: fontBold,
+      color: primaryColor,
+    });
+
+    y3 -= 30;
+    page3.drawText('KEREA', {
+      x: 50,
+      y: y3,
+      size: 14,
+      font: font,
+      color: primaryColor,
+    });
+
+    y3 -= 40;
+
+    if (employeesOnLeave && employeesOnLeave.length > 0) {
+      employeesOnLeave.forEach((emp) => {
+        const empName = emp.employee_name || 'N/A';
+        const leaveType = emp.leave_type || 'N/A';
+        const startDate = emp.start_date ? new Date(emp.start_date).toISOString().split('T')[0] : 'N/A';
+        const endDate = emp.end_date ? new Date(emp.end_date).toISOString().split('T')[0] : 'N/A';
+
+        page3.drawText(`${empName} - ${leaveType} (${startDate} to ${endDate})`, {
+          x: 50,
+          y: y3,
+          size: 9,
+          font: font,
+          color: textColor,
+        });
+
+        y3 -= 14;
+
+        // Add new page if running out of space
+        if (y3 < 50) {
+          const newPage = pdfDoc.addPage([612, 792]);
+          y3 = height - 50;
+          newPage.drawText('Employees Currently on Leave (continued)', {
+            x: 50,
+            y: y3,
+            size: 16,
+            font: fontBold,
+            color: primaryColor,
+          });
+          y3 -= 30;
+        }
+      });
+    }
+
+    // Footer for page 3
+    page3.drawText('KEREA HRMS - Confidential Document', {
       x: 50,
       y: 30,
       size: 10,
