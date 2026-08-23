@@ -498,7 +498,9 @@ export default function LeaveReportPage() {
                     });
 
                     return Array.from(employeeMap.values()).slice(0, 30).map((emp, index) => {
-                      const totalPercentage = emp.totalEntitlement > 0 ? Math.round((emp.totalTaken / emp.totalEntitlement) * 100) : 0;
+                      const totalPercentage = (emp.totalEntitlement > 0 && !isNaN(emp.totalEntitlement)) 
+                        ? Math.round((emp.totalTaken / emp.totalEntitlement) * 100) 
+                        : 0;
                       return (
                         <tr key={index} className="border-b border-slate-100">
                           <td className="px-4 py-3 font-medium text-slate-900">{emp.name.substring(0, 15)}</td>
