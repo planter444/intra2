@@ -744,8 +744,7 @@ const getLeaveReportData = async (req, res, next) => {
           COALESCE(lt.default_days, 0) as leave_entitlement,
           COALESCE(lb.balance_days, 0) as remaining_days,
           COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken,
-          COUNT(CASE WHEN lr.status LIKE 'pending%' THEN 1 END) as pending_days,
-          COUNT(CASE WHEN lr.status = 'approved' THEN 1 END) as approved_requests,
+          COALESCE(SUM(CASE WHEN lr.status LIKE 'pending%' THEN lr.days_requested ELSE 0 END), 0) as pending_days,
           MAX(lr.status) as current_status
         FROM users u
         LEFT JOIN departments d ON d.id = u.department_id
@@ -967,8 +966,7 @@ const exportLeaveReportPdf = async (req, res, next) => {
           COALESCE(lt.default_days, 0) as leave_entitlement,
           COALESCE(lb.balance_days, 0) as remaining_days,
           COALESCE(SUM(CASE WHEN lr.status = 'approved' THEN lr.days_requested ELSE 0 END), 0) as days_taken,
-          COUNT(CASE WHEN lr.status LIKE 'pending%' THEN 1 END) as pending_days,
-          COUNT(CASE WHEN lr.status = 'approved' THEN 1 END) as approved_requests,
+          COALESCE(SUM(CASE WHEN lr.status LIKE 'pending%' THEN lr.days_requested ELSE 0 END), 0) as pending_days,
           MAX(lr.status) as current_status
         FROM users u
         LEFT JOIN departments d ON d.id = u.department_id

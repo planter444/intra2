@@ -15,7 +15,8 @@ import {
   uploadTravelReceipt,
   updateTravelReceiptStatus,
   deleteTravelReceipt,
-  downloadTravelReceipt
+  downloadTravelReceipt,
+  getApproverForEmployee
 } from '../services/travelService';
 
 const statusConfig = {
@@ -60,6 +61,8 @@ export default function TravelDetailPage() {
   const [uploadModal, setUploadModal] = useState({ open: false, file: null, amount: '', description: '' });
   const [statusModal, setStatusModal] = useState({ open: false, receipt: null, status: '', comment: '' });
   const [deleteModal, setDeleteModal] = useState({ open: false, type: null, item: null });
+  const [cancelModal, setCancelModal] = useState({ open: false });
+  const [approverForEmployee, setApproverForEmployee] = useState(null);
 
   const loadRequest = async () => {
     try {
@@ -74,6 +77,15 @@ export default function TravelDetailPage() {
         reason: data.reason,
         estimatedCost: data.estimatedCost || ''
       });
+      
+      // Load approver for this employee
+      try {
+        const approverId = await getApproverForEmployee(data.userId);
+        setApproverForEmployee(approverId);
+      } catch (error) {
+        console.warn('Failed to load approver:', error.message);
+        setApproverForEmployee(null);
+      }
     } catch (error) {
       setNotice({
         open: true,
@@ -111,6 +123,7 @@ export default function TravelDetailPage() {
   const handleCancel = async () => {
     try {
       await cancelTravelRequest(id);
+      setCancelModal({ open: false });
       setNotice({
         open: true,
         title: 'Travel request cancelled',
@@ -118,6 +131,7 @@ export default function TravelDetailPage() {
       });
       loadRequest();
     } catch (error) {
+      setCancelModal({ open: false });
       setNotice({
         open: true,
         title: 'Unable to cancel request',
@@ -345,10 +359,11 @@ export default function TravelDetailPage() {
   const config = statusConfig[request.status] || statusConfig.pending;
   const canEdit = String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status);
   const canCancel = String(request.userId) === String(user.id) && request.status === 'pending';
-  const canDecide = ['admin', 'ceo', 'finance', 'supervisor'].includes(user.role) && ['pending', 'rejected'].includes(request.status);
+  // ONLY check employee-specific routing for approval
+  const canDecide = approverForEmployee && String(approverForEmployee) === String(user.id) && ['pending', 'rejected'].includes(request.status);
   const canDelete = user.role === 'admin' && ['approved', 'rejected'].includes(request.status);
   const canUploadReceipt = String(request.userId) === String(user.id) && request.status === 'approved';
-  const isApprover = String(request.userId) !== String(user.id) && ['admin', 'ceo', 'finance', 'supervisor'].includes(user.role);
+  const isApprover = String(request.userId) !== String(user.id) && approverForEmployee && String(approverForEmployee) === String(user.id);
 
   return (
     <div className="space-y-6">
@@ -482,7 +497,7 @@ export default function TravelDetailPage() {
 
           <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-4">
             {canCancel && (
-              <button type="button" className="w-full sm:w-auto rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={handleCancel}>
+              <button type="button" className="w-full sm:w-auto rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setCancelModal({ open: true })}>
                 Cancel Request
               </button>
             )}
@@ -620,6 +635,21 @@ export default function TravelDetailPage() {
         actions={[
           <button key="close" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={() => setNotice({ open: false, title: '', description: '' })}>
             Close
+          </button>
+        ]}
+      />
+
+      <Modal
+        open={cancelModal.open}
+        title="Cancel Travel Request"
+        description="Are you sure you want to cancel this travel request? This action cannot be undone."
+        onClose={() => setCancelModal({ open: false })}
+        actions={[
+          <button key="cancel" type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700" onClick={() => setCancelModal({ open: false })}>
+            No, Keep Request
+          </button>,
+          <button key="confirm" type="button" className="rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white hover:bg-rose-700" onClick={handleCancel}>
+            Yes, Cancel Request
           </button>
         ]}
       />

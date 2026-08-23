@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users, Eye, Search, ArrowUpDown } from 'lucide-react';
+import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users, Eye, Search, ArrowUpDown, User } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee } from '../services/travelService';
+import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
   pending: { label: 'Pending', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
@@ -46,13 +47,19 @@ export default function TravelPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [selectedEmployee, setSelectedEmployee] = useState('');
+  const [users, setUsers] = useState([]);
 
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const data = await fetchTravelRequests();
+      const [data, usersList] = await Promise.all([
+        fetchTravelRequests(),
+        fetchUsers()
+      ]);
       const filteredRequests = data.filter(r => r.status !== 'cancelled');
       setRequests(filteredRequests);
+      setUsers(usersList);
       
       // Load approvers for each unique employee
       const uniqueEmployeeIds = [...new Set(filteredRequests.map(r => r.userId))];
@@ -149,6 +156,12 @@ export default function TravelPage() {
     }
     return true;
   }).filter((request) => {
+    // Employee filter
+    if (selectedEmployee) {
+      return String(request.userId) === String(selectedEmployee);
+    }
+    return true;
+  }).filter((request) => {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -219,7 +232,7 @@ export default function TravelPage() {
         title="Travel requests" 
         subtitle="All travel requests with their current status and details."
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -229,6 +242,19 @@ export default function TravelPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64 rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-4 py-2 text-sm focus:border-blue-500 focus:outline-none"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <User size={16} className="text-slate-400" />
+              <select
+                value={selectedEmployee}
+                onChange={(e) => setSelectedEmployee(e.target.value)}
+                className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+              >
+                <option value="">All Employees</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+                ))}
+              </select>
             </div>
             <select
               value={sortBy}

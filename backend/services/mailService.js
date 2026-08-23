@@ -304,6 +304,13 @@ const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decisio
   const isApproved = decision === 'approve';
   const accent = isApproved ? '#16a34a' : '#dc2626';
   const statusLabel = isApproved ? 'Approved' : 'Rejected';
+  
+  // Format dates without time
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
 
   await sendBrevoEmail({
     to: [
@@ -314,19 +321,62 @@ const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decisio
     ],
     subject: `Your travel request has been ${statusLabel.toLowerCase()}`,
     htmlContent: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: ${accent};">Travel Request ${statusLabel}</h2>
-        <p style="margin: 0 0 18px;">Hello ${toName || 'there'}, your travel request has been ${statusLabel.toLowerCase()} by ${reviewerName}.</p>
-        <p style="margin: 0 0 18px;">
-          <strong>Travel Type:</strong> ${travelRequest.travel_type}<br>
-          <strong>Origin:</strong> ${travelRequest.origin}<br>
-          <strong>Destination:</strong> ${travelRequest.destination}<br>
-          <strong>Start Date:</strong> ${new Date(travelRequest.start_date).toLocaleDateString()}<br>
-          <strong>End Date:</strong> ${new Date(travelRequest.end_date).toLocaleDateString()}<br>
-          <strong>Estimated Cost:</strong> ${travelRequest.estimated_cost ? `${travelRequest.currency} ${travelRequest.estimated_cost.toLocaleString()}` : 'Not specified'}
-        </p>
-        ${comment ? `<p style="margin: 0 0 18px;"><strong>Comment:</strong> ${comment}</p>` : ''}
-        <p style="margin: 0; color: #475569;">If you have any questions, please contact your supervisor or the IT Officer.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 24px; border-radius: 12px 12px 0 0; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; line-height: 1.3;">Travel Request ${statusLabel}</h1>
+          <p style="margin: 8px 0 0; opacity: 0.9;">KEREA HRMS Travel Management</p>
+        </div>
+        <div style="background: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <p style="margin: 0 0 20px; font-size: 16px; color: #1e293b;">
+            Hello <strong>${toName || 'there'}</strong>, your travel request has been <span style="color: ${accent}; font-weight: bold;">${statusLabel.toLowerCase()}</span> by <strong>${reviewerName}</strong>.
+          </p>
+          
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 12px; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Travel Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 140px;">Travel Type:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${travelRequest.travelType || travelRequest.travel_type || 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Origin:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${travelRequest.origin || 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Destination:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${travelRequest.destination || 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Start Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${formatDate(travelRequest.startDate || travelRequest.start_date)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${formatDate(travelRequest.endDate || travelRequest.end_date)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Estimated Cost:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${travelRequest.estimatedCost || travelRequest.estimated_cost ? `${travelRequest.currency || 'KES'} ${Number(travelRequest.estimatedCost || travelRequest.estimated_cost).toLocaleString()}` : 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; vertical-align: top;">Reason:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${travelRequest.reason || 'Not specified'}</td>
+              </tr>
+            </table>
+          </div>
+          
+          ${comment ? `
+          <div style="background: ${isApproved ? '#dcfce7' : '#fee2e2'}; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${accent};">
+            <h3 style="margin: 0 0 8px; font-size: 14px; color: #475569;">${isApproved ? 'Approval' : 'Rejection'} Comment</h3>
+            <p style="margin: 0; color: #1e293b; font-size: 14px;">${comment}</p>
+          </div>
+          ` : ''}
+          
+          <p style="margin: 0; color: #64748b; font-size: 14px;">If you have any questions, please contact your supervisor or the IT Officer.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
+          This is an automated email from KEREA HRMS
+        </div>
       </div>
     `
   });
