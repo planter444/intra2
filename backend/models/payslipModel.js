@@ -59,6 +59,7 @@ const mapProfile = (row) => {
     housingLevy: Number(row.housing_levy) || 0,
     pension: Number(row.pension) || 0,
     otherDeductions: Number(row.other_deductions) || 0,
+    customDeductions: Array.isArray(row.custom_deductions) ? row.custom_deductions : [],
     personalRelief: Number(row.personal_relief) || 0,
     insuranceRelief: Number(row.insurance_relief) || 0,
     otherContributions: Array.isArray(row.other_contributions) ? row.other_contributions : []
@@ -191,8 +192,8 @@ const upsertProfile = async (userId, profile) => {
        user_id, id_number, kra_pin, nssf_number, shif_number, payment_mode,
        gross_salary, allowances, bonuses, overtime, gratuity,
        paye, nssf, nssf_tier, shif, housing_levy, pension, other_deductions,
-       personal_relief, insurance_relief, other_contributions
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+       custom_deductions, personal_relief, insurance_relief, other_contributions
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
      ON CONFLICT (user_id) DO UPDATE SET
        id_number = EXCLUDED.id_number,
        kra_pin = EXCLUDED.kra_pin,
@@ -211,6 +212,7 @@ const upsertProfile = async (userId, profile) => {
        housing_levy = EXCLUDED.housing_levy,
        pension = EXCLUDED.pension,
        other_deductions = EXCLUDED.other_deductions,
+       custom_deductions = EXCLUDED.custom_deductions,
        personal_relief = EXCLUDED.personal_relief,
        insurance_relief = EXCLUDED.insurance_relief,
        other_contributions = EXCLUDED.other_contributions,
@@ -235,6 +237,7 @@ const upsertProfile = async (userId, profile) => {
       profile.housingLevy || 0,
       profile.pension || 0,
       profile.otherDeductions || 0,
+      JSON.stringify(profile.customDeductions || []),
       profile.personalRelief || 0,
       profile.insuranceRelief || 0,
       JSON.stringify(profile.otherContributions || [])

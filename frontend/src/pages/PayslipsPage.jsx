@@ -70,8 +70,8 @@ function SlipSection({ title, children }) {
 function SlipRow({ label, children, alt }) {
   return (
     <div className={`flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-2 last:border-b-0 ${alt ? 'bg-emerald-50/40' : ''}`}>
-      <span className="text-xs font-medium text-slate-500">{label}</span>
-      <div className="w-44">{children}</div>
+      <span className="text-xs font-medium text-slate-500 flex-1">{label}</span>
+      <div className="w-56">{children}</div>
     </div>
   );
 }

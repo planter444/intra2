@@ -323,6 +323,9 @@ ADD CONSTRAINT documents_folder_type_check CHECK (CHAR_LENGTH(TRIM(folder_type))
 ALTER TABLE payroll_profiles
 ADD COLUMN IF NOT EXISTS nssf_tier VARCHAR(20) NOT NULL DEFAULT 'I_II';
 
+ALTER TABLE payroll_profiles
+ADD COLUMN IF NOT EXISTS custom_deductions JSONB NOT NULL DEFAULT '[]'::jsonb;
+
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
 CREATE INDEX IF NOT EXISTS idx_users_department ON users(department_id);
 CREATE INDEX IF NOT EXISTS idx_users_supervisor ON users(supervisor_id);
