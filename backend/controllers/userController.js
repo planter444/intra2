@@ -308,6 +308,14 @@ const updateUser = async (req, res, next) => {
         payload.supervisorId = req.body.supervisorId || null;
       }
 
+      if (Object.prototype.hasOwnProperty.call(req.body, 'designation')) {
+        const allowedDesignations = ['Field Officer', 'Intern', 'Secretariat', 'Consultant'];
+        if (req.body.designation && !allowedDesignations.includes(req.body.designation)) {
+          return res.status(400).json({ message: 'Invalid designation.' });
+        }
+        payload.designation = req.body.designation || null;
+      }
+
       payload.isActive = typeof req.body.isActive === 'boolean' ? req.body.isActive : undefined;
     } else if (req.body.phone && !/^\d+$/.test(String(req.body.phone))) {
       return res.status(400).json({ message: 'Phone number must contain digits only.' });

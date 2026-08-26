@@ -34,12 +34,12 @@ const getToday = () => new Date().toISOString().split('T')[0];
 const getDSARate = (designation, travelCategory, travelTypeDetail) => {
   if (!designation || !travelCategory) return null;
 
-  // Normalize designation to handle case sensitivity
+  // Normalize designation to handle case sensitivity and spacing
   const normalizedDesignation = designation.toLowerCase().replace(/\s+/g, '');
 
   // Within Kenya - Official Overnight Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
-    if (normalizedDesignation === 'fieldofficer' || normalizedDesignation === 'field officer') {
+    if (normalizedDesignation === 'fieldofficer') {
       return { rate: 2000, currency: 'KES', unit: 'per night' };
     }
     if (normalizedDesignation === 'intern') {
@@ -56,7 +56,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail) => {
 
   // Within Kenya - Official Day Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
-    if (normalizedDesignation === 'fieldofficer' || normalizedDesignation === 'field officer') {
+    if (normalizedDesignation === 'fieldofficer') {
       return { rate: 1500, currency: 'KES', unit: 'per day' };
     }
     if (normalizedDesignation === 'intern') {
@@ -135,23 +135,30 @@ export default function TravelApplyPage() {
 
   // Auto-calculate DSA when relevant fields change
   useEffect(() => {
-    if (form.designation && form.travelCategory && form.travelTypeDetail && form.startDate && form.endDate) {
-      const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
-      if (dsaRate) {
-        const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
-        setForm(prev => ({
-          ...prev,
-          dsaRate: dsaRate.rate,
-          dsaCurrency: dsaRate.currency,
-          dsaAmount: dsaAmount
-        }));
-      } else {
-        setForm(prev => ({
-          ...prev,
-          dsaRate: '',
-          dsaCurrency: 'KES',
-          dsaAmount: ''
-        }));
+    if (form.designation && form.travelCategory && form.startDate && form.endDate) {
+      // For East Africa and International, travelTypeDetail is not needed
+      const needsTravelType = form.travelCategory === 'Within Kenya';
+      const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
+
+      if (hasRequiredFields) {
+        const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
+        
+        if (dsaRate) {
+          const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
+          setForm(prev => ({
+            ...prev,
+            dsaRate: dsaRate.rate,
+            dsaCurrency: dsaRate.currency,
+            dsaAmount: dsaAmount
+          }));
+        } else {
+          setForm(prev => ({
+            ...prev,
+            dsaRate: '',
+            dsaCurrency: 'KES',
+            dsaAmount: ''
+          }));
+        }
       }
     }
   }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate]);
@@ -371,7 +378,9 @@ export default function TravelApplyPage() {
               disabled
               readOnly
             />
-            <p className="mt-1 text-xs text-slate-500">Automatically retrieved from your employee profile. Contact IT Officer if not set.</p>
+            {!form.designation && (
+              <p className="mt-1 text-xs text-amber-600">⚠️ Designation not set. Contact IT Officer to configure your designation for DSA calculation.</p>
+            )}
           </div>
 
           {/* Travel Category */}
