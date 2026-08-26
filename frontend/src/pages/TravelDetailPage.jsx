@@ -476,6 +476,51 @@ export default function TravelDetailPage() {
                   <p className="font-medium text-slate-900">{request.currency} {request.estimatedCost.toLocaleString()}</p>
                 </div>
               )}
+              {request.designation && (
+                <div>
+                  <p className="text-sm text-slate-500">Designation</p>
+                  <p className="font-medium text-slate-900">{request.designation}</p>
+                </div>
+              )}
+              {request.travelCategory && (
+                <div>
+                  <p className="text-sm text-slate-500">Travel Category</p>
+                  <p className="font-medium text-slate-900">{request.travelCategory}</p>
+                </div>
+              )}
+              {request.travelTypeDetail && (
+                <div>
+                  <p className="text-sm text-slate-500">Travel Type</p>
+                  <p className="font-medium text-slate-900">{request.travelTypeDetail}</p>
+                </div>
+              )}
+              {request.projectProgramme && (
+                <div>
+                  <p className="text-sm text-slate-500">Project / Programme / Activity</p>
+                  <p className="font-medium text-slate-900">{request.projectProgramme}</p>
+                </div>
+              )}
+              {request.referenceNumber && (
+                <div>
+                  <p className="text-sm text-slate-500">Reference Number</p>
+                  <p className="font-medium text-slate-900">{request.referenceNumber}</p>
+                </div>
+              )}
+              {request.dsaAmount && request.dsaRate && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <h4 className="mb-2 font-semibold text-emerald-900">DSA Calculation</h4>
+                  <div className="grid gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Rate:</span>
+                      <span className="font-medium text-slate-900">{request.dsaCurrency} {request.dsaRate.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total DSA:</span>
+                      <span className="font-semibold text-emerald-700">{request.dsaCurrency} {request.dsaAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-slate-500">Reason</p>
                 <p className="font-medium text-slate-900">{request.reason}</p>

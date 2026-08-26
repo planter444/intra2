@@ -336,10 +336,22 @@ export default function TravelPage() {
                           <Calendar size={10} className="sm:size-10" />
                           {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
                         </span>
+                        {request.referenceNumber && (
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-xs font-medium text-slate-500">Ref:</span>
+                            {request.referenceNumber}
+                          </span>
+                        )}
                         {request.estimatedCost && (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                          </span>
+                        )}
+                        {request.dsaAmount && (
+                          <span className="flex items-center gap-1.5">
+                            <DollarSign size={10} className="sm:size-10" />
+                            DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
                           </span>
                         )}
                       </div>
@@ -432,10 +444,22 @@ export default function TravelPage() {
                           <Calendar size={16} />
                           {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
                         </span>
+                        {request.referenceNumber && (
+                          <span className="flex items-center gap-1.5">
+                            <span className="text-xs font-medium text-slate-500">Ref:</span>
+                            {request.referenceNumber}
+                          </span>
+                        )}
                         {request.estimatedCost && (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
                             {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                          </span>
+                        )}
+                        {request.dsaAmount && (
+                          <span className="flex items-center gap-1.5">
+                            <DollarSign size={16} />
+                            DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
                           </span>
                         )}
                       </div>

@@ -34,10 +34,36 @@ const mapTravelRequest = (row) => ({
   approvedAt: row.approved_at,
   rejectionReason: row.rejection_reason,
   createdAt: row.created_at,
-  updatedAt: row.updated_at
+  updatedAt: row.updated_at,
+  designation: row.designation,
+  travelCategory: row.travel_category,
+  travelTypeDetail: row.travel_type_detail,
+  projectProgramme: row.project_programme,
+  dsaRate: row.dsa_rate ? Number(row.dsa_rate) : null,
+  dsaCurrency: row.dsa_currency || 'KES',
+  dsaAmount: row.dsa_amount ? Number(row.dsa_amount) : null,
+  referenceNumber: row.reference_number
 });
 
-const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId }) => {
+const generateReferenceNumber = async () => {
+  const year = new Date().getFullYear();
+  const result = await query(
+    `
+      SELECT COUNT(*) as count
+      FROM travel_requests
+      WHERE EXTRACT(YEAR FROM created_at) = $1
+    `,
+    [year]
+  );
+  
+  const count = (result.rows[0]?.count || 0) + 1;
+  const sequence = String(count).padStart(4, '0');
+  return `KEREA-TRV-${year}-${sequence}`;
+};
+
+const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount }) => {
+  const referenceNumber = await generateReferenceNumber();
+  
   let result;
   try {
     result = await query(
@@ -53,17 +79,25 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
           estimated_cost,
           currency,
           supporting_document_id,
+          designation,
+          travel_category,
+          travel_type_detail,
+          project_programme,
+          dsa_rate,
+          dsa_currency,
+          dsa_amount,
+          reference_number,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'pending')
         RETURNING id
       `,
-      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
+      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null, designation || null, travelCategory || null, travelTypeDetail || null, projectProgramme || null, dsaRate || null, dsaCurrency || 'KES', dsaAmount || null, referenceNumber]
     );
   } catch (error) {
     console.error('Travel request insert error:', error.message);
-    // If supporting_document_id column doesn't exist or any other error, retry without it
-    console.warn('Retrying travel request insert without supporting_document_id');
+    // If new columns don't exist, retry with basic columns
+    console.warn('Retrying travel request insert with basic columns');
     try {
       result = await query(
         `
@@ -77,12 +111,13 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
             reason,
             estimated_cost,
             currency,
+            supporting_document_id,
             status
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
           RETURNING id
         `,
-        [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES']
+        [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
       );
     } catch (fallbackError) {
       console.error('Fallback travel request insert also failed:', fallbackError.message);

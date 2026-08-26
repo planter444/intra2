@@ -18,10 +18,84 @@ const initialForm = {
   estimatedCost: '',
   currency: 'KES',
   receiptFile: null,
-  supportingDocuments: null
+  supportingDocuments: null,
+  designation: '',
+  travelCategory: '',
+  travelTypeDetail: '',
+  projectProgramme: '',
+  dsaRate: '',
+  dsaCurrency: 'KES',
+  dsaAmount: ''
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
+
+// DSA Rate Configuration
+const getDSARate = (designation, travelCategory, travelTypeDetail) => {
+  if (!designation || !travelCategory) return null;
+
+  // Within Kenya - Official Overnight Travel
+  if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
+    switch (designation) {
+      case 'Field Officer': return { rate: 2000, currency: 'KES', unit: 'per night' };
+      case 'Intern': return { rate: 4000, currency: 'KES', unit: 'per night' };
+      case 'Secretariat': return { rate: 4000, currency: 'KES', unit: 'per night' };
+      case 'Consultant': return { rate: 4000, currency: 'KES', unit: 'per night' };
+      default: return null;
+    }
+  }
+
+  // Within Kenya - Official Day Travel
+  if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
+    switch (designation) {
+      case 'Field Officer': return { rate: 1500, currency: 'KES', unit: 'per day' };
+      case 'Intern': return { rate: 2000, currency: 'KES', unit: 'per day' };
+      case 'Secretariat': return { rate: 2000, currency: 'KES', unit: 'per day' };
+      case 'Consultant': return { rate: 2000, currency: 'KES', unit: 'per day' };
+      default: return null;
+    }
+  }
+
+  // East Africa
+  if (travelCategory === 'East Africa') {
+    switch (designation) {
+      case 'Secretariat': return { rate: 35, currency: 'USD', unit: 'per day' };
+      case 'Consultant': return { rate: 35, currency: 'USD', unit: 'per day' };
+      default: return null;
+    }
+  }
+
+  // International - Outside East Africa
+  if (travelCategory === 'International') {
+    switch (designation) {
+      case 'Secretariat': return { rate: 50, currency: 'USD', unit: 'per day' };
+      case 'Consultant': return { rate: 50, currency: 'USD', unit: 'per day' };
+      default: return null;
+    }
+  }
+
+  return null;
+};
+
+// Calculate DSA amount based on dates and rate
+const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
+  if (!startDate || !endDate || !dsaRate) return 0;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = end - start;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (travelTypeDetail === 'Official Overnight Travel') {
+    // Nights = End Date - Start Date
+    const nights = diffDays;
+    return nights * dsaRate.rate;
+  } else {
+    // Days = End Date - Start Date + 1
+    const days = diffDays + 1;
+    return days * dsaRate.rate;
+  }
+};
 
 export default function TravelApplyPage() {
   const navigate = useNavigate();
@@ -32,6 +106,43 @@ export default function TravelApplyPage() {
   const [step, setStep] = useState(1);
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
+
+  // Auto-populate designation from user profile
+  useEffect(() => {
+    if (user?.designation) {
+      setForm(prev => ({ ...prev, designation: user.designation }));
+    }
+  }, [user?.designation]);
+
+  // Auto-calculate DSA when relevant fields change
+  useEffect(() => {
+    if (form.designation && form.travelCategory && form.travelTypeDetail && form.startDate && form.endDate) {
+      const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
+      if (dsaRate) {
+        const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
+        setForm(prev => ({
+          ...prev,
+          dsaRate: dsaRate.rate,
+          dsaCurrency: dsaRate.currency,
+          dsaAmount: dsaAmount
+        }));
+      } else {
+        setForm(prev => ({
+          ...prev,
+          dsaRate: '',
+          dsaCurrency: 'KES',
+          dsaAmount: ''
+        }));
+      }
+    }
+  }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate]);
+
+  // Reset travel type detail when category changes
+  useEffect(() => {
+    if (form.travelCategory && form.travelCategory !== 'Within Kenya') {
+      setForm(prev => ({ ...prev, travelTypeDetail: '' }));
+    }
+  }, [form.travelCategory]);
 
   useEffect(() => {
     fetchTravelRequests()
@@ -105,7 +216,14 @@ export default function TravelApplyPage() {
         destination: form.destination,
         reason: form.reason,
         estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : null,
-        currency: form.currency
+        currency: form.currency,
+        designation: form.designation,
+        travelCategory: form.travelCategory,
+        travelTypeDetail: form.travelTypeDetail,
+        projectProgramme: form.projectProgramme,
+        dsaRate: form.dsaRate ? Number(form.dsaRate) : null,
+        dsaCurrency: form.dsaCurrency,
+        dsaAmount: form.dsaAmount ? Number(form.dsaAmount) : null
       };
 
       let request;
@@ -206,7 +324,7 @@ export default function TravelApplyPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setForm({ ...initialForm, travelType: 'reimbursement' });
+                  setForm({ ...initialForm, travelType: 'reimbursement', travelCategory: 'Within Kenya', travelTypeDetail: 'Official Day Travel' });
                   setStep(2);
                 }}
                 className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-slate-200 bg-white p-4 text-left transition-all hover:border-emerald-500 hover:bg-emerald-50"
@@ -224,13 +342,77 @@ export default function TravelApplyPage() {
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>
 
+          {/* Designation (auto-filled from user profile) */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Designation</label>
+            <input
+              type="text"
+              className="bg-slate-50"
+              value={form.designation || 'Not set in profile'}
+              disabled
+              readOnly
+            />
+            <p className="mt-1 text-xs text-slate-500">Automatically retrieved from your employee profile</p>
+          </div>
+
+          {/* Travel Category */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Travel Category</label>
+            <select
+              value={form.travelCategory}
+              onChange={(event) => setForm((current) => ({ ...current, travelCategory: event.target.value }))}
+              className="bg-slate-50"
+              required
+            >
+              <option value="">Select travel category</option>
+              <option value="Within Kenya">Within Kenya</option>
+              <option value="East Africa">East Africa</option>
+              <option value="International">International</option>
+            </select>
+          </div>
+
+          {/* Travel Type Detail (only for Within Kenya) */}
+          {form.travelCategory === 'Within Kenya' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Travel Type</label>
+              <select
+                value={form.travelTypeDetail}
+                onChange={(event) => setForm((current) => ({ ...current, travelTypeDetail: event.target.value }))}
+                className="bg-slate-50"
+                required
+              >
+                <option value="">Select travel type</option>
+                <option value="Official Overnight Travel">Official Overnight Travel</option>
+                <option value="Official Day Travel">Official Day Travel</option>
+              </select>
+            </div>
+          )}
+
+          {/* Project/Programme/Activity */}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Project / Programme / Activity</label>
+            <select
+              value={form.projectProgramme}
+              onChange={(event) => setForm((current) => ({ ...current, projectProgramme: event.target.value }))}
+              className="bg-slate-50"
+              required
+            >
+              <option value="">Select project/programme</option>
+              <option value="CWF">CWF</option>
+              <option value="KEREA">KEREA</option>
+              <option value="WRI">WRI</option>
+              <option value="CLASP">CLASP</option>
+              <option value="GIZ">GIZ</option>
+              <option value="GOGLA">GOGLA</option>
+            </select>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Start date</label>
               <input
                 type="date"
                 value={form.startDate}
-                min={form.travelType === 'reimbursement' ? '' : getToday()}
                 onChange={(event) => setForm((current) => {
                   const nextStart = event.target.value;
                   const nextEnd = current.endDate && current.endDate >= nextStart ? current.endDate : nextStart;
@@ -244,12 +426,51 @@ export default function TravelApplyPage() {
               <input
                 type="date"
                 value={form.endDate}
-                min={form.startDate || (form.travelType === 'reimbursement' ? '' : getToday())}
+                min={form.startDate}
                 onChange={(event) => setForm((current) => ({ ...current, endDate: event.target.value }))}
                 required
               />
             </div>
           </div>
+
+          {/* DSA Calculation Display */}
+          {form.dsaRate && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-3 font-semibold text-emerald-900">DSA Calculation</h4>
+              <div className="grid gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Applicable Rate:</span>
+                  <span className="font-medium text-slate-900">
+                    {form.dsaCurrency} {form.dsaRate?.toLocaleString()} {getDSARate(form.designation, form.travelCategory, form.travelTypeDetail)?.unit || ''}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Number of {form.travelTypeDetail === 'Official Overnight Travel' ? 'Nights' : 'Days'}:</span>
+                  <span className="font-medium text-slate-900">
+                    {form.startDate && form.endDate ? (
+                      form.travelTypeDetail === 'Official Overnight Travel' 
+                        ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24))
+                        : Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24)) + 1
+                    ) : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-emerald-200 pt-2">
+                  <span className="font-semibold text-slate-900">Total DSA:</span>
+                  <span className="font-semibold text-emerald-700">
+                    {form.dsaCurrency} {form.dsaAmount?.toLocaleString() || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!form.dsaRate && form.designation && form.travelCategory && form.travelTypeDetail && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm text-amber-800">
+                ⚠️ No DSA rate configured for {form.designation} - {form.travelCategory} - {form.travelTypeDetail}
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>

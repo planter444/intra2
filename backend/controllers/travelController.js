@@ -89,7 +89,7 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
-    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency } = req.body;
+    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
       return res.status(400).json({ message: 'Start date, end date, origin, destination, and reason are required.' });
@@ -137,7 +137,7 @@ const createTravelRequest = async (req, res, next) => {
       }
     }
 
-    // Create travel request - try with supportingDocumentId first, fall back if column doesn't exist
+    // Create travel request with new fields
     let request;
     try {
       request = await travelModel.createTravelRequest({
@@ -150,12 +150,19 @@ const createTravelRequest = async (req, res, next) => {
         reason,
         estimatedCost: estimatedCost || null,
         currency: currency || 'KES',
-        supportingDocumentId
+        supportingDocumentId,
+        designation: designation || req.user.designation || null,
+        travelCategory: travelCategory || null,
+        travelTypeDetail: travelTypeDetail || null,
+        projectProgramme: projectProgramme || null,
+        dsaRate: dsaRate || null,
+        dsaCurrency: dsaCurrency || 'KES',
+        dsaAmount: dsaAmount || null
       });
     } catch (dbError) {
-      // If the error is about supporting_document_id column not existing, retry without it
-      if (dbError.message && dbError.message.includes('supporting_document_id')) {
-        console.warn('supporting_document_id column not found, creating request without it');
+      // If the error is about new columns not existing, retry without them
+      if (dbError.message && (dbError.message.includes('designation') || dbError.message.includes('travel_category'))) {
+        console.warn('New travel columns not found, creating request without them');
         request = await travelModel.createTravelRequest({
           userId: req.user.id,
           travelType: travelType || 'booking',
@@ -180,7 +187,7 @@ const createTravelRequest = async (req, res, next) => {
       entityType: 'travel_request',
       entityId: String(request.id),
       description: `${req.user.fullName} submitted a travel request.`,
-      metadata: { travelType, origin, destination, startDate, endDate },
+      metadata: { travelType, origin, destination, startDate, endDate, referenceNumber: request.referenceNumber },
       ipAddress: req.ip
     });
 
