@@ -64,7 +64,7 @@ export default function LocalMovementReimbursementPage() {
         title: 'Local movement reimbursement submitted',
         description: 'Your local movement reimbursement request has been submitted successfully.'
       });
-      setTimeout(() => navigate('/travel'), 2000);
+      setTimeout(() => navigate('/travel/local'), 2000);
     } catch (error) {
       setNotice({
         open: true,
@@ -95,7 +95,7 @@ export default function LocalMovementReimbursementPage() {
     <div className="space-y-6">
       <PageHeader
         title="Local Movement Reimbursement"
-        subtitle="Submit local movement expenses for reimbursement with receipt uploads."
+        subtitle="Submit local movement expenses for reimbursement with receipt uploads. Total cost required."
         actions={[
           <button
             key="back"
@@ -165,7 +165,7 @@ export default function LocalMovementReimbursementPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Cost</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Total Cost to be Reimbursed</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                   {form.currency === 'KES' ? 'KES' : form.currency}
@@ -179,6 +179,7 @@ export default function LocalMovementReimbursementPage() {
                   required
                 />
               </div>
+              <p className="mt-1 text-xs text-slate-500">Total amount for local movement reimbursement</p>
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Currency</label>

@@ -158,7 +158,7 @@ export default function TravelReimbursementPage() {
         title: 'Travel reimbursement submitted',
         description: 'Your travel reimbursement request has been submitted successfully.'
       });
-      setTimeout(() => navigate('/travel'), 2000);
+      setTimeout(() => navigate('/travel/official'), 2000);
     } catch (error) {
       setNotice({
         open: true,
@@ -188,13 +188,13 @@ export default function TravelReimbursementPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Travel Reimbursement"
-        subtitle="Submit travel expenses for reimbursement with receipt uploads."
+        title="Official Travel Reimbursement"
+        subtitle="Submit official travel expenses for reimbursement with receipt uploads."
         actions={[
           <button
             key="back"
             type="button"
-            onClick={() => navigate('/travel')}
+            onClick={() => navigate('/travel/official')}
             className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
           >
             <ArrowLeft size={18} />
@@ -303,7 +303,7 @@ export default function TravelReimbursementPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Cost (Transportation & Other Expenses)</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Total Cost for Reimbursement</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                   {form.currency === 'KES' ? 'KES' : form.currency}
@@ -317,7 +317,7 @@ export default function TravelReimbursementPage() {
                   required
                 />
               </div>
-              <p className="mt-1 text-xs text-slate-500">Separate from DSA (accommodation, meals, incidentals)</p>
+              <p className="mt-1 text-xs text-slate-500">Total amount to be reimbursed (includes all expenses)</p>
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Currency</label>
@@ -350,34 +350,6 @@ export default function TravelReimbursementPage() {
                   <span className="text-slate-600">Total DSA:</span>
                   <span className="font-semibold text-emerald-700">{form.dsaAmount} {form.dsaCurrency}</span>
                 </div>
-              </div>
-            </div>
-          )}
-
-          {/* Total Cost Summary */}
-          {(form.estimatedCost || form.dsaAmount) && (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-              <h4 className="mb-3 flex items-center gap-2 font-semibold text-blue-900">
-                <DollarSign size={18} />
-                Total Estimated Cost Summary
-              </h4>
-              <div className="grid gap-2 text-sm">
-                {form.estimatedCost && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">Transportation & Other Expenses:</span>
-                    <span className="font-medium text-slate-900">
-                      {form.currency} {parseFloat(form.estimatedCost || 0).toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {form.dsaAmount && (
-                  <div className="flex justify-between">
-                    <span className="text-slate-600">DSA (Accommodation, Meals, Incidentals):</span>
-                    <span className="font-medium text-slate-900">
-                      {form.dsaCurrency} {parseFloat(form.dsaAmount || 0).toLocaleString()}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           )}

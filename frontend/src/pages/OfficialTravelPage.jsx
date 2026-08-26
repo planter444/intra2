@@ -1,41 +1,41 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, MapPin, DollarSign, FileText, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, MapPin, FileText, CheckCircle } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 
-export default function LocalMovementPage() {
+export default function OfficialTravelPage() {
   const navigate = useNavigate();
 
   const options = [
     {
       id: 'booking',
-      title: 'Local Movement Booking',
-      description: 'Plan local movement for business purposes. Estimated cost is optional. Supporting documents optional.',
+      title: 'Official Travel Booking',
+      description: 'Plan and book official travel with automatic DSA calculation. Transportation costs optional.',
       icon: Calendar,
       color: 'from-blue-500 to-blue-600',
       borderColor: 'border-blue-200',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
-      path: '/travel/local/booking'
+      path: '/travel/apply'
     },
     {
       id: 'reimbursement',
-      title: 'Local Movement Reimbursement',
-      description: 'Submit local movement expenses for reimbursement. Total cost required. Receipts mandatory.',
+      title: 'Official Travel Reimbursement',
+      description: 'Submit official travel expenses for reimbursement with receipt uploads. Total cost required.',
       icon: FileText,
       color: 'from-purple-500 to-purple-600',
       borderColor: 'border-purple-200',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
-      path: '/travel/local/reimbursement'
+      path: '/travel/reimbursement'
     }
   ];
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Local Movement"
-        subtitle="Manage local movement bookings and reimbursements for short-distance travel within the city."
+        title="Official Travel"
+        subtitle="Manage official travel bookings and reimbursements with automatic DSA calculation."
         actions={[
           <button
             key="back"
@@ -50,8 +50,8 @@ export default function LocalMovementPage() {
       />
 
       <SectionCard
-        title="Select Local Movement Type"
-        subtitle="Choose between booking local movement (optional cost) or reimbursement (total cost required)."
+        title="Select Official Travel Type"
+        subtitle="Choose between booking a new official travel or submitting expenses for reimbursement."
       >
         <div className="grid gap-6 md:grid-cols-2">
           {options.map((option) => {
@@ -78,18 +78,17 @@ export default function LocalMovementPage() {
           })}
         </div>
 
-        <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-amber-800">
+        <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold text-blue-800">
             <CheckCircle size={16} />
-            Local Movement Information
+            Official Travel Information
           </h4>
-          <ul className="space-y-1 text-sm text-amber-700">
-            <li>• No DSA (Daily Subsistence Allowance) applicable</li>
-            <li>• Single travel date (no end date needed)</li>
-            <li>• Origin and destination required</li>
-            <li>• Project/programme selection required</li>
-            <li>• Booking: Estimated cost optional, supporting documents optional</li>
+          <ul className="space-y-1 text-sm text-blue-700">
+            <li>• Automatic DSA calculation based on designation and travel category</li>
+            <li>• Travel categories: Within Kenya, East Africa, International</li>
+            <li>• Booking: Transportation costs optional, DSA calculated automatically</li>
             <li>• Reimbursement: Total cost required, receipts mandatory</li>
+            <li>• DSA covers accommodation, meals, and incidental costs</li>
           </ul>
         </div>
       </SectionCard>

@@ -236,19 +236,11 @@ export default function TravelPage() {
           <div key="travel-options" className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate('/travel/apply')}
+              onClick={() => navigate('/travel/official')}
               className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg"
             >
-              <Plus size={18} />
-              Travel Booking
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/travel/reimbursement')}
-              className="flex items-center gap-2 rounded-2xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-lg"
-            >
-              <FileText size={18} />
-              Travel Reimbursement
+              <MapPin size={18} />
+              Official Travel
             </button>
             <button
               type="button"
@@ -348,7 +340,7 @@ export default function TravelPage() {
                               ? 'bg-blue-50 text-blue-600 border-blue-200' 
                               : 'bg-purple-50 text-purple-600 border-purple-200'
                         } border`}>
-                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
+                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
                         </span>
                       </div>
                       <h3 className="mt-2 text-base sm:text-lg font-semibold text-slate-900 truncate">
@@ -465,7 +457,7 @@ export default function TravelPage() {
                               ? 'bg-blue-50 text-blue-600 border-blue-200' 
                               : 'bg-purple-50 text-purple-600 border-purple-200'
                         } border`}>
-                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
+                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
                         </span>
                       </div>
                       <h3 className="mt-2 text-lg font-semibold text-slate-900">

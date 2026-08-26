@@ -64,7 +64,7 @@ export default function LocalMovementBookingPage() {
         title: 'Local movement booking submitted',
         description: 'Your local movement booking has been submitted successfully.'
       });
-      setTimeout(() => navigate('/travel'), 2000);
+      setTimeout(() => navigate('/travel/local'), 2000);
     } catch (error) {
       setNotice({
         open: true,
@@ -95,7 +95,7 @@ export default function LocalMovementBookingPage() {
     <div className="space-y-6">
       <PageHeader
         title="Local Movement Booking"
-        subtitle="Book local movement for business purposes within the city."
+        subtitle="Book local movement for business purposes within the city. Estimated cost is optional."
         actions={[
           <button
             key="back"
@@ -165,7 +165,7 @@ export default function LocalMovementBookingPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Cost</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Cost (Optional)</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                   {form.currency === 'KES' ? 'KES' : form.currency}
@@ -176,9 +176,9 @@ export default function LocalMovementBookingPage() {
                   onChange={(event) => setForm((current) => ({ ...current, estimatedCost: event.target.value }))}
                   placeholder="0.00"
                   className="bg-slate-50 pl-16"
-                  required
                 />
               </div>
+              <p className="mt-1 text-xs text-slate-500">Optional - for local movement budgeting</p>
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Currency</label>
