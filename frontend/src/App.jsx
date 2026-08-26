@@ -25,7 +25,6 @@ import TravelPage from './pages/TravelPage';
 import TravelApplyPage from './pages/TravelApplyPage';
 import TravelDetailPage from './pages/TravelDetailPage';
 import TravelSettingsPage from './pages/TravelSettingsPage';
-import OfficialTravelPage from './pages/OfficialTravelPage';
 import TravelReimbursementPage from './pages/TravelReimbursementPage';
 import LocalMovementPage from './pages/LocalMovementPage';
 import LocalMovementBookingPage from './pages/LocalMovementBookingPage';
@@ -89,7 +88,6 @@ export default function App() {
       <Route path="/payslips" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><PayslipsPage /></ProtectedRoute>} />
       <Route path="/payslip-templates" element={<ProtectedRoute allowedRoles={['admin']}><PayslipTemplatesPage /></ProtectedRoute>} />
       <Route path="/travel" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelPage /></ProtectedRoute>} />
-      <Route path="/travel/official" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><OfficialTravelPage /></ProtectedRoute>} />
       <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelApplyPage /></ProtectedRoute>} />
       <Route path="/travel/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelReimbursementPage /></ProtectedRoute>} />
       <Route path="/travel/local" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementPage /></ProtectedRoute>} />

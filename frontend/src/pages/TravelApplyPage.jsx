@@ -32,67 +32,90 @@ const getToday = () => new Date().toISOString().split('T')[0];
 
 // DSA Rate Configuration
 const getDSARate = (designation, travelCategory, travelTypeDetail) => {
-  if (!designation || !travelCategory) return null;
+  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail });
+  
+  if (!designation || !travelCategory) {
+    console.log('Missing designation or travelCategory');
+    return null;
+  }
 
   // Normalize designation to handle case sensitivity and spacing
   const normalizedDesignation = designation.toLowerCase().replace(/\s+/g, '');
+  console.log('Normalized designation:', normalizedDesignation);
 
   // Within Kenya - Official Overnight Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
     if (normalizedDesignation === 'fieldofficer') {
+      console.log('Match: Field Officer - Within Kenya Overnight');
       return { rate: 2000, currency: 'KES', unit: 'per night' };
     }
     if (normalizedDesignation === 'intern') {
+      console.log('Match: Intern - Within Kenya Overnight');
       return { rate: 4000, currency: 'KES', unit: 'per night' };
     }
     if (normalizedDesignation === 'secretariat') {
+      console.log('Match: Secretariat - Within Kenya Overnight');
       return { rate: 4000, currency: 'KES', unit: 'per night' };
     }
     if (normalizedDesignation === 'consultant') {
+      console.log('Match: Consultant - Within Kenya Overnight');
       return { rate: 4000, currency: 'KES', unit: 'per night' };
     }
+    console.log('No match for Within Kenya Overnight');
     return null;
   }
 
   // Within Kenya - Official Day Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
     if (normalizedDesignation === 'fieldofficer') {
+      console.log('Match: Field Officer - Within Kenya Day');
       return { rate: 1500, currency: 'KES', unit: 'per day' };
     }
     if (normalizedDesignation === 'intern') {
+      console.log('Match: Intern - Within Kenya Day');
       return { rate: 2000, currency: 'KES', unit: 'per day' };
     }
     if (normalizedDesignation === 'secretariat') {
+      console.log('Match: Secretariat - Within Kenya Day');
       return { rate: 2000, currency: 'KES', unit: 'per day' };
     }
     if (normalizedDesignation === 'consultant') {
+      console.log('Match: Consultant - Within Kenya Day');
       return { rate: 2000, currency: 'KES', unit: 'per day' };
     }
+    console.log('No match for Within Kenya Day');
     return null;
   }
 
   // East Africa
   if (travelCategory === 'East Africa') {
     if (normalizedDesignation === 'secretariat') {
+      console.log('Match: Secretariat - East Africa');
       return { rate: 35, currency: 'USD', unit: 'per day' };
     }
     if (normalizedDesignation === 'consultant') {
+      console.log('Match: Consultant - East Africa');
       return { rate: 35, currency: 'USD', unit: 'per day' };
     }
+    console.log('No match for East Africa');
     return null;
   }
 
   // International - Outside East Africa
   if (travelCategory === 'International') {
     if (normalizedDesignation === 'secretariat') {
+      console.log('Match: Secretariat - International');
       return { rate: 50, currency: 'USD', unit: 'per day' };
     }
     if (normalizedDesignation === 'consultant') {
+      console.log('Match: Consultant - International');
       return { rate: 50, currency: 'USD', unit: 'per day' };
     }
+    console.log('No match for International');
     return null;
   }
 
+  console.log('No match for travel category');
   return null;
 };
 
@@ -126,10 +149,15 @@ export default function TravelApplyPage() {
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
-  // Auto-populate designation from user profile (silently)
+  // Auto-populate designation from user profile (with debug logging)
   useEffect(() => {
+    console.log('User object:', user);
+    console.log('User designation:', user?.designation);
     if (user?.designation) {
       setForm(prev => ({ ...prev, designation: user.designation }));
+      console.log('Designation set to:', user.designation);
+    } else {
+      console.log('No designation found for user');
     }
   }, [user?.designation]);
 
@@ -303,7 +331,7 @@ export default function TravelApplyPage() {
       });
       setForm(initialForm);
       setStep(1);
-      setTimeout(() => navigate('/travel/official'), 2000);
+      setTimeout(() => navigate('/travel'), 2000);
     } catch (error) {
       setNotice({
         open: true,
@@ -321,8 +349,8 @@ export default function TravelApplyPage() {
         title="Official Travel Booking"
         subtitle="Plan official travel with automatic DSA calculation. Transportation costs are optional."
         actions={[
-          <button key="back" type="button" onClick={() => navigate('/travel/official')} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-            Back to Official Travel
+          <button key="back" type="button" onClick={() => navigate('/travel')} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
+            Back to Travel
           </button>
         ]}
       />

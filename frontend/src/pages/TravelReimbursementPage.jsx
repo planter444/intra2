@@ -158,7 +158,7 @@ export default function TravelReimbursementPage() {
         title: 'Travel reimbursement submitted',
         description: 'Your travel reimbursement request has been submitted successfully.'
       });
-      setTimeout(() => navigate('/travel/official'), 2000);
+      setTimeout(() => navigate('/travel'), 2000);
     } catch (error) {
       setNotice({
         open: true,
@@ -194,7 +194,7 @@ export default function TravelReimbursementPage() {
           <button
             key="back"
             type="button"
-            onClick={() => navigate('/travel/official')}
+            onClick={() => navigate('/travel')}
             className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700"
           >
             <ArrowLeft size={18} />
