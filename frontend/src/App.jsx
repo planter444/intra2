@@ -91,12 +91,12 @@ export default function App() {
       <Route path="/payslips" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><PayslipsPage /></ProtectedRoute>} />
       <Route path="/payslip-templates" element={<ProtectedRoute allowedRoles={['admin']}><PayslipTemplatesPage /></ProtectedRoute>} />
       <Route path="/travel" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelPage /></ProtectedRoute>} />
-      <Route path="/travel/official" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><OfficialTravelPage /></ProtectedRoute>} />
-      <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelApplyPage /></ProtectedRoute>} />
-      <Route path="/travel/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelReimbursementPage /></ProtectedRoute>} />
-      <Route path="/travel/local" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementPage /></ProtectedRoute>} />
-      <Route path="/travel/local/booking" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementBookingPage /></ProtectedRoute>} />
-      <Route path="/travel/local/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementReimbursementPage /></ProtectedRoute>} />
+      <Route path="/travel/official" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><OfficialTravelPage /></ProtectedRoute>} />
+      <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelApplyPage /></ProtectedRoute>} />
+      <Route path="/travel/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelReimbursementPage /></ProtectedRoute>} />
+      <Route path="/travel/local" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><LocalMovementPage /></ProtectedRoute>} />
+      <Route path="/travel/local/booking" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><LocalMovementBookingPage /></ProtectedRoute>} />
+      <Route path="/travel/local/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><LocalMovementReimbursementPage /></ProtectedRoute>} />
       <Route path="/travel/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelDetailPage /></ProtectedRoute>} />
       <Route path="/travel/settings" element={<ProtectedRoute allowedRoles={['admin']}><TravelSettingsPage /></ProtectedRoute>} />
       <Route path="/report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><ReportPage /></ProtectedRoute>} />
