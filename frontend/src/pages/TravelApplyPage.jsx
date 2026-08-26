@@ -126,7 +126,7 @@ export default function TravelApplyPage() {
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
-  // Auto-populate designation from user profile
+  // Auto-populate designation from user profile (silently)
   useEffect(() => {
     if (user?.designation) {
       setForm(prev => ({ ...prev, designation: user.designation }));
@@ -368,35 +368,35 @@ export default function TravelApplyPage() {
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>
 
-          {/* Designation (auto-filled from user profile) */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Designation</label>
-            <input
-              type="text"
-              className="bg-slate-50"
-              value={form.designation || 'Not set - Contact IT Officer'}
-              disabled
-              readOnly
-            />
-            {!form.designation && (
-              <p className="mt-1 text-xs text-amber-600">⚠️ Designation not set. Contact IT Officer to configure your designation for DSA calculation.</p>
-            )}
-          </div>
-
-          {/* Travel Category */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Travel Category</label>
-            <select
-              value={form.travelCategory}
-              onChange={(event) => setForm((current) => ({ ...current, travelCategory: event.target.value }))}
-              className="bg-slate-50"
-              required
-            >
-              <option value="">Select travel category</option>
-              <option value="Within Kenya">Within Kenya</option>
-              <option value="East Africa">East Africa</option>
-              <option value="International">International</option>
-            </select>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Travel Category</label>
+              <select
+                value={form.travelCategory}
+                onChange={(event) => setForm((current) => ({ ...current, travelCategory: event.target.value }))}
+                className="bg-slate-50"
+                required
+              >
+                <option value="">Select travel category</option>
+                <option value="Within Kenya">Within Kenya</option>
+                <option value="East Africa">East Africa</option>
+                <option value="International">International</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Project / Programme / Activity</label>
+              <select
+                value={form.projectProgramme}
+                onChange={(event) => setForm((current) => ({ ...current, projectProgramme: event.target.value }))}
+                className="bg-slate-50"
+                required
+              >
+                <option value="">Select project/programme</option>
+                {(settings?.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA']).map((project) => (
+                  <option key={project} value={project}>{project}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Travel Type Detail (only for Within Kenya) */}
@@ -415,22 +415,6 @@ export default function TravelApplyPage() {
               </select>
             </div>
           )}
-
-          {/* Project/Programme/Activity */}
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Project / Programme / Activity</label>
-            <select
-              value={form.projectProgramme}
-              onChange={(event) => setForm((current) => ({ ...current, projectProgramme: event.target.value }))}
-              className="bg-slate-50"
-              required
-            >
-              <option value="">Select project/programme</option>
-              {(settings?.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA']).map((project) => (
-                <option key={project} value={project}>{project}</option>
-              ))}
-            </select>
-          </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
