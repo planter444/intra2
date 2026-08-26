@@ -1,5 +1,6 @@
 const express = require('express');
-const { authenticateToken, requireRoles } = require('../middleware/authMiddleware');
+const { authenticate } = require('../middleware/authMiddleware');
+const { authorize } = require('../middleware/roleMiddleware');
 const {
   getTravelReportFilters,
   getTravelReportData,
@@ -8,13 +9,11 @@ const {
 
 const router = express.Router();
 
-// Get travel report filters
-router.get('/filters', authenticateToken, requireRoles(['admin', 'ceo']), getTravelReportFilters);
+router.use(authenticate);
 
-// Get travel report data
-router.get('/data', authenticateToken, requireRoles(['admin', 'ceo']), getTravelReportData);
-
-// Export travel report as PDF
-router.get('/export/pdf', authenticateToken, requireRoles(['admin', 'ceo']), exportTravelReportPdf);
+// Travel report routes - restricted to CEO and IT Officer
+router.get('/data', authorize('admin', 'ceo'), getTravelReportData);
+router.get('/filters', authorize('admin', 'ceo'), getTravelReportFilters);
+router.get('/export/pdf', authorize('admin', 'ceo'), exportTravelReportPdf);
 
 module.exports = router;
