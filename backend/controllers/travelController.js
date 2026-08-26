@@ -320,8 +320,16 @@ const decideTravelRequest = async (req, res, next) => {
     // ONLY check employee-specific routing - this is the only approval strategy
     const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
     
+    // CEO can approve their own requests
+    if (req.user.role === 'ceo' && String(request.userId) === String(req.user.id)) {
+      // CEO can self-approve
+    } 
+    // IT officers can approve for themselves if they are the designated approver
+    else if (req.user.role === 'it_officer' && String(request.userId) === String(req.user.id) && String(approverForEmployee) === String(req.user.id)) {
+      // IT officer can self-approve if they are the designated approver
+    }
     // User must be the designated approver for this employee
-    if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
+    else if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
       return res.status(403).json({ message: 'You are not authorized to approve this travel request. Only the designated approver in employee-specific routing can approve.' });
     }
 
