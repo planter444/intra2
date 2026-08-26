@@ -121,21 +121,32 @@ const getDSARate = (designation, travelCategory, travelTypeDetail) => {
 
 // Calculate DSA amount based on dates and rate
 const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
-  if (!startDate || !endDate || !dsaRate) return 0;
+  console.log('calculateDSAAmount called:', { startDate, endDate, dsaRate, travelTypeDetail });
+  
+  if (!startDate || !endDate || !dsaRate) {
+    console.log('Missing required parameters for DSA calculation');
+    return 0;
+  }
 
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffTime = end - start;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  console.log('Date calculation:', { start, end, diffTime, diffDays });
 
   if (travelTypeDetail === 'Official Overnight Travel') {
     // Nights = End Date - Start Date
     const nights = diffDays;
-    return nights * dsaRate.rate;
+    const result = nights * dsaRate.rate;
+    console.log('Overnight calculation:', nights, 'nights ×', dsaRate.rate, '=', result);
+    return result;
   } else {
     // Days = End Date - Start Date + 1
     const days = diffDays + 1;
-    return days * dsaRate.rate;
+    const result = days * dsaRate.rate;
+    console.log('Day calculation:', days, 'days ×', dsaRate.rate, '=', result);
+    return result;
   }
 };
 
@@ -163,16 +174,29 @@ export default function TravelApplyPage() {
 
   // Auto-calculate DSA when relevant fields change
   useEffect(() => {
+    console.log('DSA Calculation Trigger:', { 
+      designation: form.designation, 
+      travelCategory: form.travelCategory, 
+      travelTypeDetail: form.travelTypeDetail, 
+      startDate: form.startDate, 
+      endDate: form.endDate 
+    });
+
     if (form.designation && form.travelCategory && form.startDate && form.endDate) {
       // For East Africa and International, travelTypeDetail is not needed
       const needsTravelType = form.travelCategory === 'Within Kenya';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
 
+      console.log('DSA Calculation logic:', { needsTravelType, hasRequiredFields });
+
       if (hasRequiredFields) {
         const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
+        console.log('DSA Rate Result:', dsaRate);
         
         if (dsaRate) {
           const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
+          console.log('DSA Amount Result:', dsaAmount);
+          
           setForm(prev => ({
             ...prev,
             dsaRate: dsaRate.rate,
@@ -180,6 +204,7 @@ export default function TravelApplyPage() {
             dsaAmount: dsaAmount
           }));
         } else {
+          console.log('No DSA rate found, clearing fields');
           setForm(prev => ({
             ...prev,
             dsaRate: '',
@@ -331,7 +356,7 @@ export default function TravelApplyPage() {
       });
       setForm(initialForm);
       setStep(1);
-      setTimeout(() => navigate('/travel'), 2000);
+      setTimeout(() => navigate('/travel/official'), 2000);
     } catch (error) {
       setNotice({
         open: true,
@@ -349,8 +374,8 @@ export default function TravelApplyPage() {
         title="Official Travel Booking"
         subtitle="Plan official travel with automatic DSA calculation. Transportation costs are optional."
         actions={[
-          <button key="back" type="button" onClick={() => navigate('/travel')} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-            Back to Travel
+          <button key="back" type="button" onClick={() => navigate('/travel/official')} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
+            Back to Official Travel
           </button>
         ]}
       />
@@ -541,7 +566,7 @@ export default function TravelApplyPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Transportation Cost (Optional)</label>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Transportation Cost (Optional)</label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                   {form.currency === 'KES' ? 'KES' : form.currency}

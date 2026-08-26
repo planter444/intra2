@@ -236,19 +236,11 @@ export default function TravelPage() {
           <div key="travel-options" className="flex gap-2">
             <button
               type="button"
-              onClick={() => navigate('/travel/apply')}
+              onClick={() => navigate('/travel/official')}
               className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg"
             >
-              <Plus size={18} />
-              Official Travel Booking
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/travel/reimbursement')}
-              className="flex items-center gap-2 rounded-2xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-lg"
-            >
-              <FileText size={18} />
-              Official Travel Reimbursement
+              <MapPin size={18} />
+              Official Travel
             </button>
             <button
               type="button"
