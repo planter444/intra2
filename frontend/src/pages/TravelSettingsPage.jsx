@@ -470,6 +470,7 @@ export default function TravelSettingsPage() {
           )}
         </div>
       </SectionCard>
+      )}
 
       <Modal
         open={notice.open}
