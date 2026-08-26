@@ -34,44 +34,63 @@ const getToday = () => new Date().toISOString().split('T')[0];
 const getDSARate = (designation, travelCategory, travelTypeDetail) => {
   if (!designation || !travelCategory) return null;
 
+  // Normalize designation to handle case sensitivity
+  const normalizedDesignation = designation.toLowerCase().replace(/\s+/g, '');
+
   // Within Kenya - Official Overnight Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
-    switch (designation) {
-      case 'Field Officer': return { rate: 2000, currency: 'KES', unit: 'per night' };
-      case 'Intern': return { rate: 4000, currency: 'KES', unit: 'per night' };
-      case 'Secretariat': return { rate: 4000, currency: 'KES', unit: 'per night' };
-      case 'Consultant': return { rate: 4000, currency: 'KES', unit: 'per night' };
-      default: return null;
+    if (normalizedDesignation === 'fieldofficer' || normalizedDesignation === 'field officer') {
+      return { rate: 2000, currency: 'KES', unit: 'per night' };
     }
+    if (normalizedDesignation === 'intern') {
+      return { rate: 4000, currency: 'KES', unit: 'per night' };
+    }
+    if (normalizedDesignation === 'secretariat') {
+      return { rate: 4000, currency: 'KES', unit: 'per night' };
+    }
+    if (normalizedDesignation === 'consultant') {
+      return { rate: 4000, currency: 'KES', unit: 'per night' };
+    }
+    return null;
   }
 
   // Within Kenya - Official Day Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
-    switch (designation) {
-      case 'Field Officer': return { rate: 1500, currency: 'KES', unit: 'per day' };
-      case 'Intern': return { rate: 2000, currency: 'KES', unit: 'per day' };
-      case 'Secretariat': return { rate: 2000, currency: 'KES', unit: 'per day' };
-      case 'Consultant': return { rate: 2000, currency: 'KES', unit: 'per day' };
-      default: return null;
+    if (normalizedDesignation === 'fieldofficer' || normalizedDesignation === 'field officer') {
+      return { rate: 1500, currency: 'KES', unit: 'per day' };
     }
+    if (normalizedDesignation === 'intern') {
+      return { rate: 2000, currency: 'KES', unit: 'per day' };
+    }
+    if (normalizedDesignation === 'secretariat') {
+      return { rate: 2000, currency: 'KES', unit: 'per day' };
+    }
+    if (normalizedDesignation === 'consultant') {
+      return { rate: 2000, currency: 'KES', unit: 'per day' };
+    }
+    return null;
   }
 
   // East Africa
   if (travelCategory === 'East Africa') {
-    switch (designation) {
-      case 'Secretariat': return { rate: 35, currency: 'USD', unit: 'per day' };
-      case 'Consultant': return { rate: 35, currency: 'USD', unit: 'per day' };
-      default: return null;
+    if (normalizedDesignation === 'secretariat') {
+      return { rate: 35, currency: 'USD', unit: 'per day' };
     }
+    if (normalizedDesignation === 'consultant') {
+      return { rate: 35, currency: 'USD', unit: 'per day' };
+    }
+    return null;
   }
 
   // International - Outside East Africa
   if (travelCategory === 'International') {
-    switch (designation) {
-      case 'Secretariat': return { rate: 50, currency: 'USD', unit: 'per day' };
-      case 'Consultant': return { rate: 50, currency: 'USD', unit: 'per day' };
-      default: return null;
+    if (normalizedDesignation === 'secretariat') {
+      return { rate: 50, currency: 'USD', unit: 'per day' };
     }
+    if (normalizedDesignation === 'consultant') {
+      return { rate: 50, currency: 'USD', unit: 'per day' };
+    }
+    return null;
   }
 
   return null;
@@ -99,7 +118,7 @@ const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
 
 export default function TravelApplyPage() {
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, settings } = useAuth();
   const [requests, setRequests] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
@@ -107,15 +126,12 @@ export default function TravelApplyPage() {
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
-  // Auto-populate designation from user profile (if available)
+  // Auto-populate designation from user profile
   useEffect(() => {
     if (user?.designation) {
       setForm(prev => ({ ...prev, designation: user.designation }));
-    } else {
-      // Fallback to position title if designation not available
-      setForm(prev => ({ ...prev, designation: user?.positionTitle || 'Field Officer' }));
     }
-  }, [user?.designation, user?.positionTitle]);
+  }, [user?.designation]);
 
   // Auto-calculate DSA when relevant fields change
   useEffect(() => {
@@ -345,22 +361,17 @@ export default function TravelApplyPage() {
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>
 
-          {/* Designation (auto-filled from user profile, but editable) */}
+          {/* Designation (auto-filled from user profile) */}
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Designation</label>
-            <select
-              value={form.designation || ''}
-              onChange={(event) => setForm((current) => ({ ...current, designation: event.target.value }))}
+            <input
+              type="text"
               className="bg-slate-50"
-              required
-            >
-              <option value="">Select designation</option>
-              <option value="Field Officer">Field Officer</option>
-              <option value="Intern">Intern</option>
-              <option value="Secretariat">Secretariat</option>
-              <option value="Consultant">Consultant</option>
-            </select>
-            <p className="mt-1 text-xs text-slate-500">Select your designation for DSA calculation</p>
+              value={form.designation || 'Not set - Contact IT Officer'}
+              disabled
+              readOnly
+            />
+            <p className="mt-1 text-xs text-slate-500">Automatically retrieved from your employee profile. Contact IT Officer if not set.</p>
           </div>
 
           {/* Travel Category */}
@@ -406,12 +417,9 @@ export default function TravelApplyPage() {
               required
             >
               <option value="">Select project/programme</option>
-              <option value="CWF">CWF</option>
-              <option value="KEREA">KEREA</option>
-              <option value="WRI">WRI</option>
-              <option value="CLASP">CLASP</option>
-              <option value="GIZ">GIZ</option>
-              <option value="GOGLA">GOGLA</option>
+              {(settings?.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA']).map((project) => (
+                <option key={project} value={project}>{project}</option>
+              ))}
             </select>
           </div>
 

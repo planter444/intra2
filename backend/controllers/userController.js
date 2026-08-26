@@ -246,6 +246,7 @@ const updateUser = async (req, res, next) => {
         email: normalizedEmail,
         phone: req.body.phone,
         positionTitle: req.body.positionTitle,
+        designation: req.body.designation,
         gender: req.body.gender
       }
       : {

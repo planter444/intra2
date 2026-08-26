@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Save, Plus, X, Mail, Route, UserPlus, Trash2 } from 'lucide-react';
+import { Save, Plus, X, Mail, Route, UserPlus, Trash2, Briefcase, Users } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { fetchTravelNotificationSettings, updateTravelNotificationSettings, fetchAllEmployeeRouting, addEmployeeRouting, removeEmployeeRouting } from '../services/travelService';
-import { fetchUsers } from '../services/userService';
+import { fetchUsers, updateUser } from '../services/userService';
+import { updateSettings } from '../services/settingsService';
 
 export default function TravelSettingsPage() {
-  const { user } = useAuth();
+  const { user, settings, replaceSettings } = useAuth();
   const [notificationSettings, setNotificationSettings] = useState({
     recipientIds: []
   });
@@ -20,6 +21,9 @@ export default function TravelSettingsPage() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedApprover, setSelectedApprover] = useState('');
   const [selectedNotificationRecipients, setSelectedNotificationRecipients] = useState([]);
+  const [designationModal, setDesignationModal] = useState({ open: false, userId: null, designation: '' });
+  const [projectsModal, setProjectsModal] = useState({ open: false, project: '' });
+  const [activeTab, setActiveTab] = useState('notifications');
 
   useEffect(() => {
     loadSettings();
@@ -134,6 +138,105 @@ export default function TravelSettingsPage() {
     }
   };
 
+  const handleUpdateDesignation = async () => {
+    try {
+      await updateUser(designationModal.userId, { designation: designationModal.designation });
+      await loadSettings();
+      setDesignationModal({ open: false, userId: null, designation: '' });
+      setNotice({
+        open: true,
+        title: 'Designation updated',
+        description: 'Employee designation has been updated successfully.'
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to update designation',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleAddProject = async () => {
+    if (!projectsModal.project.trim()) {
+      setNotice({
+        open: true,
+        title: 'Invalid project name',
+        description: 'Please enter a valid project name.'
+      });
+      return;
+    }
+
+    try {
+      const currentProjects = settings.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA'];
+      const newProjects = [...currentProjects, projectsModal.project.trim().toUpperCase()];
+      
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          projects: newProjects
+        }
+      });
+      
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          projects: newProjects
+        }
+      });
+      
+      setProjectsModal({ open: false, project: '' });
+      setNotice({
+        open: true,
+        title: 'Project added',
+        description: 'Project has been added successfully.'
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to add project',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleRemoveProject = async (projectToRemove) => {
+    try {
+      const currentProjects = settings.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA'];
+      const newProjects = currentProjects.filter(p => p !== projectToRemove);
+      
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          projects: newProjects
+        }
+      });
+      
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          projects: newProjects
+        }
+      });
+      
+      setNotice({
+        open: true,
+        title: 'Project removed',
+        description: 'Project has been removed successfully.'
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to remove project',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -145,8 +248,8 @@ export default function TravelSettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Travel Notification Settings"
-        subtitle="Configure who gets notified when employees upload travel receipts for reimbursement."
+        title="Travel Settings"
+        subtitle="Configure travel management settings including designations, projects, notifications, and routing."
         actions={[
           <button
             key="save"
@@ -161,35 +264,143 @@ export default function TravelSettingsPage() {
         ]}
       />
 
-      <SectionCard title="Travel notification recipients" subtitle="Select employees who should receive notifications when travel requests are submitted or receipts are uploaded.">
-        <div className="space-y-4">
-          {users.length === 0 ? (
-            <p className="text-sm text-slate-500">No employees available.</p>
-          ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {users.map((u) => (
-                <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
-                  <input
-                    type="checkbox"
-                    checked={selectedNotificationRecipients.includes(String(u.id))}
-                    onChange={() => handleNotificationRecipientChange(String(u.id))}
-                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
-                    <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
+      {/* Tab Navigation */}
+      <div className="flex gap-2 border-b border-slate-200">
+        <button
+          type="button"
+          onClick={() => setActiveTab('notifications')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'notifications' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Mail size={16} className="inline mr-2" />
+          Notifications
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('routing')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'routing' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Route size={16} className="inline mr-2" />
+          Routing
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('designations')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'designations' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Users size={16} className="inline mr-2" />
+          Designations
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('projects')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'projects' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Briefcase size={16} className="inline mr-2" />
+          Projects
+        </button>
+      </div>
+
+      {activeTab === 'notifications' && (
+        <SectionCard title="Travel notification recipients" subtitle="Select employees who should receive notifications when travel requests are submitted or receipts are uploaded.">
+          <div className="space-y-4">
+            {users.length === 0 ? (
+              <p className="text-sm text-slate-500">No employees available.</p>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {users.map((u) => (
+                  <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
+                    <input
+                      type="checkbox"
+                      checked={selectedNotificationRecipients.includes(String(u.id))}
+                      onChange={() => handleNotificationRecipientChange(String(u.id))}
+                      className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                      <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+            <p className="text-sm text-slate-500">
+              {selectedNotificationRecipients.length} employee(s) selected for notifications
+            </p>
+          </div>
+        </SectionCard>
+      )}
+
+      {activeTab === 'designations' && (
+        <SectionCard title="Employee Designations" subtitle="Assign designations to employees for DSA calculation. Designations determine the applicable DSA rates.">
+          <div className="space-y-4">
+            {users.length === 0 ? (
+              <p className="text-sm text-slate-500">No employees available.</p>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {users.map((u) => (
+                  <div key={u.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3">
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                      <p className="text-xs text-slate-500">{u.email} • {u.positionTitle || 'No position'}</p>
+                      <p className="text-xs text-slate-400">Current: {u.designation || 'Not set'}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDesignationModal({ open: true, userId: u.id, designation: u.designation || '' })}
+                      className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50"
+                    >
+                      Set Designation
+                    </button>
                   </div>
-                </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
+
+      {activeTab === 'projects' && (
+        <SectionCard title="Projects / Programmes / Activities" subtitle="Manage the available project options for travel requests.">
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={projectsModal.project}
+                onChange={(e) => setProjectsModal({ ...projectsModal, project: e.target.value })}
+                placeholder="Enter new project name"
+                className="flex-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setProjectsModal({ ...projectsModal, open: true })}
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+              >
+                <Plus size={16} />
+                Add Project
+              </button>
+            </div>
+            
+            <div className="space-y-2">
+              {(settings.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA']).map((project) => (
+                <div key={project} className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3">
+                  <span className="font-medium text-slate-900">{project}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveProject(project)}
+                    className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50"
+                    title="Remove project"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               ))}
             </div>
-          )}
-          <p className="text-sm text-slate-500">
-            {selectedNotificationRecipients.length} employee(s) selected for notifications
-          </p>
-        </div>
-      </SectionCard>
+          </div>
+        </SectionCard>
+      )}
 
-      <SectionCard title="Employee-specific routing" subtitle="Configure specific approvers for individual employees. This is the only approval routing method - approvers will receive notifications for their assigned employees.">
+      {activeTab === 'routing' && (
+        <SectionCard title="Employee-specific routing" subtitle="Configure specific approvers for individual employees. This is the only approval routing method - approvers will receive notifications for their assigned employees.">
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
@@ -271,6 +482,78 @@ export default function TravelSettingsPage() {
           </button>
         ]}
       />
+
+      <Modal
+        open={designationModal.open}
+        title="Set Employee Designation"
+        description="Select the designation for this employee. This will determine their DSA rates for travel."
+        onClose={() => setDesignationModal({ open: false, userId: null, designation: '' })}
+      >
+        <div className="mt-4">
+          <label className="mb-2 block text-sm font-medium text-slate-700">Designation</label>
+          <select
+            value={designationModal.designation}
+            onChange={(e) => setDesignationModal({ ...designationModal, designation: e.target.value })}
+            className="bg-slate-50"
+          >
+            <option value="">Select designation</option>
+            <option value="Field Officer">Field Officer</option>
+            <option value="Intern">Intern</option>
+            <option value="Secretariat">Secretariat</option>
+            <option value="Consultant">Consultant</option>
+          </select>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700"
+            onClick={() => setDesignationModal({ open: false, userId: null, designation: '' })}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+            onClick={handleUpdateDesignation}
+          >
+            Update Designation
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={projectsModal.open}
+        title="Add New Project"
+        description="Enter the name of the new project/programme/activity."
+        onClose={() => setProjectsModal({ open: false, project: '' })}
+      >
+        <div className="mt-4">
+          <label className="mb-2 block text-sm font-medium text-slate-700">Project Name</label>
+          <input
+            type="text"
+            value={projectsModal.project}
+            onChange={(e) => setProjectsModal({ ...projectsModal, project: e.target.value })}
+            placeholder="e.g., NEW_PROJECT"
+            className="bg-slate-50"
+          />
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700"
+            onClick={() => setProjectsModal({ open: false, project: '' })}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
+            onClick={handleAddProject}
+          >
+            Add Project
+          </button>
+        </div>
+      </Modal>
     </div>
   );
 }

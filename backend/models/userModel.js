@@ -128,6 +128,7 @@ const mapUser = (row) => {
     supervisorId: row.supervisor_id,
     supervisorName: row.supervisor_first_name ? `${row.supervisor_first_name} ${row.supervisor_last_name}` : null,
     positionTitle: row.position_title,
+    designation: row.designation || null,
     isActive: row.is_active,
     isDeleted: row.is_deleted,
     deletedAt: row.deleted_at,
@@ -251,6 +252,7 @@ const update = async (id, payload) => {
     supervisorId: 'supervisor_id',
     joinedAt: 'joined_at',
     positionTitle: 'position_title',
+    designation: 'designation',
     passwordHash: 'password_hash',
     isActive: 'is_active',
     lastLoginAt: 'last_login_at'
