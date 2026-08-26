@@ -233,15 +233,32 @@ export default function TravelPage() {
         title="Travel Management"
         subtitle="View and manage travel requests, upload receipts for reimbursement, and track approval status."
         actions={[
-          <button
-            key="apply"
-            type="button"
-            onClick={() => navigate('/travel/apply')}
-            className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg"
-          >
-            <Plus size={18} />
-            New Travel Request
-          </button>
+          <div key="travel-options" className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/travel/apply')}
+              className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white shadow-lg"
+            >
+              <Plus size={18} />
+              Travel Booking
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/travel/reimbursement')}
+              className="flex items-center gap-2 rounded-2xl bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-lg"
+            >
+              <FileText size={18} />
+              Travel Reimbursement
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/travel/local')}
+              className="flex items-center gap-2 rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-lg"
+            >
+              <MapPin size={18} />
+              Local Movement
+            </button>
+          </div>
         ]}
       />
 
@@ -324,8 +341,14 @@ export default function TravelPage() {
                           {config.label}
                         </span>
                         <span className="text-xs text-slate-400 truncate">{request.employeeName}</span>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${request.travelType === 'booking' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-purple-50 text-purple-600 border-purple-200'} border`}>
-                          {request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                          request.travelCategory === 'Local Movement' 
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                            : request.travelType === 'booking' 
+                              ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                              : 'bg-purple-50 text-purple-600 border-purple-200'
+                        } border`}>
+                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
                         </span>
                       </div>
                       <h3 className="mt-2 text-base sm:text-lg font-semibold text-slate-900 truncate">
@@ -348,7 +371,7 @@ export default function TravelPage() {
                             {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
                           </span>
                         )}
-                        {request.dsaAmount && (
+                        {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
@@ -435,6 +458,15 @@ export default function TravelPage() {
                           {config.label}
                         </span>
                         <span className="text-sm text-slate-400">{request.employeeName}</span>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                          request.travelCategory === 'Local Movement' 
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
+                            : request.travelType === 'booking' 
+                              ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                              : 'bg-purple-50 text-purple-600 border-purple-200'
+                        } border`}>
+                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
+                        </span>
                       </div>
                       <h3 className="mt-2 text-lg font-semibold text-slate-900">
                         {request.origin} → {request.destination}
@@ -456,7 +488,7 @@ export default function TravelPage() {
                             {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
                           </span>
                         )}
-                        {request.dsaAmount && (
+                        {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
                             DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, DollarSign } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -445,7 +445,11 @@ export default function TravelApplyPage() {
           {/* DSA Calculation Display */}
           {form.dsaRate && (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-              <h4 className="mb-3 font-semibold text-emerald-900">DSA Calculation</h4>
+              <h4 className="mb-3 flex items-center gap-2 font-semibold text-emerald-900">
+                <DollarSign size={18} />
+                DSA (Daily Subsistence Allowance)
+              </h4>
+              <p className="mb-3 text-xs text-emerald-700">Covers accommodation, meals, and incidental costs</p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Applicable Rate:</span>
@@ -508,16 +512,22 @@ export default function TravelApplyPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated cost (optional)</label>
-              <input
-                type="number"
-                className="bg-slate-50"
-                placeholder="e.g., 50000"
-                value={form.estimatedCost}
-                onChange={(event) => setForm((current) => ({ ...current, estimatedCost: event.target.value }))}
-                min="0"
-                step="0.01"
-              />
+              <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Cost (Transportation & Other Expenses)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  {form.currency === 'KES' ? 'KES' : form.currency}
+                </span>
+                <input
+                  type="number"
+                  className="bg-slate-50 pl-16"
+                  placeholder="e.g., 50000"
+                  value={form.estimatedCost}
+                  onChange={(event) => setForm((current) => ({ ...current, estimatedCost: event.target.value }))}
+                  min="0"
+                  step="0.01"
+                />
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Separate from DSA (accommodation, meals, incidentals)</p>
             </div>
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Currency</label>
@@ -549,6 +559,37 @@ export default function TravelApplyPage() {
               </select>
             </div>
           </div>
+
+          {/* Total Cost Summary */}
+          {(form.estimatedCost || form.dsaAmount) && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <h4 className="mb-3 flex items-center gap-2 font-semibold text-blue-900">
+                <DollarSign size={18} />
+                Total Estimated Cost Summary
+              </h4>
+              <div className="grid gap-2 text-sm">
+                {form.estimatedCost && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Transportation & Other Expenses:</span>
+                    <span className="font-medium text-slate-900">
+                      {form.currency} {parseFloat(form.estimatedCost || 0).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {form.dsaAmount && (
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">DSA (Accommodation, Meals, Incidentals):</span>
+                    <span className="font-medium text-slate-900">
+                      {form.dsaCurrency} {parseFloat(form.dsaAmount || 0).toLocaleString()}
+                    </span>
+                  </div>
+                )}
+                {form.estimatedCost && form.dsaAmount && form.currency !== form.dsaCurrency && (
+                  <p className="text-xs text-slate-500 italic">Note: Different currencies - convert to your base currency for total</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Reason for travel</label>

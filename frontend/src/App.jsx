@@ -25,6 +25,10 @@ import TravelPage from './pages/TravelPage';
 import TravelApplyPage from './pages/TravelApplyPage';
 import TravelDetailPage from './pages/TravelDetailPage';
 import TravelSettingsPage from './pages/TravelSettingsPage';
+import TravelReimbursementPage from './pages/TravelReimbursementPage';
+import LocalMovementPage from './pages/LocalMovementPage';
+import LocalMovementBookingPage from './pages/LocalMovementBookingPage';
+import LocalMovementReimbursementPage from './pages/LocalMovementReimbursementPage';
 import LeaveReportPage from './pages/LeaveReportPage';
 
 function ProtectedRoute({ children, allowedRoles }) {
@@ -85,6 +89,10 @@ export default function App() {
       <Route path="/payslip-templates" element={<ProtectedRoute allowedRoles={['admin']}><PayslipTemplatesPage /></ProtectedRoute>} />
       <Route path="/travel" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelPage /></ProtectedRoute>} />
       <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelApplyPage /></ProtectedRoute>} />
+      <Route path="/travel/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><TravelReimbursementPage /></ProtectedRoute>} />
+      <Route path="/travel/local" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementPage /></ProtectedRoute>} />
+      <Route path="/travel/local/booking" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementBookingPage /></ProtectedRoute>} />
+      <Route path="/travel/local/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LocalMovementReimbursementPage /></ProtectedRoute>} />
       <Route path="/travel/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelDetailPage /></ProtectedRoute>} />
       <Route path="/travel/settings" element={<ProtectedRoute allowedRoles={['admin']}><TravelSettingsPage /></ProtectedRoute>} />
       <Route path="/leave-report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><LeaveReportPage /></ProtectedRoute>} />
