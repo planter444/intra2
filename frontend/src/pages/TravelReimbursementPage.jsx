@@ -12,38 +12,39 @@ import { fetchSettings } from '../services/settingsService';
 const getDSARate = (designation, travelCategory, travelTypeDetail) => {
   if (!designation || !travelCategory) return null;
 
+  // Normalize designation to handle case sensitivity and spacing
   const normalizedDesignation = designation.toLowerCase().replace(/\s+/g, '');
 
   // Within Kenya - Official Overnight Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
-    if (normalizedDesignation === 'fieldofficer') return { rate: 2000, currency: 'KES', unit: 'per night' };
-    if (normalizedDesignation === 'intern') return { rate: 4000, currency: 'KES', unit: 'per night' };
-    if (normalizedDesignation === 'secretariat') return { rate: 4000, currency: 'KES', unit: 'per night' };
-    if (normalizedDesignation === 'consultant') return { rate: 4000, currency: 'KES', unit: 'per night' };
+    if (normalizedDesignation === 'fieldofficer') {
+      return { rate: 2500, currency: 'KES', unit: 'per night' };
+    }
+    if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
+      return { rate: 4000, currency: 'KES', unit: 'per night' };
+    }
     return null;
   }
 
   // Within Kenya - Official Day Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
-    if (normalizedDesignation === 'fieldofficer') return { rate: 1500, currency: 'KES', unit: 'per day' };
-    if (normalizedDesignation === 'intern') return { rate: 2000, currency: 'KES', unit: 'per day' };
-    if (normalizedDesignation === 'secretariat') return { rate: 2000, currency: 'KES', unit: 'per day' };
-    if (normalizedDesignation === 'consultant') return { rate: 2000, currency: 'KES', unit: 'per day' };
+    if (normalizedDesignation === 'fieldofficer') {
+      return { rate: 1500, currency: 'KES', unit: 'per day' };
+    }
+    if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
+      return { rate: 2000, currency: 'KES', unit: 'per day' };
+    }
     return null;
   }
 
-  // East Africa
+  // East Africa - All designations
   if (travelCategory === 'East Africa') {
-    if (normalizedDesignation === 'secretariat') return { rate: 35, currency: 'USD', unit: 'per day' };
-    if (normalizedDesignation === 'consultant') return { rate: 35, currency: 'USD', unit: 'per day' };
-    return null;
+    return { rate: 35, currency: 'USD', unit: 'per day' };
   }
 
-  // International - Outside East Africa
+  // International - All designations
   if (travelCategory === 'International') {
-    if (normalizedDesignation === 'secretariat') return { rate: 50, currency: 'USD', unit: 'per day' };
-    if (normalizedDesignation === 'consultant') return { rate: 50, currency: 'USD', unit: 'per day' };
-    return null;
+    return { rate: 50, currency: 'USD', unit: 'per day' };
   }
 
   return null;
@@ -51,32 +52,21 @@ const getDSARate = (designation, travelCategory, travelTypeDetail) => {
 
 // Calculate DSA amount based on dates and rate
 const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
-  console.log('calculateDSAAmount called:', { startDate, endDate, dsaRate, travelTypeDetail });
-  
-  if (!startDate || !endDate || !dsaRate) {
-    console.log('Missing required parameters for DSA calculation');
-    return 0;
-  }
+  if (!startDate || !endDate || !dsaRate) return 0;
 
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffTime = end - start;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  console.log('Date calculation:', { start, end, diffTime, diffDays });
 
   if (travelTypeDetail === 'Official Overnight Travel') {
     // Nights = End Date - Start Date
     const nights = diffDays;
-    const result = nights * dsaRate.rate;
-    console.log('Overnight calculation:', nights, 'nights ×', dsaRate.rate, '=', result);
-    return result;
+    return nights * dsaRate.rate;
   } else {
     // Days = End Date - Start Date + 1
     const days = diffDays + 1;
-    const result = days * dsaRate.rate;
-    console.log('Day calculation:', days, 'days ×', dsaRate.rate, '=', result);
-    return result;
+    return days * dsaRate.rate;
   }
 };
 
@@ -118,28 +108,15 @@ export default function TravelReimbursementPage() {
 
   // Auto-calculate DSA when relevant fields change
   useEffect(() => {
-    console.log('DSA Calculation Trigger:', { 
-      designation: form.designation, 
-      travelCategory: form.travelCategory, 
-      travelTypeDetail: form.travelTypeDetail, 
-      startDate: form.startDate, 
-      endDate: form.endDate 
-    });
-
     if (form.designation && form.travelCategory && form.startDate && form.endDate) {
       const needsTravelType = form.travelCategory === 'Within Kenya';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
 
-      console.log('DSA Calculation logic:', { needsTravelType, hasRequiredFields });
-
       if (hasRequiredFields) {
         const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
-        console.log('DSA Rate Result:', dsaRate);
         
         if (dsaRate) {
           const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
-          console.log('DSA Amount Result:', dsaAmount);
-          
           setForm(prev => ({
             ...prev,
             dsaRate: dsaRate.rate,
@@ -147,7 +124,6 @@ export default function TravelReimbursementPage() {
             dsaAmount: dsaAmount
           }));
         } else {
-          console.log('No DSA rate found, clearing fields');
           setForm(prev => ({
             ...prev,
             dsaRate: '',

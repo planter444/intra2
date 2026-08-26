@@ -32,121 +32,63 @@ const getToday = () => new Date().toISOString().split('T')[0];
 
 // DSA Rate Configuration
 const getDSARate = (designation, travelCategory, travelTypeDetail) => {
-  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail });
-  
-  if (!designation || !travelCategory) {
-    console.log('Missing designation or travelCategory');
-    return null;
-  }
+  if (!designation || !travelCategory) return null;
 
   // Normalize designation to handle case sensitivity and spacing
   const normalizedDesignation = designation.toLowerCase().replace(/\s+/g, '');
-  console.log('Normalized designation:', normalizedDesignation);
 
   // Within Kenya - Official Overnight Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
     if (normalizedDesignation === 'fieldofficer') {
-      console.log('Match: Field Officer - Within Kenya Overnight');
-      return { rate: 2000, currency: 'KES', unit: 'per night' };
+      return { rate: 2500, currency: 'KES', unit: 'per night' };
     }
-    if (normalizedDesignation === 'intern') {
-      console.log('Match: Intern - Within Kenya Overnight');
+    if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       return { rate: 4000, currency: 'KES', unit: 'per night' };
     }
-    if (normalizedDesignation === 'secretariat') {
-      console.log('Match: Secretariat - Within Kenya Overnight');
-      return { rate: 4000, currency: 'KES', unit: 'per night' };
-    }
-    if (normalizedDesignation === 'consultant') {
-      console.log('Match: Consultant - Within Kenya Overnight');
-      return { rate: 4000, currency: 'KES', unit: 'per night' };
-    }
-    console.log('No match for Within Kenya Overnight');
     return null;
   }
 
   // Within Kenya - Official Day Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
     if (normalizedDesignation === 'fieldofficer') {
-      console.log('Match: Field Officer - Within Kenya Day');
       return { rate: 1500, currency: 'KES', unit: 'per day' };
     }
-    if (normalizedDesignation === 'intern') {
-      console.log('Match: Intern - Within Kenya Day');
+    if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       return { rate: 2000, currency: 'KES', unit: 'per day' };
     }
-    if (normalizedDesignation === 'secretariat') {
-      console.log('Match: Secretariat - Within Kenya Day');
-      return { rate: 2000, currency: 'KES', unit: 'per day' };
-    }
-    if (normalizedDesignation === 'consultant') {
-      console.log('Match: Consultant - Within Kenya Day');
-      return { rate: 2000, currency: 'KES', unit: 'per day' };
-    }
-    console.log('No match for Within Kenya Day');
     return null;
   }
 
-  // East Africa
+  // East Africa - All designations
   if (travelCategory === 'East Africa') {
-    if (normalizedDesignation === 'secretariat') {
-      console.log('Match: Secretariat - East Africa');
-      return { rate: 35, currency: 'USD', unit: 'per day' };
-    }
-    if (normalizedDesignation === 'consultant') {
-      console.log('Match: Consultant - East Africa');
-      return { rate: 35, currency: 'USD', unit: 'per day' };
-    }
-    console.log('No match for East Africa');
-    return null;
+    return { rate: 35, currency: 'USD', unit: 'per day' };
   }
 
-  // International - Outside East Africa
+  // International - All designations
   if (travelCategory === 'International') {
-    if (normalizedDesignation === 'secretariat') {
-      console.log('Match: Secretariat - International');
-      return { rate: 50, currency: 'USD', unit: 'per day' };
-    }
-    if (normalizedDesignation === 'consultant') {
-      console.log('Match: Consultant - International');
-      return { rate: 50, currency: 'USD', unit: 'per day' };
-    }
-    console.log('No match for International');
-    return null;
+    return { rate: 50, currency: 'USD', unit: 'per day' };
   }
 
-  console.log('No match for travel category');
   return null;
 };
 
 // Calculate DSA amount based on dates and rate
 const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
-  console.log('calculateDSAAmount called:', { startDate, endDate, dsaRate, travelTypeDetail });
-  
-  if (!startDate || !endDate || !dsaRate) {
-    console.log('Missing required parameters for DSA calculation');
-    return 0;
-  }
+  if (!startDate || !endDate || !dsaRate) return 0;
 
   const start = new Date(startDate);
   const end = new Date(endDate);
   const diffTime = end - start;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  console.log('Date calculation:', { start, end, diffTime, diffDays });
 
   if (travelTypeDetail === 'Official Overnight Travel') {
     // Nights = End Date - Start Date
     const nights = diffDays;
-    const result = nights * dsaRate.rate;
-    console.log('Overnight calculation:', nights, 'nights ×', dsaRate.rate, '=', result);
-    return result;
+    return nights * dsaRate.rate;
   } else {
     // Days = End Date - Start Date + 1
     const days = diffDays + 1;
-    const result = days * dsaRate.rate;
-    console.log('Day calculation:', days, 'days ×', dsaRate.rate, '=', result);
-    return result;
+    return days * dsaRate.rate;
   }
 };
 
@@ -160,43 +102,25 @@ export default function TravelApplyPage() {
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
-  // Auto-populate designation from user profile (with debug logging)
+  // Auto-populate designation from user profile
   useEffect(() => {
-    console.log('User object:', user);
-    console.log('User designation:', user?.designation);
     if (user?.designation) {
       setForm(prev => ({ ...prev, designation: user.designation }));
-      console.log('Designation set to:', user.designation);
-    } else {
-      console.log('No designation found for user');
     }
   }, [user?.designation]);
 
   // Auto-calculate DSA when relevant fields change
   useEffect(() => {
-    console.log('DSA Calculation Trigger:', { 
-      designation: form.designation, 
-      travelCategory: form.travelCategory, 
-      travelTypeDetail: form.travelTypeDetail, 
-      startDate: form.startDate, 
-      endDate: form.endDate 
-    });
-
     if (form.designation && form.travelCategory && form.startDate && form.endDate) {
       // For East Africa and International, travelTypeDetail is not needed
       const needsTravelType = form.travelCategory === 'Within Kenya';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
 
-      console.log('DSA Calculation logic:', { needsTravelType, hasRequiredFields });
-
       if (hasRequiredFields) {
         const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
-        console.log('DSA Rate Result:', dsaRate);
         
         if (dsaRate) {
           const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
-          console.log('DSA Amount Result:', dsaAmount);
-          
           setForm(prev => ({
             ...prev,
             dsaRate: dsaRate.rate,
@@ -204,7 +128,6 @@ export default function TravelApplyPage() {
             dsaAmount: dsaAmount
           }));
         } else {
-          console.log('No DSA rate found, clearing fields');
           setForm(prev => ({
             ...prev,
             dsaRate: '',
@@ -613,6 +536,49 @@ export default function TravelApplyPage() {
               </select>
             </div>
           </div>
+
+          {/* DSA Section - appears right after estimated transportation cost */}
+          {form.dsaRate && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-3 flex items-center gap-2 font-semibold text-emerald-900">
+                <DollarSign size={18} />
+                DSA (Daily Subsistence Allowance)
+              </h4>
+              <p className="mb-3 text-xs text-emerald-700">Covers accommodation, meals, and incidental costs</p>
+              <div className="grid gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Applicable Rate:</span>
+                  <span className="font-medium text-slate-900">
+                    {form.dsaCurrency} {form.dsaRate?.toLocaleString()} {getDSARate(form.designation, form.travelCategory, form.travelTypeDetail)?.unit || ''}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Number of {form.travelTypeDetail === 'Official Overnight Travel' ? 'Nights' : 'Days'}:</span>
+                  <span className="font-medium text-slate-900">
+                    {form.startDate && form.endDate ? (
+                      form.travelTypeDetail === 'Official Overnight Travel' 
+                        ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24))
+                        : Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24)) + 1
+                    ) : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-emerald-200 pt-2">
+                  <span className="font-semibold text-slate-900">Total DSA:</span>
+                  <span className="font-semibold text-emerald-700">
+                    {form.dsaCurrency} {form.dsaAmount?.toLocaleString() || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!form.dsaRate && form.designation && form.travelCategory && (form.travelCategory !== 'Within Kenya' || form.travelTypeDetail) && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <p className="text-sm text-amber-800">
+                ⚠️ Select travel dates to calculate DSA
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Reason for travel</label>
