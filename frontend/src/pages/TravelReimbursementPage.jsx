@@ -93,6 +93,7 @@ export default function TravelReimbursementPage() {
     dsaRate: '',
     dsaCurrency: 'KES',
     dsaAmount: '',
+    dsaProvided: false,
     reason: '',
     supportingDocuments: [],
     referenceNumber: ''
@@ -154,7 +155,8 @@ export default function TravelReimbursementPage() {
         userId: user.id,
         receipts: receipts,
         dsaAmount: parseFloat(form.dsaAmount) || 0,
-        estimatedCost: parseFloat(form.estimatedCost) || 0
+        estimatedCost: parseFloat(form.estimatedCost) || 0,
+        dsaProvided: form.dsaProvided || false
       };
 
       await createTravelRequest(payload);
@@ -306,6 +308,28 @@ export default function TravelReimbursementPage() {
             </div>
           </div>
 
+          {/* DSA Provided Checkbox */}
+          {form.dsaAmount > 0 && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.dsaProvided}
+                  onChange={(event) => setForm((current) => ({ ...current, dsaProvided: event.target.checked }))}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {form.dsaProvided 
+                      ? 'DSA will be excluded from the total reimbursement amount.' 
+                      : 'DSA will be included in the total reimbursement amount.'}
+                  </p>
+                </div>
+              </label>
+            </div>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <label className="mb-2 block text-sm font-medium text-slate-700">Total Cost for Reimbursement</label>
@@ -340,12 +364,21 @@ export default function TravelReimbursementPage() {
 
           {/* DSA Section */}
           {form.dsaAmount > 0 && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-800">
+            <div className={`rounded-xl border p-4 ${form.dsaProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <DollarSign size={16} />
                 DSA (Daily Subsistence Allowance)
+                {form.dsaProvided && (
+                  <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+                    Excluded from total
+                  </span>
+                )}
               </h4>
-              <p className="mb-3 text-xs text-emerald-700">Covers accommodation, meals, and incidental costs</p>
+              <p className="mb-3 text-xs text-slate-600">
+                {form.dsaProvided 
+                  ? 'DSA was provided during travel and will not be reimbursed.' 
+                  : 'Covers accommodation, meals, and incidental costs - included in reimbursement.'}
+              </p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
@@ -353,7 +386,9 @@ export default function TravelReimbursementPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total DSA:</span>
-                  <span className="font-semibold text-emerald-700">{form.dsaAmount} {form.dsaCurrency}</span>
+                  <span className={`font-semibold ${form.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
+                    {form.dsaAmount} {form.dsaCurrency}
+                  </span>
                 </div>
               </div>
             </div>

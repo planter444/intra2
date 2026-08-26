@@ -25,6 +25,9 @@ ALTER TABLE travel_requests
 ADD COLUMN IF NOT EXISTS dsa_amount NUMERIC(14,2) DEFAULT 0;
 
 ALTER TABLE travel_requests
+ADD COLUMN IF NOT EXISTS dsa_provided BOOLEAN DEFAULT FALSE;
+
+ALTER TABLE travel_requests
 ADD COLUMN IF NOT EXISTS reference_number VARCHAR(50);
 
 -- Create index for reference number uniqueness
