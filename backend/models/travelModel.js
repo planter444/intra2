@@ -35,14 +35,14 @@ const mapTravelRequest = (row) => ({
   rejectionReason: row.rejection_reason,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
-  designation: row.designation,
-  travelCategory: row.travel_category,
-  travelTypeDetail: row.travel_type_detail,
-  projectProgramme: row.project_programme,
+  designation: row.designation || null,
+  travelCategory: row.travel_category || null,
+  travelTypeDetail: row.travel_type_detail || null,
+  projectProgramme: row.project_programme || null,
   dsaRate: row.dsa_rate ? Number(row.dsa_rate) : null,
   dsaCurrency: row.dsa_currency || 'KES',
   dsaAmount: row.dsa_amount ? Number(row.dsa_amount) : null,
-  referenceNumber: row.reference_number
+  referenceNumber: row.reference_number || null
 });
 
 const generateReferenceNumber = async () => {

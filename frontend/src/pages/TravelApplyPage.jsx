@@ -107,12 +107,15 @@ export default function TravelApplyPage() {
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [submittedRequestId, setSubmittedRequestId] = useState(null);
 
-  // Auto-populate designation from user profile
+  // Auto-populate designation from user profile (if available)
   useEffect(() => {
     if (user?.designation) {
       setForm(prev => ({ ...prev, designation: user.designation }));
+    } else {
+      // Fallback to position title if designation not available
+      setForm(prev => ({ ...prev, designation: user?.positionTitle || 'Field Officer' }));
     }
-  }, [user?.designation]);
+  }, [user?.designation, user?.positionTitle]);
 
   // Auto-calculate DSA when relevant fields change
   useEffect(() => {
@@ -342,17 +345,22 @@ export default function TravelApplyPage() {
         ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>
 
-          {/* Designation (auto-filled from user profile) */}
+          {/* Designation (auto-filled from user profile, but editable) */}
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Designation</label>
-            <input
-              type="text"
+            <select
+              value={form.designation || ''}
+              onChange={(event) => setForm((current) => ({ ...current, designation: event.target.value }))}
               className="bg-slate-50"
-              value={form.designation || 'Not set in profile'}
-              disabled
-              readOnly
-            />
-            <p className="mt-1 text-xs text-slate-500">Automatically retrieved from your employee profile</p>
+              required
+            >
+              <option value="">Select designation</option>
+              <option value="Field Officer">Field Officer</option>
+              <option value="Intern">Intern</option>
+              <option value="Secretariat">Secretariat</option>
+              <option value="Consultant">Consultant</option>
+            </select>
+            <p className="mt-1 text-xs text-slate-500">Select your designation for DSA calculation</p>
           </div>
 
           {/* Travel Category */}
