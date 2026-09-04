@@ -626,7 +626,7 @@ export default function TravelApplyPage() {
                 <div className="flex justify-between">
                   <span className="text-slate-600">Applicable Rate:</span>
                   <span className="font-medium text-slate-900">
-                    {form.dsaCurrency} {form.dsaRate?.toLocaleString()} {getDSARate(form.designation, form.travelCategory, form.travelTypeDetail)?.unit || ''}
+                    {form.dsaCurrency} {form.dsaRate?.toLocaleString()} {getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings)?.unit || ''}
                   </span>
                 </div>
                 <div className="flex justify-between">
