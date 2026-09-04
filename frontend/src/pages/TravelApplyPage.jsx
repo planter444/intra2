@@ -630,10 +630,10 @@ export default function TravelApplyPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-600">Number of {form.travelTypeDetail === 'Official Overnight Travel' ? 'Nights' : 'Days'}:</span>
+                  <span className="text-slate-600">Number of {settings?.travel?.dsa?.calculationBasis === 'nights' ? 'Nights' : 'Days'}:</span>
                   <span className="font-medium text-slate-900">
                     {form.startDate && form.endDate ? (
-                      form.travelTypeDetail === 'Official Overnight Travel' 
+                      settings?.travel?.dsa?.calculationBasis === 'nights'
                         ? Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24))
                         : Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24)) + 1
                     ) : 0}
