@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Gauge, Medal, Printer, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Download, Gauge, Medal, Printer, Sparkles, TrendingUp } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';
@@ -36,14 +36,97 @@ export default function PerformanceEmployeePage() {
   );
   const performanceBand = useMemo(() => getPerformanceBand(average, settings?.kpi?.performanceBands || {}), [average, settings?.kpi?.performanceBands]);
 
+  const handleExportPDF = () => {
+    const auditInfo = entry.audit || {};
+    const printContent = `
+      <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #1e293b; margin: 0;">${settings?.branding?.organizationName || 'KEREA'}</h1>
+          <h2 style="color: #64748b; margin: 10px 0; font-size: 18px;">Employee Performance Report</h2>
+        </div>
+        
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #1e293b; margin: 0 0 10px 0;">Employee Information</h3>
+          <p style="margin: 5px 0;"><strong>Name:</strong> ${employee.fullName}</p>
+          <p style="margin: 5px 0;"><strong>Designation:</strong> ${employee.positionTitle || employee.roleTitle || 'Not set'}</p>
+          <p style="margin: 5px 0;"><strong>Department:</strong> ${employee.departmentName || 'Not set'}</p>
+          <p style="margin: 5px 0;"><strong>Performance Band:</strong> ${performanceBand}</p>
+          <p style="margin: 5px 0;"><strong>Average Score:</strong> ${average ?? 'N/A'}</p>
+        </div>
+
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #1e293b; margin: 0 0 10px 0;">Core Roles</h3>
+          <ul style="margin: 0; padding-left: 20px;">
+            ${entry.coreRoles.filter(r => r).map(role => `<li style="margin: 5px 0;">${role}</li>`).join('') || '<li style="margin: 5px 0;">No core roles defined</li>'}
+          </ul>
+        </div>
+
+        <div style="background: #f8fafc; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+          <h3 style="color: #1e293b; margin: 0 0 10px 0;">KPI Indicators</h3>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+            <thead>
+              <tr style="background: #e2e8f0;">
+                <th style="padding: 10px; text-align: left; border: 1px solid #cbd5e1;">KPI Description</th>
+                <th style="padding: 10px; text-align: center; border: 1px solid #cbd5e1;">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${configuredIndicators.map(indicator => `
+                <tr>
+                  <td style="padding: 10px; border: 1px solid #cbd5e1;">${indicator.label || 'N/A'}</td>
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1;">${indicator.score ?? 'N/A'}</td>
+                </tr>
+              `).join('') || '<tr><td colspan="2" style="padding: 10px; text-align: center; border: 1px solid #cbd5e1;">No KPI indicators configured</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        ${auditInfo.lastModifiedAt ? `
+        <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px;">
+          <h3 style="color: #92400e; margin: 0 0 10px 0; font-size: 14px;">Assessment Audit Information</h3>
+          <p style="margin: 5px 0; font-size: 12px;"><strong>Last Modified By:</strong> ${auditInfo.lastModifiedByName || 'Unknown'}</p>
+          <p style="margin: 5px 0; font-size: 12px;"><strong>Last Modified At:</strong> ${new Date(auditInfo.lastModifiedAt).toLocaleString()}</p>
+        </div>
+        ` : ''}
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">
+          <p>Generated on ${new Date().toLocaleString()}</p>
+          <p>${settings?.branding?.organizationName || 'KEREA'} HRMS</p>
+        </div>
+      </div>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${employee.fullName} - Performance Report</title>
+        <style>
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          }
+        </style>
+      </head>
+      <body>${printContent}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 500);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title={employee ? `${employee.fullName} Performance Overview` : 'Employee Performance Overview'}
         subtitle={employee ? `${employee.positionTitle || employee.roleTitle || 'No designation'} · ${performanceBand}` : 'This employee record could not be found.'}
         actions={[
+          employee ? <button key="export" type="button" onClick={handleExportPDF} className="inline-flex items-center gap-2 rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg">
+            <Download size={16} />Export PDF
+          </button> : null,
           employee ? <button key="print" type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700">
-            <Printer size={16} />Print performance
+            <Printer size={16} />Print
           </button> : null,
           <Link key="back" to="/performance-dashboard" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700">
             <ArrowLeft size={16} />Back to employees

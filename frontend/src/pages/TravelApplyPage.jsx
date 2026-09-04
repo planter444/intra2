@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, X, DollarSign } from 'lucide-react';
+import { Upload, X, DollarSign, Building2 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -25,17 +25,58 @@ const initialForm = {
   projectProgramme: '',
   dsaRate: '',
   dsaCurrency: 'KES',
-  dsaAmount: ''
+  dsaAmount: '',
+  selectedHotel: ''
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
 // DSA Rate Configuration
-const getDSARate = (designation, travelCategory, travelTypeDetail) => {
-  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail });
+const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => {
+  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail, settings });
   
-  if (!designation || !travelCategory) {
-    console.log('Missing designation or travelCategory');
+  if (!travelCategory) {
+    console.log('Missing travelCategory');
+    return null;
+  }
+
+  const dsaMode = settings?.travel?.dsa?.mode || 'designation';
+  console.log('DSA Mode:', dsaMode);
+
+  // Standard DSA Mode - use admin-configured rates
+  if (dsaMode === 'standard') {
+    const dsaSettings = settings?.travel?.dsa;
+    
+    if (travelCategory === 'Within Kenya') {
+      return { 
+        rate: dsaSettings?.kenyaRate || 2000, 
+        currency: dsaSettings?.kenyaCurrency || 'KES', 
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      };
+    }
+    
+    if (travelCategory === 'East Africa') {
+      return { 
+        rate: dsaSettings?.eastAfricaRate || 40, 
+        currency: dsaSettings?.eastAfricaCurrency || 'USD', 
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      };
+    }
+    
+    if (travelCategory === 'International') {
+      return { 
+        rate: dsaSettings?.internationalRate || 50, 
+        currency: dsaSettings?.internationalCurrency || 'USD', 
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      };
+    }
+    
+    return null;
+  }
+
+  // Designation-Based DSA Mode - use existing logic
+  if (!designation) {
+    console.log('Missing designation for designation-based mode');
     return null;
   }
 
@@ -47,7 +88,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail) => {
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
     if (normalizedDesignation === 'fieldofficer') {
       console.log('Match: Field Officer - Within Kenya Overnight');
-      return { rate: 2500, currency: 'KES', unit: 'per night' };
+      return { rate: 2000, currency: 'KES', unit: 'per night' };
     }
     if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       console.log('Match: Intern/Secretariat/Consultant - Within Kenya Overnight');
@@ -71,16 +112,24 @@ const getDSARate = (designation, travelCategory, travelTypeDetail) => {
     return null;
   }
 
-  // East Africa - All designations
+  // East Africa - Secretariat and Consultant only
   if (travelCategory === 'East Africa') {
-    console.log('Match: East Africa - All designations');
-    return { rate: 35, currency: 'USD', unit: 'per day' };
+    if (normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
+      console.log('Match: East Africa - Secretariat/Consultant');
+      return { rate: 35, currency: 'USD', unit: 'per day' };
+    }
+    console.log('No match for East Africa designation');
+    return null;
   }
 
-  // International - All designations
+  // International - Secretariat and Consultant only
   if (travelCategory === 'International') {
-    console.log('Match: International - All designations');
-    return { rate: 50, currency: 'USD', unit: 'per day' };
+    if (normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
+      console.log('Match: International - Secretariat/Consultant');
+      return { rate: 50, currency: 'USD', unit: 'per day' };
+    }
+    console.log('No match for International designation');
+    return null;
   }
 
   console.log('No match for travel category');
@@ -88,7 +137,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail) => {
 };
 
 // Calculate DSA amount based on dates and rate
-const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
+const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail, settings) => {
   if (!startDate || !endDate || !dsaRate) return 0;
 
   const start = new Date(startDate);
@@ -96,13 +145,18 @@ const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail) => {
   const diffTime = end - start;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  if (travelTypeDetail === 'Official Overnight Travel') {
+  const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'nights';
+  console.log('Calculation basis:', calculationBasis);
+
+  if (calculationBasis === 'nights') {
     // Nights = End Date - Start Date
     const nights = diffDays;
+    console.log('Calculated nights:', nights);
     return nights * dsaRate.rate;
   } else {
     // Days = End Date - Start Date + 1
     const days = diffDays + 1;
+    console.log('Calculated days:', days);
     return days * dsaRate.rate;
   }
 };
@@ -138,19 +192,22 @@ export default function TravelApplyPage() {
       endDate: form.endDate 
     });
 
-    if (form.designation && form.travelCategory && form.startDate && form.endDate) {
-      // For East Africa and International, travelTypeDetail is not needed
-      const needsTravelType = form.travelCategory === 'Within Kenya';
+    if (form.travelCategory && form.startDate && form.endDate) {
+      // For East Africa and International, travelTypeDetail is not needed in designation mode
+      const dsaMode = settings?.travel?.dsa?.mode || 'designation';
+      const needsTravelType = dsaMode === 'designation' && form.travelCategory === 'Within Kenya';
+      const needsDesignation = dsaMode === 'designation';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
+      const hasDesignation = needsDesignation ? form.designation : true;
 
-      console.log('DSA Calculation logic:', { needsTravelType, hasRequiredFields });
+      console.log('DSA Calculation logic:', { dsaMode, needsTravelType, hasRequiredFields, needsDesignation, hasDesignation });
 
-      if (hasRequiredFields) {
-        const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail);
+      if (hasRequiredFields && hasDesignation) {
+        const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings);
         console.log('DSA Rate Result:', dsaRate);
         
         if (dsaRate) {
-          const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail);
+          const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail, settings);
           console.log('DSA Amount Result:', dsaAmount);
           
           setForm(prev => ({
@@ -170,7 +227,25 @@ export default function TravelApplyPage() {
         }
       }
     }
-  }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate]);
+  }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
+
+  // Check for preferred hotels based on destination
+  const getPreferredHotels = () => {
+    if (!form.destination) return [];
+    const hotels = settings?.travel?.hotels || [];
+    const activeHotels = hotels.filter(h => h.active);
+    
+    // Match by town or county (case-insensitive partial match)
+    const destinationLower = form.destination.toLowerCase();
+    return activeHotels.filter(hotel => 
+      hotel.town?.toLowerCase().includes(destinationLower) ||
+      hotel.county?.toLowerCase().includes(destinationLower) ||
+      destinationLower.includes(hotel.town?.toLowerCase()) ||
+      destinationLower.includes(hotel.county?.toLowerCase())
+    );
+  };
+
+  const preferredHotels = getPreferredHotels();
 
   // Reset travel type detail when category changes
   useEffect(() => {
@@ -258,7 +333,8 @@ export default function TravelApplyPage() {
         projectProgramme: form.projectProgramme,
         dsaRate: form.dsaRate ? Number(form.dsaRate) : null,
         dsaCurrency: form.dsaCurrency,
-        dsaAmount: form.dsaAmount ? Number(form.dsaAmount) : null
+        dsaAmount: form.dsaAmount ? Number(form.dsaAmount) : null,
+        selectedHotel: form.selectedHotel || null
       };
 
       let request;
@@ -431,11 +507,58 @@ export default function TravelApplyPage() {
                 className="bg-slate-50"
                 placeholder="e.g., Mombasa WhiteSands"
                 value={form.destination}
-                onChange={(event) => setForm((current) => ({ ...current, destination: event.target.value }))}
+                onChange={(event) => setForm((current) => ({ ...current, destination: event.target.value, selectedHotel: '' }))}
                 required
               />
             </div>
           </div>
+
+          {/* Preferred Hotels Section */}
+          {preferredHotels.length > 0 && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-3 flex items-center gap-2 font-medium text-emerald-800">
+                <Building2 size={16} />
+                Preferred Accommodation Available
+              </h4>
+              <p className="mb-3 text-sm text-slate-600">
+                KEREA has approved hotels for this destination. Organisation will settle hotel bills directly.
+              </p>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 cursor-pointer hover:bg-emerald-50">
+                  <input
+                    type="radio"
+                    name="hotelSelection"
+                    value=""
+                    checked={!form.selectedHotel}
+                    onChange={(event) => setForm((current) => ({ ...current, selectedHotel: event.target.value }))}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">No preferred hotel (arrange own accommodation)</p>
+                    <p className="text-sm text-slate-500">Proceed with normal accommodation/reimbursement process</p>
+                  </div>
+                </label>
+                {preferredHotels.map((hotel) => (
+                  <label key={hotel.id} className="flex items-center gap-3 rounded-lg border border-emerald-200 bg-white p-3 cursor-pointer hover:bg-emerald-50">
+                    <input
+                      type="radio"
+                      name="hotelSelection"
+                      value={hotel.id}
+                      checked={form.selectedHotel === hotel.id}
+                      onChange={(event) => setForm((current) => ({ ...current, selectedHotel: event.target.value }))}
+                      className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div className="flex-1">
+                      <p className="font-medium text-slate-900">{hotel.name}</p>
+                      <p className="text-sm text-slate-600">{hotel.town}{hotel.county ? `, ${hotel.county}` : ''}</p>
+                      {hotel.location && <p className="text-xs text-slate-500">{hotel.location}</p>}
+                      {hotel.contact && <p className="text-xs text-slate-500">{hotel.contact}</p>}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>

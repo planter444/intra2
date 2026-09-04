@@ -256,7 +256,14 @@ export default function SettingsPage() {
           ...(current.kpi || {}),
           records: {
             ...(current.kpi?.records || {}),
-            [employeeId]: serializeKpiEntry(nextEntry)
+            [employeeId]: {
+              ...serializeKpiEntry(nextEntry),
+              audit: {
+                lastModifiedBy: user?.id,
+                lastModifiedByName: user?.fullName,
+                lastModifiedAt: new Date().toISOString()
+              }
+            }
           }
         }
       };
@@ -1704,6 +1711,60 @@ export default function SettingsPage() {
 
       {activePage === 'kpi' ? (
         <div className="space-y-6">
+          <SectionCard title="KPI Assessment Settings" subtitle="Configure the default assessment frequency for KPI evaluations.">
+            <div className="max-w-md">
+              <label className="mb-2 block text-sm font-medium text-slate-700">Assessment Frequency</label>
+              <select
+                value={draft.kpi?.frequency || 'quarterly'}
+                onChange={(event) => setDraft((current) => ({
+                  ...current,
+                  kpi: {
+                    ...(current.kpi || {}),
+                    frequency: event.target.value
+                  }
+                }))}
+                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+              >
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="halfYearly">Half-Yearly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+              <p className="mt-2 text-sm text-slate-500">This frequency will be used as the default for KPI assessment periods.</p>
+            </div>
+          </SectionCard>
+
+          {user?.role === 'ceo' && (
+            <SectionCard title="KPI Assessment Locking" subtitle="Lock or unlock KPI assessments to prevent further modifications. Only the CEO can lock assessments.">
+              <div className="space-y-4">
+                <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={draft.kpi?.locked === true}
+                    onChange={(event) => setDraft((current) => ({
+                  ...current,
+                  kpi: {
+                    ...(current.kpi || {}),
+                    locked: event.target.checked
+                  }
+                }))}
+                  />
+                  <span>
+                    <span className="block font-semibold text-slate-900">Lock KPI Assessments</span>
+                    <span className="mt-1 block text-xs text-slate-500">When locked, KPI scores cannot be modified by any user including the CEO. This is typically done at the end of an assessment period.</span>
+                  </span>
+                </label>
+                {draft.kpi?.locked && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <p className="text-sm font-medium text-amber-800">KPI assessments are currently locked</p>
+                    <p className="text-xs text-amber-600">Uncheck the box above to allow modifications to KPI scores.</p>
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+          )}
+
           <SectionCard title="Employees" subtitle="Choose an employee to set their core roles, KPI description, and scores.">
             <div className="max-w-md">
               <label className="mb-2 block text-sm font-medium text-slate-700">Select Employee</label>
@@ -1731,6 +1792,10 @@ export default function SettingsPage() {
           >
             {!selectedKpiEmployee ? (
               <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-10 text-sm text-slate-500">Select an employee above to begin editing KPI details.</div>
+            ) : draft.kpi?.locked ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-10 text-sm text-amber-600">
+                KPI assessments are currently locked. Contact the CEO to unlock for modifications.
+              </div>
             ) : (
               <div className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-3">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Save, Plus, X, Mail, Route, UserPlus, Trash2, Briefcase, Users } from 'lucide-react';
+import { Save, Plus, X, Mail, Route, UserPlus, Trash2, Briefcase, Users, Calculator, DollarSign, Building2, MapPin, Phone, Check } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -23,11 +23,46 @@ export default function TravelSettingsPage() {
   const [selectedNotificationRecipients, setSelectedNotificationRecipients] = useState([]);
   const [designationModal, setDesignationModal] = useState({ open: false, userId: null, designation: '' });
   const [projectsModal, setProjectsModal] = useState({ open: false, project: '' });
+  const [dsaSettings, setDsaSettings] = useState({
+    mode: 'designation', // 'designation' or 'standard'
+    calculationBasis: 'nights', // 'nights' or 'days'
+    kenyaRate: 2000,
+    kenyaCurrency: 'KES',
+    eastAfricaRate: 40,
+    eastAfricaCurrency: 'USD',
+    internationalRate: 50,
+    internationalCurrency: 'USD'
+  });
+  const [hotelsModal, setHotelsModal] = useState({ open: false, hotel: null });
+  const [hotelForm, setHotelForm] = useState({
+    name: '',
+    county: '',
+    town: '',
+    location: '',
+    contact: '',
+    notes: '',
+    active: true
+  });
   const [activeTab, setActiveTab] = useState('notifications');
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  useEffect(() => {
+    if (settings?.travel?.dsa) {
+      setDsaSettings({
+        mode: settings.travel.dsa.mode || 'designation',
+        calculationBasis: settings.travel.dsa.calculationBasis || 'nights',
+        kenyaRate: settings.travel.dsa.kenyaRate || 2000,
+        kenyaCurrency: settings.travel.dsa.kenyaCurrency || 'KES',
+        eastAfricaRate: settings.travel.dsa.eastAfricaRate || 40,
+        eastAfricaCurrency: settings.travel.dsa.eastAfricaCurrency || 'USD',
+        internationalRate: settings.travel.dsa.internationalRate || 50,
+        internationalCurrency: settings.travel.dsa.internationalCurrency || 'USD'
+      });
+    }
+  }, [settings]);
 
   const loadSettings = async () => {
     try {
@@ -57,6 +92,23 @@ export default function TravelSettingsPage() {
       setSaving(true);
       await updateTravelNotificationSettings({ recipientIds: selectedNotificationRecipients });
       setNotificationSettings({ ...notificationSettings, recipientIds: selectedNotificationRecipients });
+      
+      // Save DSA settings
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          dsa: dsaSettings
+        }
+      });
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          dsa: dsaSettings
+        }
+      });
+      
       setNotice({
         open: true,
         title: 'Settings saved',
@@ -237,6 +289,192 @@ export default function TravelSettingsPage() {
     }
   };
 
+  const handleAddHotel = async () => {
+    if (!hotelForm.name || !hotelForm.town) {
+      setNotice({
+        open: true,
+        title: 'Missing information',
+        description: 'Hotel name and town are required.'
+      });
+      return;
+    }
+
+    try {
+      const currentHotels = settings.travel?.hotels || [];
+      const newHotel = {
+        id: Date.now().toString(),
+        ...hotelForm
+      };
+      
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: [...currentHotels, newHotel]
+        }
+      });
+      
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: [...currentHotels, newHotel]
+        }
+      });
+      
+      setHotelForm({
+        name: '',
+        county: '',
+        town: '',
+        location: '',
+        contact: '',
+        notes: '',
+        active: true
+      });
+      setHotelsModal({ open: false, hotel: null });
+      
+      setNotice({
+        open: true,
+        title: 'Hotel added',
+        description: 'Preferred hotel has been added successfully.'
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to add hotel',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleEditHotel = (hotel) => {
+    setHotelForm(hotel);
+    setHotelsModal({ open: true, hotel });
+  };
+
+  const handleUpdateHotel = async () => {
+    if (!hotelForm.name || !hotelForm.town) {
+      setNotice({
+        open: true,
+        title: 'Missing information',
+        description: 'Hotel name and town are required.'
+      });
+      return;
+    }
+
+    try {
+      const currentHotels = settings.travel?.hotels || [];
+      const updatedHotels = currentHotels.map(h => 
+        h.id === hotelsModal.hotel.id ? { ...hotelForm, id: h.id } : h
+      );
+      
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: updatedHotels
+        }
+      });
+      
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: updatedHotels
+        }
+      });
+      
+      setHotelForm({
+        name: '',
+        county: '',
+        town: '',
+        location: '',
+        contact: '',
+        notes: '',
+        active: true
+      });
+      setHotelsModal({ open: false, hotel: null });
+      
+      setNotice({
+        open: true,
+        title: 'Hotel updated',
+        description: 'Preferred hotel has been updated successfully.'
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to update hotel',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleDeleteHotel = async (hotelId) => {
+    try {
+      const currentHotels = settings.travel?.hotels || [];
+      const updatedHotels = currentHotels.filter(h => h.id !== hotelId);
+      
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: updatedHotels
+        }
+      });
+      
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: updatedHotels
+        }
+      });
+      
+      setNotice({
+        open: true,
+        title: 'Hotel deleted',
+        description: 'Preferred hotel has been deleted successfully.'
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to delete hotel',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleToggleHotelStatus = async (hotelId) => {
+    try {
+      const currentHotels = settings.travel?.hotels || [];
+      const updatedHotels = currentHotels.map(h => 
+        h.id === hotelId ? { ...h, active: !h.active } : h
+      );
+      
+      await updateSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: updatedHotels
+        }
+      });
+      
+      replaceSettings({
+        ...settings,
+        travel: {
+          ...settings.travel,
+          hotels: updatedHotels
+        }
+      });
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to update hotel status',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -297,6 +535,22 @@ export default function TravelSettingsPage() {
         >
           <Briefcase size={16} className="inline mr-2" />
           Projects
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('dsa')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'dsa' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Calculator size={16} className="inline mr-2" />
+          DSA Settings
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('hotels')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'hotels' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Building2 size={16} className="inline mr-2" />
+          Preferred Hotels
         </button>
       </div>
 
@@ -395,6 +649,255 @@ export default function TravelSettingsPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </SectionCard>
+      )}
+
+      {activeTab === 'dsa' && (
+        <SectionCard title="DSA Settings" subtitle="Configure Daily Subsistence Allowance calculation method and rates.">
+          <div className="space-y-6">
+            {/* DSA Calculation Mode */}
+            <div>
+              <label className="mb-3 block text-sm font-medium text-slate-700">DSA Calculation Mode</label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="dsaMode"
+                    value="designation"
+                    checked={dsaSettings.mode === 'designation'}
+                    onChange={(e) => setDsaSettings({ ...dsaSettings, mode: e.target.value })}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Designation-Based DSA</p>
+                    <p className="text-sm text-slate-500">DSA rates vary by employee designation (Field Officer, Intern, Secretariat, Consultant)</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="dsaMode"
+                    value="standard"
+                    checked={dsaSettings.mode === 'standard'}
+                    onChange={(e) => setDsaSettings({ ...dsaSettings, mode: e.target.value })}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Admin-Configured Standard DSA</p>
+                    <p className="text-sm text-slate-500">Single DSA rate applies to all staff regardless of designation</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* DSA Calculation Basis */}
+            <div>
+              <label className="mb-3 block text-sm font-medium text-slate-700">DSA Calculation Basis</label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="calculationBasis"
+                    value="nights"
+                    checked={dsaSettings.calculationBasis === 'nights'}
+                    onChange={(e) => setDsaSettings({ ...dsaSettings, calculationBasis: e.target.value })}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Charge by Nights</p>
+                    <p className="text-sm text-slate-500">Calculate nights between start and end date (e.g., Monday to Friday = 4 nights)</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="calculationBasis"
+                    value="days"
+                    checked={dsaSettings.calculationBasis === 'days'}
+                    onChange={(e) => setDsaSettings({ ...dsaSettings, calculationBasis: e.target.value })}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Charge by Travel Days</p>
+                    <p className="text-sm text-slate-500">Calculate calendar travel days (e.g., Monday to Friday = 5 days)</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Standard DSA Rates (only shown when mode is 'standard') */}
+            {dsaSettings.mode === 'standard' && (
+              <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <h3 className="flex items-center gap-2 font-medium text-emerald-800">
+                  <DollarSign size={18} />
+                  Standard DSA Rates
+                </h3>
+                
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Within Kenya Rate</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={dsaSettings.kenyaRate}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, kenyaRate: Number(e.target.value) })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        min="0"
+                      />
+                      <select
+                        value={dsaSettings.kenyaCurrency}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, kenyaCurrency: e.target.value })}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      >
+                        <option value="KES">KES</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">East Africa Rate</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={dsaSettings.eastAfricaRate}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, eastAfricaRate: Number(e.target.value) })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        min="0"
+                      />
+                      <select
+                        value={dsaSettings.eastAfricaCurrency}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, eastAfricaCurrency: e.target.value })}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      >
+                        <option value="KES">KES</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">International Rate</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={dsaSettings.internationalRate}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, internationalRate: Number(e.target.value) })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        min="0"
+                      />
+                      <select
+                        value={dsaSettings.internationalCurrency}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, internationalCurrency: e.target.value })}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      >
+                        <option value="KES">KES</option>
+                        <option value="USD">USD</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <p className="text-sm text-slate-500">
+              Changes to DSA settings will apply to new travel requests. Historical requests retain their original rates.
+            </p>
+          </div>
+        </SectionCard>
+      )}
+
+      {activeTab === 'hotels' && (
+        <SectionCard title="Preferred Hotels / Accommodation" subtitle="Manage KEREA-approved hotels for official travel. Employees will be prompted to select from these hotels when available for their destination.">
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={() => {
+                setHotelForm({
+                  name: '',
+                  county: '',
+                  town: '',
+                  location: '',
+                  contact: '',
+                  notes: '',
+                  active: true
+                });
+                setHotelsModal({ open: true, hotel: null });
+              }}
+              className="flex items-center gap-2 rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white"
+            >
+              <Plus size={18} />
+              Add Hotel
+            </button>
+            
+            {(settings.travel?.hotels || []).length === 0 ? (
+              <p className="text-sm text-slate-500">No preferred hotels configured yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {(settings.travel?.hotels || []).map((hotel) => (
+                  <div key={hotel.id} className={`rounded-xl border ${hotel.active ? 'border-slate-200 bg-white' : 'border-slate-200 bg-slate-50 opacity-60'} p-4`}>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-slate-900">{hotel.name}</h4>
+                          {!hotel.active && (
+                            <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">Inactive</span>
+                          )}
+                        </div>
+                        <div className="mt-2 space-y-1 text-sm text-slate-600">
+                          <div className="flex items-center gap-2">
+                            <MapPin size={14} />
+                            <span>{hotel.town}{hotel.county ? `, ${hotel.county}` : ''}</span>
+                          </div>
+                          {hotel.location && (
+                            <div className="flex items-center gap-2">
+                              <Building2 size={14} />
+                              <span>{hotel.location}</span>
+                            </div>
+                          )}
+                          {hotel.contact && (
+                            <div className="flex items-center gap-2">
+                              <Phone size={14} />
+                              <span>{hotel.contact}</span>
+                            </div>
+                          )}
+                          {hotel.notes && (
+                            <p className="text-xs text-slate-500 italic">{hotel.notes}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHotelStatus(hotel.id)}
+                          className={`rounded-lg p-1.5 ${hotel.active ? 'text-emerald-600 hover:bg-emerald-50' : 'text-slate-600 hover:bg-slate-100'}`}
+                          title={hotel.active ? 'Deactivate hotel' : 'Activate hotel'}
+                        >
+                          <Check size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEditHotel(hotel)}
+                          className="rounded-lg border border-slate-200 p-1.5 text-slate-600 hover:bg-slate-50"
+                          title="Edit hotel"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHotel(hotel.id)}
+                          className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50"
+                          title="Delete hotel"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </SectionCard>
       )}
@@ -507,17 +1010,133 @@ export default function TravelSettingsPage() {
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
-            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700"
             onClick={() => setDesignationModal({ open: false, userId: null, designation: '' })}
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700"
           >
             Cancel
           </button>
           <button
             type="button"
-            className="rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700"
-            onClick={handleUpdateDesignation}
+            onClick={async () => {
+              try {
+                await updateUser(designationModal.userId, { designation: designationModal.designation });
+                const updatedUsers = await fetchUsers();
+                setUsers(updatedUsers);
+                setDesignationModal({ open: false, userId: null, designation: '' });
+                setNotice({
+                  open: true,
+                  title: 'Designation updated',
+                  description: 'Employee designation has been updated successfully.'
+                });
+              } catch (error) {
+                setNotice({
+                  open: true,
+                  title: 'Unable to update designation',
+                  description: error.response?.data?.message || 'Please try again.'
+                });
+              }
+            }}
+            className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white"
           >
-            Update Designation
+            Save Designation
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={hotelsModal.open}
+        title={hotelsModal.hotel ? 'Edit Hotel' : 'Add Hotel'}
+        description={hotelsModal.hotel ? 'Update the hotel information below.' : 'Enter the hotel details below to add it to the preferred hotels list.'}
+        onClose={() => setHotelsModal({ open: false, hotel: null })}
+      >
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Hotel Name *</label>
+            <input
+              type="text"
+              value={hotelForm.name}
+              onChange={(e) => setHotelForm({ ...hotelForm, name: e.target.value })}
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              placeholder="Enter hotel name"
+            />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">County</label>
+              <input
+                type="text"
+                value={hotelForm.county}
+                onChange={(e) => setHotelForm({ ...hotelForm, county: e.target.value })}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                placeholder="Enter county"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Town/City *</label>
+              <input
+                type="text"
+                value={hotelForm.town}
+                onChange={(e) => setHotelForm({ ...hotelForm, town: e.target.value })}
+                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+                placeholder="Enter town or city"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Location</label>
+            <input
+              type="text"
+              value={hotelForm.location}
+              onChange={(e) => setHotelForm({ ...hotelForm, location: e.target.value })}
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              placeholder="Enter specific location/address"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Contact Details</label>
+            <input
+              type="text"
+              value={hotelForm.contact}
+              onChange={(e) => setHotelForm({ ...hotelForm, contact: e.target.value })}
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              placeholder="Phone number or email"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Notes</label>
+            <textarea
+              value={hotelForm.notes}
+              onChange={(e) => setHotelForm({ ...hotelForm, notes: e.target.value })}
+              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
+              rows="2"
+              placeholder="Any additional notes"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="hotelActive"
+              checked={hotelForm.active}
+              onChange={(e) => setHotelForm({ ...hotelForm, active: e.target.checked })}
+              className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <label htmlFor="hotelActive" className="text-sm font-medium text-slate-700">Active</label>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setHotelsModal({ open: false, hotel: null })}
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={hotelsModal.hotel ? handleUpdateHotel : handleAddHotel}
+            className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white"
+          >
+            {hotelsModal.hotel ? 'Update Hotel' : 'Add Hotel'}
           </button>
         </div>
       </Modal>
