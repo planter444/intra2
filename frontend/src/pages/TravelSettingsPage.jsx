@@ -752,66 +752,69 @@ export default function TravelSettingsPage() {
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">Within Kenya Rate</label>
                     <div className="flex gap-2">
-                      <input
-                        type="number"
-                        value={dsaSettings.kenyaRate}
-                        onChange={(e) => setDsaSettings({ ...dsaSettings, kenyaRate: Number(e.target.value) })}
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                        min="0"
-                      />
                       <select
                         value={dsaSettings.kenyaCurrency}
                         onChange={(e) => setDsaSettings({ ...dsaSettings, kenyaCurrency: e.target.value })}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        className="w-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                       >
                         <option value="KES">KES</option>
                         <option value="USD">USD</option>
                         <option value="GBP">GBP</option>
                       </select>
+                      <input
+                        type="number"
+                        value={dsaSettings.kenyaRate || ''}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, kenyaRate: e.target.value ? Number(e.target.value) : 0 })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        min="0"
+                        placeholder="Enter amount"
+                      />
                     </div>
                   </div>
 
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">East Africa Rate</label>
                     <div className="flex gap-2">
-                      <input
-                        type="number"
-                        value={dsaSettings.eastAfricaRate}
-                        onChange={(e) => setDsaSettings({ ...dsaSettings, eastAfricaRate: Number(e.target.value) })}
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                        min="0"
-                      />
                       <select
                         value={dsaSettings.eastAfricaCurrency}
                         onChange={(e) => setDsaSettings({ ...dsaSettings, eastAfricaCurrency: e.target.value })}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        className="w-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                       >
                         <option value="KES">KES</option>
                         <option value="USD">USD</option>
                         <option value="GBP">GBP</option>
                       </select>
+                      <input
+                        type="number"
+                        value={dsaSettings.eastAfricaRate || ''}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, eastAfricaRate: e.target.value ? Number(e.target.value) : 0 })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        min="0"
+                        placeholder="Enter amount"
+                      />
                     </div>
                   </div>
 
                   <div>
                     <label className="mb-2 block text-sm font-medium text-slate-700">International Rate</label>
                     <div className="flex gap-2">
-                      <input
-                        type="number"
-                        value={dsaSettings.internationalRate}
-                        onChange={(e) => setDsaSettings({ ...dsaSettings, internationalRate: Number(e.target.value) })}
-                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                        min="0"
-                      />
                       <select
                         value={dsaSettings.internationalCurrency}
                         onChange={(e) => setDsaSettings({ ...dsaSettings, internationalCurrency: e.target.value })}
-                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                        className="w-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                       >
                         <option value="KES">KES</option>
                         <option value="USD">USD</option>
                         <option value="GBP">GBP</option>
                       </select>
+                      <input
+                        type="number"
+                        value={dsaSettings.internationalRate || ''}
+                        onChange={(e) => setDsaSettings({ ...dsaSettings, internationalRate: e.target.value ? Number(e.target.value) : 0 })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        min="0"
+                        placeholder="Enter amount"
+                      />
                     </div>
                   </div>
                 </div>
