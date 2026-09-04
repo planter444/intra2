@@ -57,7 +57,7 @@ export default function OfficialTravelPage() {
 
         <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
           <p className="text-sm text-slate-600">
-            <span className="font-medium">Note:</span> DSA is calculated automatically based on designation, travel category, and dates.
+            <span className="font-medium">Note:</span> DSA is calculated automatically based on travel category, and dates.
           </p>
         </div>
       </SectionCard>

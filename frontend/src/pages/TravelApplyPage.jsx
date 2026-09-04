@@ -418,7 +418,7 @@ export default function TravelApplyPage() {
               <input
                 type="text"
                 className="bg-slate-50"
-                placeholder="e.g., Nairobi Office"
+                placeholder="e.g., Ongata Rongai"
                 value={form.origin}
                 onChange={(event) => setForm((current) => ({ ...current, origin: event.target.value }))}
                 required
@@ -429,7 +429,7 @@ export default function TravelApplyPage() {
               <input
                 type="text"
                 className="bg-slate-50"
-                placeholder="e.g., Mombasa Branch"
+                placeholder="e.g., Mombasa WhiteSands"
                 value={form.destination}
                 onChange={(event) => setForm((current) => ({ ...current, destination: event.target.value }))}
                 required

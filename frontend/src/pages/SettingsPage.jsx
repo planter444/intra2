@@ -843,6 +843,9 @@ export default function SettingsPage() {
       return accumulator;
     }, {});
     const normalizedKpiMatrix = Object.entries(normalizedKpiRecords).reduce((accumulator, [employeeId, entry]) => {
+      if (!entry.indicators || !Array.isArray(entry.indicators)) {
+        return accumulator;
+      }
       accumulator[employeeId] = Array.from({ length: entry.indicators.length }, (_, index) => ({
         [`k${index + 1}`]: entry.indicators[index]?.score ?? ''
       })).reduce((scores, item) => ({ ...scores, ...item }), {});
