@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BarChart3, Gauge, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { ArrowRight, BarChart3, Download, Gauge, Sparkles, TrendingUp, Users } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';

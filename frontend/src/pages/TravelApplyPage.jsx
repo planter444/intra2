@@ -84,15 +84,19 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
   const normalizedDesignation = designation.toLowerCase().replace(/\s+/g, '');
   console.log('Normalized designation:', normalizedDesignation);
 
+  // Get the calculation basis from settings to determine the unit
+  const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'nights';
+  const unit = calculationBasis === 'nights' ? 'per night' : 'per day';
+
   // Within Kenya - Official Overnight Travel
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Overnight Travel') {
     if (normalizedDesignation === 'fieldofficer') {
       console.log('Match: Field Officer - Within Kenya Overnight');
-      return { rate: 2000, currency: 'KES', unit: 'per night' };
+      return { rate: 2000, currency: 'KES', unit };
     }
     if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       console.log('Match: Intern/Secretariat/Consultant - Within Kenya Overnight');
-      return { rate: 4000, currency: 'KES', unit: 'per night' };
+      return { rate: 4000, currency: 'KES', unit };
     }
     console.log('No match for Within Kenya Overnight');
     return null;
@@ -102,11 +106,11 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
   if (travelCategory === 'Within Kenya' && travelTypeDetail === 'Official Day Travel') {
     if (normalizedDesignation === 'fieldofficer') {
       console.log('Match: Field Officer - Within Kenya Day');
-      return { rate: 1500, currency: 'KES', unit: 'per day' };
+      return { rate: 1500, currency: 'KES', unit };
     }
     if (normalizedDesignation === 'intern' || normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       console.log('Match: Intern/Secretariat/Consultant - Within Kenya Day');
-      return { rate: 2000, currency: 'KES', unit: 'per day' };
+      return { rate: 2000, currency: 'KES', unit };
     }
     console.log('No match for Within Kenya Day');
     return null;
@@ -116,7 +120,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
   if (travelCategory === 'East Africa') {
     if (normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       console.log('Match: East Africa - Secretariat/Consultant');
-      return { rate: 35, currency: 'USD', unit: 'per day' };
+      return { rate: 35, currency: 'USD', unit };
     }
     console.log('No match for East Africa designation');
     return null;
@@ -126,7 +130,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
   if (travelCategory === 'International') {
     if (normalizedDesignation === 'secretariat' || normalizedDesignation === 'consultant') {
       console.log('Match: International - Secretariat/Consultant');
-      return { rate: 50, currency: 'USD', unit: 'per day' };
+      return { rate: 50, currency: 'USD', unit };
     }
     console.log('No match for International designation');
     return null;
@@ -617,7 +621,7 @@ export default function TravelApplyPage() {
                 <DollarSign size={18} />
                 DSA (Daily Subsistence Allowance)
               </h4>
-              <p className="mb-3 text-xs text-emerald-700">Covers accommodation, meals, and incidental costs</p>
+              <p className="mb-3 text-xs text-emerald-700">{settings?.travel?.dsa?.description || 'Covers accommodation, meals, and incidental costs'}</p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Applicable Rate:</span>

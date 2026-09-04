@@ -31,7 +31,8 @@ export default function TravelSettingsPage() {
     eastAfricaRate: 40,
     eastAfricaCurrency: 'USD',
     internationalRate: 50,
-    internationalCurrency: 'USD'
+    internationalCurrency: 'USD',
+    description: 'Covers accommodation, meals, and incidental costs'
   });
   const [hotelsModal, setHotelsModal] = useState({ open: false, hotel: null });
   const [hotelForm, setHotelForm] = useState({
@@ -691,6 +692,19 @@ export default function TravelSettingsPage() {
               </div>
             </div>
 
+            {/* DSA Description */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">DSA Description Message</label>
+              <input
+                type="text"
+                value={dsaSettings.description}
+                onChange={(e) => setDsaSettings({ ...dsaSettings, description: e.target.value })}
+                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                placeholder="e.g., Covers accommodation, meals, and incidental costs"
+              />
+              <p className="mt-1 text-xs text-slate-500">This message will be displayed to employees when they see their DSA amount in travel requests.</p>
+            </div>
+
             {/* DSA Calculation Basis */}
             <div>
               <label className="mb-3 block text-sm font-medium text-slate-700">DSA Calculation Basis</label>
@@ -752,6 +766,7 @@ export default function TravelSettingsPage() {
                       >
                         <option value="KES">KES</option>
                         <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
                       </select>
                     </div>
                   </div>
@@ -773,6 +788,7 @@ export default function TravelSettingsPage() {
                       >
                         <option value="KES">KES</option>
                         <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
                       </select>
                     </div>
                   </div>
@@ -794,6 +810,7 @@ export default function TravelSettingsPage() {
                       >
                         <option value="KES">KES</option>
                         <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
                       </select>
                     </div>
                   </div>
