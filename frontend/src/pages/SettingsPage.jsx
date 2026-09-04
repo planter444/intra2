@@ -794,7 +794,7 @@ export default function SettingsPage() {
           defaultMobileUrl: String(draft.interface?.backgrounds?.redesigned?.defaultMobileUrl || draft.interface?.backgrounds?.redesigned?.defaultImageUrl || ''),
           perPage: Object.fromEntries(['dashboard','employees','profile','documents','leave','settings','audit','kpi','performance','travel','leaveReport','payslips'].map((k) => {
             const raw = (draft.interface?.backgrounds?.redesigned?.perPage || {})[k];
-            const asObj = typeof raw === 'object' && raw ? raw : { desktop: String(raw || '').trim(), mobile: String(asObj.mobile || '').trim() };
+            const asObj = typeof raw === 'object' && raw ? raw : { desktop: String(raw || '').trim(), mobile: String(raw || '').trim() };
             return [k, { desktop: String(asObj.desktop || '').trim(), mobile: String(asObj.mobile || '').trim() }];
           }))
         },
