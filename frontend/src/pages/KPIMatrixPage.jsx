@@ -4,7 +4,7 @@ import { ArrowRight, BriefcaseBusiness, ChartColumnIncreasing, Lock, Unlock, Sav
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';
-import Notice from '../components/Notice';
+import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { fetchUsers } from '../services/userService';
 import { usePagePresentation } from '../hooks/usePagePresentation';
@@ -422,11 +422,16 @@ export default function KPIMatrixPage() {
         )}
       </SectionCard>
 
-      <Notice
+      <Modal
         open={notice.open}
         title={notice.title}
         description={notice.description}
         onClose={() => setNotice({ open: false, title: '', description: '' })}
+        actions={[
+          <button key="close" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={() => setNotice({ open: false, title: '', description: '' })}>
+            Close
+          </button>
+        ]}
       />
     </div>
   );
