@@ -1,6 +1,6 @@
 const { getSystemSettings, updateSystemSettings, restoreSystemSettings } = require('../services/settingsService');
 const { logAction } = require('../services/auditService');
-const { query } = require('../db');
+const { query } = require('../config/db');
 
 const getSettings = async (req, res, next) => {
   try {

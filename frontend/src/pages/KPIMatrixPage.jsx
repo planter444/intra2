@@ -7,6 +7,7 @@ import StatCard from '../components/StatCard';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { fetchUsers } from '../services/userService';
+import { updateSettings } from '../services/settingsService';
 import { usePagePresentation } from '../hooks/usePagePresentation';
 import { getAverageKpiScore, getNormalizedKpiEntry } from '../utils/kpi';
 
@@ -21,7 +22,7 @@ const accentClasses = [
 
 export default function KPIMatrixPage() {
   const navigate = useNavigate();
-  const { settings, user, updateSettings } = useAuth();
+  const { settings, user, replaceSettings } = useAuth();
   const [users, setUsers] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [editMode, setEditMode] = useState(false);
@@ -81,7 +82,8 @@ export default function KPIMatrixPage() {
           }
         }
       };
-      await updateSettings({ kpi: updatedKpi });
+      const newSettings = await updateSettings({ kpi: updatedKpi });
+      replaceSettings(newSettings);
       setEditMode(false);
       setNotice({
         open: true,
@@ -140,7 +142,8 @@ export default function KPIMatrixPage() {
           }
         }
       };
-      await updateSettings({ kpi: updatedKpi });
+      const newSettings = await updateSettings({ kpi: updatedKpi });
+      replaceSettings(newSettings);
       setNotice({
         open: true,
         title: employeeKpiData.locked ? 'KPI Unlocked' : 'KPI Locked',
