@@ -422,11 +422,13 @@ export default function TravelDetailPage() {
   }
 
   const config = statusConfig[request.status] || statusConfig.pending;
-  const canEdit = String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status);
+  // Normal staff can only edit pending/rejected requests; admin can edit any request
+  const canEdit = (String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status)) || user.role === 'admin';
   const canCancel = String(request.userId) === String(user.id) && request.status === 'pending';
   // CEO can approve any request, otherwise check employee-specific routing for approval
   const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'rejected'].includes(request.status);
-  const canDelete = user.role === 'admin' && ['approved', 'rejected'].includes(request.status);
+  // Only admin can delete requests
+  const canDelete = user.role === 'admin';
   const canUploadReceipt = String(request.userId) === String(user.id) && request.status === 'approved';
   const isApprover = String(request.userId) !== String(user.id) && (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id)));
 

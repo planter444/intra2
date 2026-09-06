@@ -289,7 +289,8 @@ export default function TravelApplyPage() {
       return 'End date cannot be earlier than start date.';
     }
 
-    if (form.estimatedCost && isNaN(parseFloat(form.estimatedCost))) {
+    // Estimated cost is optional - only validate if provided
+    if (form.estimatedCost !== '' && form.estimatedCost !== null && form.estimatedCost !== undefined && isNaN(parseFloat(form.estimatedCost))) {
       return 'Estimated cost must be a valid number.';
     }
 
