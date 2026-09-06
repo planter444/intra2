@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Download, Pencil, Plus, Trash2, Sparkles } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Modal from '../components/Modal';
 import PageHeader from '../components/PageHeader';
@@ -73,6 +73,7 @@ export default function SettingsPage() {
   const isAdmin = user?.role === 'admin';
   const isCeoOnly = user?.role === 'ceo';
   const isFinanceOnly = user?.role === 'finance';
+  const isItOfficer = user?.role === 'admin';
   const availablePages = isCeoOnly
     ? [
         ['employees', 'Employees Page'],
@@ -1711,6 +1712,60 @@ export default function SettingsPage() {
 
       {activePage === 'kpi' ? (
         <div className="space-y-6">
+          {isItOfficer && (
+            <SectionCard title="KPI Data Management" subtitle="IT Officer Only - Seed random KPI data for all employees.">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white hover:opacity-90"
+                  onClick={async () => {
+                    if (confirm('This will seed KPI data for all employees with random core roles and indicators. This action cannot be undone. Continue?')) {
+                      try {
+                        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/settings/seed-kpi`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                          }
+                        });
+                        const data = await response.json();
+                        if (data.success) {
+                          alert(data.message);
+                          window.location.reload();
+                        }
+                      } catch (error) {
+                        alert('Failed to seed KPI data');
+                      }
+                    }
+                  }}
+                >
+                  <Sparkles size={16} /> Seed KPI Data
+                </button>
+                <p className="text-sm text-slate-500">This will generate ~5 core roles and ~5 KPI indicators with random scores (60-100) for each employee.</p>
+              </div>
+            </SectionCard>
+          )}
+
+          <SectionCard title="Performance Band Settings" subtitle="Configure score ranges for performance bands (e.g., 0-10 = Needs Assistance, 10-20 = Developing, etc.).">
+            <div className="space-y-4">
+              {Object.entries(performanceBands).map(([bandKey, band]) => (
+                <div key={bandKey} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <label className="text-sm font-medium text-slate-900 capitalize">{band.label || bandKey}</label>
+                    <input
+                      type="number"
+                      className="w-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      value={band.minScore || 0}
+                      onChange={(e) => setPerformanceBandField(bandKey, 'minScore', e.target.value)}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <p className="text-xs text-slate-500">Minimum score for this performance band</p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+
           <SectionCard title="KPI Assessment Settings" subtitle="Configure the default assessment frequency for KPI evaluations.">
             <div className="max-w-md">
               <label className="mb-2 block text-sm font-medium text-slate-700">Assessment Frequency</label>

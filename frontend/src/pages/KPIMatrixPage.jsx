@@ -4,6 +4,7 @@ import { ArrowRight, BriefcaseBusiness, ChartColumnIncreasing, Lock, Unlock, Sav
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';
+import Notice from '../components/Notice';
 import { useAuth } from '../context/AuthContext';
 import { fetchUsers } from '../services/userService';
 import { usePagePresentation } from '../hooks/usePagePresentation';
@@ -61,6 +62,8 @@ export default function KPIMatrixPage() {
     }
   };
 
+  const [notice, setNotice] = useState({ open: false, title: '', description: '' });
+
   const handleSave = async () => {
     try {
       const updatedKpi = {
@@ -69,14 +72,29 @@ export default function KPIMatrixPage() {
           ...settings?.kpi?.records,
           [String(selectedEmployeeId)]: {
             ...editForm,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            audit: {
+              lastModifiedBy: user.id,
+              lastModifiedAt: new Date().toISOString(),
+              lastModifiedByName: user.fullName
+            }
           }
         }
       };
       await updateSettings({ kpi: updatedKpi });
       setEditMode(false);
+      setNotice({
+        open: true,
+        title: 'KPI Saved Successfully',
+        description: `KPI data for ${selectedEmployee?.fullName} has been updated.`
+      });
     } catch (error) {
       console.error('Failed to save KPI data:', error);
+      setNotice({
+        open: true,
+        title: 'Save Failed',
+        description: 'Unable to save KPI data. Please try again.'
+      });
     }
   };
 
@@ -123,8 +141,20 @@ export default function KPIMatrixPage() {
         }
       };
       await updateSettings({ kpi: updatedKpi });
+      setNotice({
+        open: true,
+        title: employeeKpiData.locked ? 'KPI Unlocked' : 'KPI Locked',
+        description: employeeKpiData.locked 
+          ? `KPI assessment for ${selectedEmployee?.fullName} has been unlocked and can now be edited.`
+          : `KPI assessment for ${selectedEmployee?.fullName} has been locked. No further edits will be allowed.`
+      });
     } catch (error) {
       console.error('Failed to toggle lock:', error);
+      setNotice({
+        open: true,
+        title: 'Lock Toggle Failed',
+        description: 'Unable to update lock status. Please try again.'
+      });
     }
   };
 
@@ -133,34 +163,6 @@ export default function KPIMatrixPage() {
       <PageHeader
         title="KPI Management"
         subtitle="Select an employee to view and manage their KPI configuration and scores."
-        actions={user.role === 'admin' || user.role === 'ceo' ? [
-          <button
-            key="seed-kpi"
-            type="button"
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            onClick={async () => {
-              if (confirm('This will seed KPI data for all employees with random core roles and indicators. Continue?')) {
-                try {
-                  const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/settings/seed-kpi`, {
-                    method: 'POST',
-                    headers: {
-                      'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                  });
-                  const data = await response.json();
-                  if (data.success) {
-                    alert(data.message);
-                    window.location.reload();
-                  }
-                } catch (error) {
-                  alert('Failed to seed KPI data');
-                }
-              }
-            }}
-          >
-            <Sparkles size={16} /> Seed KPI Data
-          </button>
-        ] : undefined}
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -214,14 +216,21 @@ export default function KPIMatrixPage() {
                       </button>
                     )}
                     {user.role === 'ceo' && (
-                      <button
-                        type="button"
-                        className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${employeeKpiData.locked ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-                        onClick={handleToggleLock}
-                      >
-                        {employeeKpiData.locked ? <Lock size={16} /> : <Unlock size={16} />}
-                        {employeeKpiData.locked ? 'Locked' : 'Lock'}
-                      </button>
+                      <div className="relative group">
+                        <button
+                          type="button"
+                          className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${employeeKpiData.locked ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                          onClick={handleToggleLock}
+                        >
+                          {employeeKpiData.locked ? <Lock size={16} /> : <Unlock size={16} />}
+                          {employeeKpiData.locked ? 'Locked' : 'Lock'}
+                        </button>
+                        <div className="absolute right-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                          {employeeKpiData.locked 
+                            ? 'Click to unlock this KPI assessment. Once unlocked, edits will be allowed again.'
+                            : 'Click to lock this KPI assessment. Once locked, no further edits will be allowed by anyone.'}
+                        </div>
+                      </div>
                     )}
                   </>
                 )}
@@ -412,6 +421,13 @@ export default function KPIMatrixPage() {
           </div>
         )}
       </SectionCard>
+
+      <Notice
+        open={notice.open}
+        title={notice.title}
+        description={notice.description}
+        onClose={() => setNotice({ open: false, title: '', description: '' })}
+      />
     </div>
   );
 }
