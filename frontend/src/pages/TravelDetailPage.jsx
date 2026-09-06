@@ -63,6 +63,7 @@ export default function TravelDetailPage() {
   const [deleteModal, setDeleteModal] = useState({ open: false, type: null, item: null });
   const [cancelModal, setCancelModal] = useState({ open: false });
   const [approverForEmployee, setApproverForEmployee] = useState(null);
+  const [supportingDocModal, setSupportingDocModal] = useState({ open: false, file: null });
 
   const loadRequest = async () => {
     try {
@@ -152,7 +153,71 @@ export default function TravelDetailPage() {
     } catch (error) {
       setNotice({
         open: true,
-        title: 'Unable to process decision',
+        title: `Unable to ${decision} request`,
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleSupportingDocUpload = async () => {
+    if (!supportingDocModal.file) {
+      setNotice({
+        open: true,
+        title: 'No file selected',
+        description: 'Please select a file to upload.'
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', supportingDocModal.file);
+      formData.append('documentType', 'supporting_document');
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/documents/upload`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Upload failed');
+      }
+
+      const { documentId } = await response.json();
+
+      await updateTravelRequest(id, { supportingDocumentId: documentId });
+      setSupportingDocModal({ open: false, file: null });
+      setNotice({
+        open: true,
+        title: 'Document uploaded',
+        description: 'Supporting document has been uploaded successfully.'
+      });
+      loadRequest();
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Upload failed',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleSupportingDocRemove = async () => {
+    try {
+      await updateTravelRequest(id, { supportingDocumentId: null });
+      setNotice({
+        open: true,
+        title: 'Document removed',
+        description: 'Supporting document has been removed successfully.'
+      });
+      loadRequest();
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to remove document',
         description: error.response?.data?.message || 'Please try again.'
       });
     }
@@ -359,11 +424,11 @@ export default function TravelDetailPage() {
   const config = statusConfig[request.status] || statusConfig.pending;
   const canEdit = String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status);
   const canCancel = String(request.userId) === String(user.id) && request.status === 'pending';
-  // ONLY check employee-specific routing for approval
-  const canDecide = approverForEmployee && String(approverForEmployee) === String(user.id) && ['pending', 'rejected'].includes(request.status);
+  // CEO can approve any request, otherwise check employee-specific routing for approval
+  const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'rejected'].includes(request.status);
   const canDelete = user.role === 'admin' && ['approved', 'rejected'].includes(request.status);
   const canUploadReceipt = String(request.userId) === String(user.id) && request.status === 'approved';
-  const isApprover = String(request.userId) !== String(user.id) && approverForEmployee && String(approverForEmployee) === String(user.id);
+  const isApprover = String(request.userId) !== String(user.id) && (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id)));
 
   return (
     <div className="space-y-6">
@@ -421,6 +486,55 @@ export default function TravelDetailPage() {
                 <label className="mb-2 block text-sm font-medium text-slate-700">Reason</label>
                 <textarea rows="3" className="bg-white" value={editForm.reason} onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })} />
               </div>
+              
+              {request.travelType === 'booking' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Supporting Document</label>
+                  {request.supportingDocumentId ? (
+                    <div className="rounded-xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-slate-700">Document attached</span>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                            onClick={handlePreviewSupportingDocument}
+                            title="Preview"
+                          >
+                            <Eye size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                            onClick={handleDownloadSupportingDocument}
+                            title="Download"
+                          >
+                            <Download size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            className="rounded-lg border border-rose-200 p-2 text-rose-600 hover:bg-rose-50"
+                            onClick={handleSupportingDocRemove}
+                            title="Remove"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 rounded-xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50"
+                      onClick={() => setSupportingDocModal({ open: true, file: null })}
+                    >
+                      <Upload size={16} />
+                      Upload supporting document
+                    </button>
+                  )}
+                </div>
+              )}
+              
               <div className="flex gap-3">
                 <button type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setEditMode(false)}>
                   Cancel
@@ -646,6 +760,16 @@ export default function TravelDetailPage() {
                     Attached
                   </span>
                   <span className="text-sm text-slate-400 truncate">Supporting document</span>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="rounded-lg border border-rose-200 p-2 text-rose-600 hover:bg-rose-50"
+                      onClick={handleSupportingDocRemove}
+                      title="Remove"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
                 <p className="mt-1 text-sm text-slate-500">Uploaded with travel request</p>
               </div>
@@ -797,6 +921,48 @@ export default function TravelDetailPage() {
           </button>
         ]}
       />
+
+      <Modal
+        open={supportingDocModal.open}
+        title="Upload supporting document"
+        description="Upload a supporting document for this travel request."
+        onClose={() => setSupportingDocModal({ open: false, file: null })}
+      >
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Document file</label>
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center">
+              <Upload size={24} className="text-slate-400" />
+              <div>
+                <p className="text-sm font-medium text-slate-700">Click to upload document</p>
+                <p className="mt-1 text-xs text-slate-400">PDF, images, or other files (max 10 MB)</p>
+              </div>
+              <input
+                type="file"
+                className="hidden"
+                accept=".pdf,.jpg,.jpeg,.png,.webp"
+                onChange={(e) => setSupportingDocModal({ ...supportingDocModal, file: e.target.files?.[0] || null })}
+              />
+            </label>
+            {supportingDocModal.file && (
+              <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700">
+                <span>{supportingDocModal.file.name}</span>
+                <button type="button" className="text-slate-500" onClick={() => setSupportingDocModal({ ...supportingDocModal, file: null })}>
+                  <X size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button type="button" className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700" onClick={() => setSupportingDocModal({ open: false, file: null })}>
+              Cancel
+            </button>
+            <button type="button" className="rounded-2xl bg-brand-gradient px-4 py-2 text-sm font-medium text-white" onClick={handleSupportingDocUpload}>
+              Upload Document
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
