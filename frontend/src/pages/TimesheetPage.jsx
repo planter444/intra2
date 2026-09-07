@@ -17,6 +17,10 @@ const isWeekend = (day, month, year) => {
   const dayOfWeek = getDayOfWeek(day, month, year);
   return dayOfWeek === 0 || dayOfWeek === 6;
 };
+const getMonthName = (month) => {
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return months[month - 1] || 'January';
+};
 
 const calculateWorkingDays = (month, year) => {
   const daysInMonth = getDaysInMonth(month, year);
@@ -747,7 +751,7 @@ export default function TimesheetPage() {
         ].filter(Boolean)}
       />
 
-      <SectionCard title="Timesheet" description={`Fill in your daily hours for ${monthName} ${year}`}>
+      <SectionCard title="Timesheet" description={`Fill in your daily hours for ${getMonthName(month)} ${year}`}>
         {timesheet && timesheet.status !== 'draft' && (
           <div className={`mb-6 p-4 rounded-lg border ${
             timesheet.status === 'submitted' ? 'bg-amber-50 border-amber-200' :
