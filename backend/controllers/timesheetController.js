@@ -70,16 +70,10 @@ const createTimesheet = async (req, res, next) => {
       
       const updates = {
         partners: Array.isArray(partners) ? partners : [],
-        dailyEntries: dailyEntries && typeof dailyEntries === 'object' ? dailyEntries : {}
+        dailyEntries: dailyEntries && typeof dailyEntries === 'object' ? dailyEntries : {},
+        totalHours: parseFloat(totalHours) || 0,
+        levelOfEffort: parseFloat(levelOfEffort) || 0
       };
-
-      // Only add totalHours and levelOfEffort if they're explicitly provided
-      if (totalHours !== undefined && totalHours !== null) {
-        updates.totalHours = parseFloat(totalHours);
-      }
-      if (levelOfEffort !== undefined && levelOfEffort !== null) {
-        updates.levelOfEffort = parseFloat(levelOfEffort);
-      }
       
       const updated = await timesheetModel.updateTimesheet(parseInt(existing.id), updates);
       
@@ -223,11 +217,11 @@ const submitTimesheet = async (req, res, next) => {
     const timesheetRouting = settings?.payload?.timesheet?.routing || {};
     const supervisorId = timesheetRouting[String(req.user.id)] || timesheetRouting.default || null;
 
-    const updated = await timesheetModel.updateTimesheet(id, {
+    const updated = await timesheetModel.updateTimesheet(parseInt(id), {
       status: 'submitted',
-      employeeSignature,
+      employeeSignature: String(employeeSignature),
       employeeSignatureDate: new Date(),
-      supervisorId,
+      supervisorId: supervisorId ? parseInt(supervisorId) : null,
       submittedAt: new Date()
     });
 
