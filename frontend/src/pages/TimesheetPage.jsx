@@ -935,22 +935,24 @@ export default function TimesheetPage() {
                       {dayNames[dayOfWeek]}
                     </td>
                     {(selectedPartners || []).map(partner => (
-                      <td key={partner} className="px-3 py-2 border">
-                        <input
-                          type="number"
-                          min="0"
-                          max="8"
-                          step="0.5"
-                          value={entry.partnerHours?.[partner] || ''}
-                          onChange={(e) => handlePartnerHoursChange(day, partner, e.target.value)}
-                          disabled={!canEdit || isWeekendDay || !!entry.absence}
-                          placeholder=""
-                          className="w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
-                        />
+                      <td key={partner} className="px-3 py-2 border text-center">
+                        {entry.absence ? 'X' : (
+                          <input
+                            type="number"
+                            min="0"
+                            max="8"
+                            step="0.5"
+                            value={entry.partnerHours?.[partner] || ''}
+                            onChange={(e) => handlePartnerHoursChange(day, partner, e.target.value)}
+                            disabled={!canEdit || isWeekendDay || !!entry.absence}
+                            placeholder=""
+                            className="w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
+                          />
+                        )}
                       </td>
                     ))}
                     <td className="px-3 py-2 border text-center font-medium text-slate-900">
-                      {entry.absence ? 'N/A' : (() => {
+                      {entry.absence ? (entry.absence === 'Did not work' ? 'N/A' : 'S') : (() => {
                         let dayTotal = 0;
                         if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
                           dayTotal += parseFloat(entry.hours) || 0;

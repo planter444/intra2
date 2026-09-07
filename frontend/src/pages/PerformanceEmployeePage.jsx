@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, Download, Gauge, Medal, Printer, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Download, Gauge, Medal, Printer, Sparkles, TrendingUp, BriefcaseBusiness } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';
@@ -234,6 +234,31 @@ export default function PerformanceEmployeePage() {
             <StatCard title="Designation" value={employee.positionTitle || employee.roleTitle || 'Not set'} helper="Saved employee role/title" accent="from-sky-700 to-cyan-500" />
             <StatCard title="Performance band" value={performanceBand} helper="Derived from the average KPI score" accent="from-emerald-700 to-green-500" />
           </div>
+
+          {entry.coreRoles && entry.coreRoles.length > 0 && (
+            <SectionCard title="Core Roles" subtitle="Key responsibilities and associated comments." style={{ ...cardStyle, ...animationStyle }}>
+              <div className="space-y-3">
+                {entry.coreRoles.map((role, index) => {
+                  const roleText = typeof role === 'string' ? role : role?.role;
+                  const commentText = typeof role === 'string' ? '' : role?.comment;
+                  if (!roleText || !String(roleText).trim()) return null;
+                  return (
+                    <div key={`core-role-${index}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+                      <div className="flex items-start gap-3">
+                        <BriefcaseBusiness size={18} className="text-emerald-600 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-slate-900">{roleText}</p>
+                          {commentText && (
+                            <p className="mt-2 text-xs text-slate-500 italic">"{commentText}"</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          )}
 
           <SectionCard title="Performance breakdown" subtitle="Each KPI is shown as an individual performance meter." style={{ ...cardStyle, ...animationStyle }}>
             <div className="space-y-4">
