@@ -59,11 +59,11 @@ const calculateLevelOfEffort = (totalHours, month, year, dailyEntries) => {
   const workingDays = calculateWorkingDays(month, year);
   let possibleHours = workingDays * 8;
   
-  // Deduct 8 hours for each "Did not work" absence (person was supposed to work but didn't)
-  // Don't deduct for other absences (Sick Leave, Annual Leave, Training, Other, Public Holiday)
+  // "Did not work" counts as 0 hours worked but does NOT reduce possible hours
+  // Other absences (Sick Leave, Annual Leave, Training, Other, Public Holiday) reduce possible hours
   if (dailyEntries) {
     Object.values(dailyEntries).forEach(entry => {
-      if (entry.absence === 'Did not work' && !isWeekend(parseInt(Object.keys(dailyEntries).find(k => dailyEntries[k] === entry)), month, year)) {
+      if (entry.absence && entry.absence !== 'Did not work' && !isWeekend(parseInt(Object.keys(dailyEntries).find(k => dailyEntries[k] === entry)), month, year)) {
         possibleHours -= 8;
       }
     });
@@ -130,11 +130,13 @@ export default function TimesheetPage() {
         setSelectedPartners(existing.partners || []);
         setEmployeeSignature(existing.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
         setSupervisorSignature(existing.supervisor_signature || localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
+        setSupervisorComment(existing.supervisor_comment || '');
       } else {
         console.log('No existing timesheet for month:', newMonth, 'year:', newYear);
         setTimesheet(null);
         setDailyEntries({});
         setSelectedPartners([]);
+        setSupervisorComment('');
         // Use persisted signatures from localStorage
         setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
         setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
@@ -145,6 +147,7 @@ export default function TimesheetPage() {
       setTimesheet(null);
       setDailyEntries({});
       setSelectedPartners([]);
+      setSupervisorComment('');
       setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
       setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
       initializeDailyEntries();
@@ -952,7 +955,7 @@ export default function TimesheetPage() {
                       </td>
                     ))}
                     <td className="px-3 py-2 border text-center font-medium text-slate-900">
-                      {entry.absence ? (entry.absence === 'Did not work' ? 'N/A' : 'S') : (() => {
+                      {entry.absence ? 'X' : (() => {
                         let dayTotal = 0;
                         if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
                           dayTotal += parseFloat(entry.hours) || 0;

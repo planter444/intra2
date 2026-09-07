@@ -53,13 +53,29 @@ export const getNormalizedKpiEntry = (entry = {}, options = {}) => {
 
     return {
       label: String(rawIndicator?.label || '').trim(),
-      score: normalizeScore(rawIndicator?.score ?? legacyScore)
+      score: normalizeScore(rawIndicator?.score ?? legacyScore),
+      weight: rawIndicator?.weight || '',
+      comment: rawIndicator?.comment || ''
     };
   });
 
+  // Normalize core roles - handle both string and object formats
+  const normalizedCoreRoles = base.coreRoles.map((role, index) => {
+    const rawRole = Array.isArray(entry?.coreRoles) ? entry.coreRoles[index] : null;
+    if (typeof rawRole === 'string') {
+      return { role: rawRole.trim(), comment: '' };
+    } else if (rawRole && typeof rawRole === 'object') {
+      return { role: String(rawRole.role || '').trim(), comment: rawRole.comment || '' };
+    }
+    return { role: '', comment: '' };
+  });
+
   return {
-    coreRoles: base.coreRoles.map((role, index) => String(Array.isArray(entry?.coreRoles) ? entry.coreRoles[index] || '' : '').trim()),
-    indicators: normalizedIndicators
+    coreRoles: normalizedCoreRoles,
+    indicators: normalizedIndicators,
+    description: entry?.description || '',
+    assessmentFrequency: entry?.assessmentFrequency || 'monthly',
+    audit: entry?.audit || {}
   };
 };
 
