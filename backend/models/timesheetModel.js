@@ -5,7 +5,7 @@ const TABLE_NAME = 'timesheets';
 const createTimesheet = async ({ userId, month, year, partners, dailyEntries }) => {
   const result = await query(
     `INSERT INTO ${TABLE_NAME} (user_id, month, year, partners, daily_entries) 
-     VALUES ($1, $2, $3, $4, $5) 
+     VALUES ($1::BIGINT, $2::INTEGER, $3::INTEGER, $4::TEXT[], $5::JSONB) 
      RETURNING *`,
     [userId, month, year, partners, JSON.stringify(dailyEntries)]
   );
@@ -14,7 +14,7 @@ const createTimesheet = async ({ userId, month, year, partners, dailyEntries }) 
 
 const getTimesheet = async ({ userId, month, year }) => {
   const result = await query(
-    `SELECT * FROM ${TABLE_NAME} WHERE user_id = $1 AND month = $2 AND year = $3`,
+    `SELECT * FROM ${TABLE_NAME} WHERE user_id = $1::BIGINT AND month = $2::INTEGER AND year = $3::INTEGER`,
     [userId, month, year]
   );
   return result.rows[0];
@@ -27,12 +27,12 @@ const updateTimesheet = async (id, updates) => {
 
   if (updates.partners !== undefined) {
     fields.push(`partners = $${paramCount}::TEXT[]`);
-    values.push(updates.partners);
+    values.push(Array.isArray(updates.partners) ? updates.partners : []);
     paramCount++;
   }
   if (updates.dailyEntries !== undefined) {
     fields.push(`daily_entries = $${paramCount}::JSONB`);
-    values.push(JSON.stringify(updates.dailyEntries));
+    values.push(typeof updates.dailyEntries === 'object' ? JSON.stringify(updates.dailyEntries) : '{}');
     paramCount++;
   }
   if (updates.totalHours !== undefined) {
@@ -46,53 +46,53 @@ const updateTimesheet = async (id, updates) => {
     paramCount++;
   }
   if (updates.employeeSignature !== undefined) {
-    fields.push(`employee_signature = $${paramCount}`);
-    values.push(updates.employeeSignature);
+    fields.push(`employee_signature = $${paramCount}::TEXT`);
+    values.push(updates.employeeSignature || null);
     paramCount++;
   }
   if (updates.employeeSignatureDate !== undefined) {
-    fields.push(`employee_signature_date = $${paramCount}`);
-    values.push(updates.employeeSignatureDate);
+    fields.push(`employee_signature_date = $${paramCount}::TIMESTAMPTZ`);
+    values.push(updates.employeeSignatureDate || null);
     paramCount++;
   }
   if (updates.supervisorId !== undefined) {
-    fields.push(`supervisor_id = $${paramCount}`);
-    values.push(updates.supervisorId);
+    fields.push(`supervisor_id = $${paramCount}::BIGINT`);
+    values.push(updates.supervisorId ? parseInt(updates.supervisorId) : null);
     paramCount++;
   }
   if (updates.supervisorSignature !== undefined) {
-    fields.push(`supervisor_signature = $${paramCount}`);
-    values.push(updates.supervisorSignature);
+    fields.push(`supervisor_signature = $${paramCount}::TEXT`);
+    values.push(updates.supervisorSignature || null);
     paramCount++;
   }
   if (updates.supervisorSignatureDate !== undefined) {
-    fields.push(`supervisor_signature_date = $${paramCount}`);
-    values.push(updates.supervisorSignatureDate);
+    fields.push(`supervisor_signature_date = $${paramCount}::TIMESTAMPTZ`);
+    values.push(updates.supervisorSignatureDate || null);
     paramCount++;
   }
   if (updates.supervisorComment !== undefined) {
-    fields.push(`supervisor_comment = $${paramCount}`);
-    values.push(updates.supervisorComment);
+    fields.push(`supervisor_comment = $${paramCount}::TEXT`);
+    values.push(updates.supervisorComment || null);
     paramCount++;
   }
   if (updates.status !== undefined) {
-    fields.push(`status = $${paramCount}`);
-    values.push(updates.status);
+    fields.push(`status = $${paramCount}::VARCHAR(20)`);
+    values.push(updates.status || 'draft');
     paramCount++;
   }
   if (updates.submittedAt !== undefined) {
-    fields.push(`submitted_at = $${paramCount}`);
-    values.push(updates.submittedAt);
+    fields.push(`submitted_at = $${paramCount}::TIMESTAMPTZ`);
+    values.push(updates.submittedAt || null);
     paramCount++;
   }
   if (updates.approvedAt !== undefined) {
-    fields.push(`approved_at = $${paramCount}`);
-    values.push(updates.approvedAt);
+    fields.push(`approved_at = $${paramCount}::TIMESTAMPTZ`);
+    values.push(updates.approvedAt || null);
     paramCount++;
   }
   if (updates.rejectedAt !== undefined) {
-    fields.push(`rejected_at = $${paramCount}`);
-    values.push(updates.rejectedAt);
+    fields.push(`rejected_at = $${paramCount}::TIMESTAMPTZ`);
+    values.push(updates.rejectedAt || null);
     paramCount++;
   }
 
@@ -101,7 +101,7 @@ const updateTimesheet = async (id, updates) => {
   paramCount++;
 
   const result = await query(
-    `UPDATE ${TABLE_NAME} SET ${fields.join(', ')} WHERE id = $${paramCount} RETURNING *`,
+    `UPDATE ${TABLE_NAME} SET ${fields.join(', ')} WHERE id = $${paramCount}::BIGINT RETURNING *`,
     values
   );
   return result.rows[0];

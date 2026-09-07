@@ -58,14 +58,21 @@ const createTimesheet = async (req, res, next) => {
       return res.status(400).json({ message: 'Month and year are required' });
     }
 
-    const existing = await timesheetModel.getTimesheet({ userId, month, year });
+    const existing = await timesheetModel.getTimesheet({ 
+      userId: parseInt(userId), 
+      month: parseInt(month), 
+      year: parseInt(year) 
+    });
     if (existing) {
       // Update existing timesheet instead of creating new one
+      const calculatedTotalHours = calculateTotalHours(dailyEntries);
+      const calculatedLevelOfEffort = calculateLevelOfEffort(calculatedTotalHours, parseInt(month), parseInt(year));
+      
       const updated = await timesheetModel.updateTimesheet(existing.id, {
-        partners,
-        dailyEntries,
-        totalHours,
-        levelOfEffort
+        partners: Array.isArray(partners) ? partners : [],
+        dailyEntries: dailyEntries && typeof dailyEntries === 'object' ? dailyEntries : {},
+        totalHours: totalHours !== undefined && totalHours !== null ? parseFloat(totalHours) : calculatedTotalHours,
+        levelOfEffort: levelOfEffort !== undefined && levelOfEffort !== null ? parseFloat(levelOfEffort) : calculatedLevelOfEffort
       });
       
       await logAction({
