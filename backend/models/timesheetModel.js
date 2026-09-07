@@ -111,14 +111,14 @@ const listTimesheets = async ({ userId, status, month, year, supervisorId } = {}
   let queryText = `SELECT t.*, u.full_name as employee_name, u.position_title, 
                   s.full_name as supervisor_name 
                   FROM ${TABLE_NAME} t 
-                  JOIN users u ON t.user_id = u.id 
+                  LEFT JOIN users u ON t.user_id = u.id 
                   LEFT JOIN users s ON t.supervisor_id = s.id WHERE 1=1`;
   const params = [];
   let paramCount = 1;
 
   if (userId) {
     queryText += ` AND t.user_id = $${paramCount}`;
-    params.push(userId);
+    params.push(parseInt(userId));
     paramCount++;
   }
   if (status) {
@@ -128,17 +128,17 @@ const listTimesheets = async ({ userId, status, month, year, supervisorId } = {}
   }
   if (month) {
     queryText += ` AND t.month = $${paramCount}`;
-    params.push(month);
+    params.push(parseInt(month));
     paramCount++;
   }
   if (year) {
     queryText += ` AND t.year = $${paramCount}`;
-    params.push(year);
+    params.push(parseInt(year));
     paramCount++;
   }
   if (supervisorId) {
     queryText += ` AND t.supervisor_id = $${paramCount}`;
-    params.push(supervisorId);
+    params.push(parseInt(supervisorId));
     paramCount++;
   }
 

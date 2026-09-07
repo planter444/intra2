@@ -22,8 +22,8 @@ const calculateWorkingDays = (month, year) => {
 
 const calculateTotalHours = (dailyEntries) => {
   let total = 0;
-  Object.values(dailyEntries).forEach(entry => {
-    if (entry.hours) {
+  Object.values(dailyEntries || {}).forEach(entry => {
+    if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
       total += parseFloat(entry.hours) || 0;
     }
   });

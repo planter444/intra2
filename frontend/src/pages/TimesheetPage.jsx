@@ -32,7 +32,7 @@ const calculateWorkingDays = (month, year) => {
   const calculateTotalHours = (dailyEntries) => {
     let total = 0;
     Object.values(dailyEntries || {}).forEach(entry => {
-      if (entry.hours) {
+      if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
         total += parseFloat(entry.hours) || 0;
       }
     });
@@ -132,9 +132,7 @@ export default function TimesheetPage() {
       };
     }
     setDailyEntries(entries);
-    if (!selectedPartners || selectedPartners.length === 0) {
-      setSelectedPartners(partners || DEFAULT_PARTNERS);
-    }
+    setSelectedPartners([]);
   };
 
   const loadTimesheet = async () => {
@@ -224,20 +222,20 @@ export default function TimesheetPage() {
       const saveData = {
         partners: selectedPartners,
         dailyEntries,
-        totalHours,
-        levelOfEffort
+        totalHours: parseFloat(totalHours) || 0,
+        levelOfEffort: parseFloat(levelOfEffort) || 0
       };
       
       if (timesheet) {
         await updateTimesheet(timesheet.id, saveData);
       } else {
         const newTimesheet = await createTimesheet({
-          month,
-          year,
+          month: parseInt(month),
+          year: parseInt(year),
           partners: selectedPartners,
           dailyEntries,
-          totalHours,
-          levelOfEffort
+          totalHours: parseFloat(totalHours) || 0,
+          levelOfEffort: parseFloat(levelOfEffort) || 0
         });
         setTimesheet(newTimesheet);
       }
