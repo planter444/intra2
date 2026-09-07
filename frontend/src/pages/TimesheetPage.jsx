@@ -202,7 +202,7 @@ export default function TimesheetPage() {
       setYear(data.year || year || new Date().getFullYear());
       setSelectedPartners(data.partners || []);
       setDailyEntries(data.daily_entries || {});
-      const loadedEmployeeSig = data.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '';
+      const loadedEmployeeSig = data.employee_signature || localStorage.getItem(`employeeSignature_${data.user_id}`) || '';
       const loadedSupervisorSig = data.supervisor_signature || localStorage.getItem(`supervisorSignature_${user?.id}`) || '';
       console.log('Loaded employee signature:', loadedEmployeeSig ? 'Yes' : 'No');
       console.log('Loaded supervisor signature:', loadedSupervisorSig ? 'Yes' : 'No');
@@ -811,14 +811,14 @@ export default function TimesheetPage() {
             <label className="mb-2 block text-sm font-medium text-slate-700">Employee</label>
             <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
               <User size={16} className="text-slate-500" />
-              <span className="text-sm font-medium text-slate-900">{user?.fullName || 'N/A'}</span>
+              <span className="text-sm font-medium text-slate-900">{timesheet?.employee_name || user?.fullName || 'N/A'}</span>
             </div>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Position</label>
             <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
               <Building2 size={16} className="text-slate-500" />
-              <span className="text-sm font-medium text-slate-900">{user?.positionTitle || 'N/A'}</span>
+              <span className="text-sm font-medium text-slate-900">{timesheet?.position_title || user?.positionTitle || 'N/A'}</span>
             </div>
           </div>
           <div>

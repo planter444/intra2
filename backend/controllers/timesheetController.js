@@ -149,17 +149,7 @@ const getTimesheet = async (req, res, next) => {
   try {
     const { id } = req.params;
     
-    // Allow approvers (admin, ceo, or configured supervisor) to view submitted timesheets
-    if (req.user.role === 'admin' || req.user.role === 'ceo') {
-      const allTimesheets = await timesheetModel.listTimesheets({});
-      const timesheetData = allTimesheets.find(t => String(t.id) === String(id));
-      if (!timesheetData) {
-        return res.status(404).json({ message: 'Timesheet not found' });
-      }
-      return res.json({ timesheet: timesheetData });
-    }
-
-    // Check if user is the configured supervisor for this timesheet
+    // Get the timesheet data
     const allTimesheets = await timesheetModel.listTimesheets({});
     const timesheetData = allTimesheets.find(t => String(t.id) === String(id));
     
@@ -167,9 +157,18 @@ const getTimesheet = async (req, res, next) => {
       return res.status(404).json({ message: 'Timesheet not found' });
     }
 
-    // Allow if user owns the timesheet or is the assigned supervisor
-    if (String(timesheetData.user_id) === String(req.user.id) || 
-        String(timesheetData.supervisor_id) === String(req.user.id)) {
+    // Allow if user owns the timesheet
+    if (String(timesheetData.user_id) === String(req.user.id)) {
+      return res.json({ timesheet: timesheetData });
+    }
+
+    // Allow approvers (admin, ceo, or configured supervisor) to view submitted timesheets
+    if (req.user.role === 'admin' || req.user.role === 'ceo') {
+      return res.json({ timesheet: timesheetData });
+    }
+
+    // Allow if user is the assigned supervisor for this timesheet
+    if (String(timesheetData.supervisor_id) === String(req.user.id)) {
       return res.json({ timesheet: timesheetData });
     }
 
