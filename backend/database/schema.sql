@@ -453,4 +453,5 @@ CREATE INDEX IF NOT EXISTS idx_timesheets_period ON timesheets(month, year);
 CREATE INDEX IF NOT EXISTS idx_timesheets_status ON timesheets(status);
 CREATE INDEX IF NOT EXISTS idx_timesheets_supervisor ON timesheets(supervisor_id);
 
-ALTER TABLE timesheets ENABLE ROW LEVEL SECURITY;
+-- RLS disabled to match other working tables in the system
+ALTER TABLE timesheets DISABLE ROW LEVEL SECURITY;
