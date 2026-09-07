@@ -93,6 +93,7 @@ export default function TimesheetPage() {
   const [signatureModal, setSignatureModal] = useState({ open: false, type: '' });
   const [approvalModal, setApprovalModal] = useState({ open: false, action: '' });
   const [signatureUpload, setSignatureUpload] = useState(null);
+  const [timesheetOwnerId, setTimesheetOwnerId] = useState(null);
 
   const daysInMonth = useMemo(() => getDaysInMonth(month || 1, year || new Date().getFullYear()), [month, year]);
   const workingDays = useMemo(() => calculateWorkingDays(month || 1, year || new Date().getFullYear()), [month, year]);
@@ -120,13 +121,15 @@ export default function TimesheetPage() {
     setMonth(newMonth);
     setYear(newYear);
     
-    // Check if timesheet exists for new month by listing user's timesheets
+    // Always load the current user's timesheet when navigating months
+    // This ensures that even when viewing someone else's timesheet, navigation shows user's own timesheets
     try {
       const timesheets = await listTimesheets({ userId: user?.id, month: newMonth, year: newYear });
       const existing = timesheets?.[0];
       if (existing) {
         console.log('Loading existing timesheet for month:', newMonth, 'year:', newYear, 'status:', existing.status);
         setTimesheet(existing);
+        setTimesheetOwnerId(existing.user_id);
         setDailyEntries(existing.daily_entries || {});
         setSelectedPartners(existing.partners || []);
         setEmployeeSignature(existing.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
@@ -135,6 +138,7 @@ export default function TimesheetPage() {
       } else {
         console.log('No existing timesheet for month:', newMonth, 'year:', newYear);
         setTimesheet(null);
+        setTimesheetOwnerId(user?.id);
         setDailyEntries({});
         setSelectedPartners([]);
         setSupervisorComment('');
@@ -146,6 +150,7 @@ export default function TimesheetPage() {
     } catch (error) {
       console.error('Failed to load timesheet for month:', error);
       setTimesheet(null);
+      setTimesheetOwnerId(user?.id);
       setDailyEntries({});
       setSelectedPartners([]);
       setSupervisorComment('');
@@ -198,6 +203,7 @@ export default function TimesheetPage() {
         return;
       }
       setTimesheet(data);
+      setTimesheetOwnerId(data.user_id);
       setMonth(data.month || month || 1);
       setYear(data.year || year || new Date().getFullYear());
       setSelectedPartners(data.partners || []);
@@ -828,7 +834,6 @@ export default function TimesheetPage() {
                 type="button"
                 onClick={() => handleMonthChange(-1)}
                 className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                disabled={!canEdit}
               >
                 <ChevronLeft size={16} />
               </button>
@@ -842,7 +847,6 @@ export default function TimesheetPage() {
                 type="button"
                 onClick={() => handleMonthChange(1)}
                 className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
-                disabled={!canEdit}
               >
                 <ChevronRight size={16} />
               </button>
