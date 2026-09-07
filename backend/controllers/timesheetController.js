@@ -23,8 +23,20 @@ const calculateWorkingDays = (month, year) => {
 const calculateTotalHours = (dailyEntries) => {
   let total = 0;
   Object.values(dailyEntries || {}).forEach(entry => {
+    if (!entry) return;
+    
+    // Add main hours
     if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
       total += parseFloat(entry.hours) || 0;
+    }
+    
+    // Add partner hours
+    if (entry.partnerHours) {
+      Object.values(entry.partnerHours).forEach(hours => {
+        if (hours !== '' && hours !== null && hours !== undefined) {
+          total += parseFloat(hours) || 0;
+        }
+      });
     }
   });
   return total;
