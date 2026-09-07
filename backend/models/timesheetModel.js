@@ -26,23 +26,23 @@ const updateTimesheet = async (id, updates) => {
   let paramCount = 1;
 
   if (updates.partners !== undefined) {
-    fields.push(`partners = $${paramCount}`);
+    fields.push(`partners = $${paramCount}::TEXT[]`);
     values.push(updates.partners);
     paramCount++;
   }
   if (updates.dailyEntries !== undefined) {
-    fields.push(`daily_entries = $${paramCount}`);
+    fields.push(`daily_entries = $${paramCount}::JSONB`);
     values.push(JSON.stringify(updates.dailyEntries));
     paramCount++;
   }
   if (updates.totalHours !== undefined) {
-    fields.push(`total_hours = $${paramCount}`);
-    values.push(updates.totalHours);
+    fields.push(`total_hours = $${paramCount}::NUMERIC(10,2)`);
+    values.push(parseFloat(updates.totalHours) || 0);
     paramCount++;
   }
   if (updates.levelOfEffort !== undefined) {
-    fields.push(`level_of_effort = $${paramCount}`);
-    values.push(updates.levelOfEffort);
+    fields.push(`level_of_effort = $${paramCount}::NUMERIC(5,2)`);
+    values.push(parseFloat(updates.levelOfEffort) || 0);
     paramCount++;
   }
   if (updates.employeeSignature !== undefined) {
@@ -117,7 +117,7 @@ const listTimesheets = async ({ userId, status, month, year, supervisorId } = {}
   let paramCount = 1;
 
   if (userId) {
-    queryText += ` AND t.user_id = $${paramCount}`;
+    queryText += ` AND t.user_id = $${paramCount}::BIGINT`;
     params.push(parseInt(userId));
     paramCount++;
   }
@@ -127,17 +127,17 @@ const listTimesheets = async ({ userId, status, month, year, supervisorId } = {}
     paramCount++;
   }
   if (month) {
-    queryText += ` AND t.month = $${paramCount}`;
+    queryText += ` AND t.month = $${paramCount}::INTEGER`;
     params.push(parseInt(month));
     paramCount++;
   }
   if (year) {
-    queryText += ` AND t.year = $${paramCount}`;
+    queryText += ` AND t.year = $${paramCount}::INTEGER`;
     params.push(parseInt(year));
     paramCount++;
   }
   if (supervisorId) {
-    queryText += ` AND t.supervisor_id = $${paramCount}`;
+    queryText += ` AND t.supervisor_id = $${paramCount}::BIGINT`;
     params.push(parseInt(supervisorId));
     paramCount++;
   }

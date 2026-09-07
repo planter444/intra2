@@ -205,14 +205,27 @@ export default function TimesheetPage() {
 
   const handlePartnerHoursChange = (day, partner, value) => {
     const hours = parseFloat(value) || 0;
-    if (hours > 8) {
+    
+    // Calculate total hours for this day across all partners
+    let dayTotal = hours;
+    const entry = dailyEntries[day] || {};
+    if (entry.partnerHours) {
+      Object.entries(entry.partnerHours).forEach(([p, h]) => {
+        if (p !== partner && h !== '' && h !== null && h !== undefined) {
+          dayTotal += parseFloat(h) || 0;
+        }
+      });
+    }
+    
+    if (dayTotal > 8) {
       setNotice({
         open: true,
         title: 'Invalid Hours',
-        description: 'Maximum 8 hours per day allowed. Please enter 8 hours or less.'
+        description: `Total hours across all partners cannot exceed 8 hours per day. Current total: ${dayTotal} hours.`
       });
       return;
     }
+    
     setDailyEntries(prev => ({
       ...prev,
       [day]: {
@@ -812,14 +825,14 @@ export default function TimesheetPage() {
                           step="0.5"
                           value={entry.partnerHours?.[partner] || ''}
                           onChange={(e) => handlePartnerHoursChange(day, partner, e.target.value)}
-                          disabled={!canEdit || isWeekendDay}
+                          disabled={!canEdit || isWeekendDay || !!entry.absence}
                           placeholder=""
                           className="w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
                         />
                       </td>
                     ))}
                     <td className="px-3 py-2 border text-center font-medium text-slate-900">
-                      {(() => {
+                      {entry.absence ? 'X' : (() => {
                         let dayTotal = 0;
                         if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
                           dayTotal += parseFloat(entry.hours) || 0;
