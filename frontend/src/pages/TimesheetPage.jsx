@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, Download, FileSpreadsheet, Plus, Save, Send, CheckCircle2, XCircle, FileText, User, Building2, PenTool } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, Download, FileSpreadsheet, Plus, Save, Send, CheckCircle2, XCircle, FileText, User, Building2, PenTool, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -65,6 +65,7 @@ export default function TimesheetPage() {
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
   const [signatureModal, setSignatureModal] = useState({ open: false, type: '' });
   const [approvalModal, setApprovalModal] = useState({ open: false, action: '' });
+  const [signatureUpload, setSignatureUpload] = useState(null);
 
   const daysInMonth = useMemo(() => getDaysInMonth(month || 1, year || new Date().getFullYear()), [month, year]);
   const workingDays = useMemo(() => calculateWorkingDays(month || 1, year || new Date().getFullYear()), [month, year]);
@@ -74,6 +75,41 @@ export default function TimesheetPage() {
   const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || settings?.timesheet?.supervisors?.includes(String(user?.id));
   const canEdit = !timesheet || timesheet.status === 'draft';
   const canApprove = isSupervisor && timesheet?.status === 'submitted';
+  const canDelete = user?.role === 'admin' && (!timesheet || timesheet.status === 'draft');
+
+  const handleMonthChange = async (delta) => {
+    let newMonth = month + delta;
+    let newYear = year;
+    
+    if (newMonth > 12) {
+      newMonth = 1;
+      newYear = year + 1;
+    } else if (newMonth < 1) {
+      newMonth = 12;
+      newYear = year - 1;
+    }
+    
+    setMonth(newMonth);
+    setYear(newYear);
+    
+    // Check if timesheet exists for new month by listing user's timesheets
+    try {
+      const timesheets = await listTimesheets({ userId: user?.id, month: newMonth, year: newYear });
+      const existing = timesheets?.[0];
+      if (existing) {
+        setTimesheet(existing);
+        setDailyEntries(existing.daily_entries || {});
+        setSelectedPartners(existing.partners || []);
+        setEmployeeSignature(existing.employee_signature || '');
+      } else {
+        setTimesheet(null);
+        initializeDailyEntries();
+      }
+    } catch (error) {
+      setTimesheet(null);
+      initializeDailyEntries();
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -89,7 +125,7 @@ export default function TimesheetPage() {
     const days = daysInMonth || 31;
     for (let day = 1; day <= days; day++) {
       entries[day] = {
-        hours: 0,
+        hours: '',
         partnerHours: {},
         absence: null,
         isWeekend: isWeekend(day, month || 1, year || new Date().getFullYear())
@@ -165,21 +201,43 @@ export default function TimesheetPage() {
     }));
   };
 
+  const handleSignatureUpload = (e, type) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result;
+        if (type === 'employee') {
+          setEmployeeSignature(base64);
+        } else {
+          setSupervisorSignature(base64);
+        }
+        setSignatureModal({ open: false, type: '' });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
+      const saveData = {
+        partners: selectedPartners,
+        dailyEntries,
+        totalHours,
+        levelOfEffort
+      };
+      
       if (timesheet) {
-        await updateTimesheet(timesheet.id, {
-          partners: selectedPartners,
-          dailyEntries,
-          employeeSignature
-        });
+        await updateTimesheet(timesheet.id, saveData);
       } else {
         const newTimesheet = await createTimesheet({
           month,
           year,
           partners: selectedPartners,
-          dailyEntries
+          dailyEntries,
+          totalHours,
+          levelOfEffort
         });
         setTimesheet(newTimesheet);
       }
@@ -193,7 +251,7 @@ export default function TimesheetPage() {
       setNotice({
         open: true,
         title: 'Error',
-        description: 'Failed to save timesheet. Please try again.'
+        description: error.response?.data?.message || 'Failed to save timesheet. Please try again.'
       });
     } finally {
       setLoading(false);
@@ -290,8 +348,20 @@ export default function TimesheetPage() {
   const handleExportExcel = () => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     
-    let csvContent = 'Day,Date,Day of Week';
-    selectedPartners?.forEach(partner => {
+    let csvContent = '\ufeff'; // BOM for Excel UTF-8
+    csvContent += 'TIMESHEET REPORT\n';
+    csvContent += `Employee,${user?.fullName || 'N/A'}\n`;
+    csvContent += `Position,${user?.positionTitle || 'N/A'}\n`;
+    csvContent += `Department,${user?.departmentName || 'N/A'}\n`;
+    csvContent += `Period,${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n`;
+    csvContent += `Working Days,${workingDays}\n`;
+    csvContent += `Total Hours,${totalHours.toFixed(1)}\n`;
+    csvContent += `Level of Effort,${levelOfEffort}%\n`;
+    csvContent += `Status,${timesheet?.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Draft'}\n\n`;
+    
+    csvContent += 'DAILY ENTRIES\n';
+    csvContent += 'Day,Date,Day of Week';
+    (selectedPartners || []).forEach(partner => {
       csvContent += `,${partner} (hrs)`;
     });
     csvContent += ',Total Hours,Absence\n';
@@ -301,29 +371,32 @@ export default function TimesheetPage() {
       const dayOfWeek = getDayOfWeek(day, month, year);
       
       csvContent += `${day},${day}/${month}/${year},${dayNames[dayOfWeek]}`;
-      selectedPartners?.forEach(partner => {
+      (selectedPartners || []).forEach(partner => {
         csvContent += `,${entry.partnerHours?.[partner] || 0}`;
       });
       csvContent += `,${entry.hours || 0},${entry.absence || ''}\n`;
     }
 
-    csvContent += `\nEmployee,${user?.fullName || 'N/A'}\n`;
-    csvContent += `Position,${user?.positionTitle || 'N/A'}\n`;
-    csvContent += `Period,${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n`;
-    csvContent += `Total Hours,${totalHours}\n`;
-    csvContent += `Working Days,${workingDays}\n`;
+    csvContent += `\nSUMMARY\n`;
+    csvContent += `Total Hours Worked,${totalHours.toFixed(1)}\n`;
+    csvContent += `Possible Hours,${workingDays * 8}\n`;
     csvContent += `Level of Effort,${levelOfEffort}%\n`;
-    csvContent += `Status,${timesheet?.status || 'Draft'}\n`;
+    
+    if (timesheet?.employee_signature_date) {
+      csvContent += `\nEmployee Signed,${new Date(timesheet.employee_signature_date).toLocaleString()}\n`;
+    }
+    if (timesheet?.supervisor_signature_date) {
+      csvContent += `Supervisor Signed,${new Date(timesheet.supervisor_signature_date).toLocaleString()}\n`;
+    }
+    if (timesheet?.supervisor_comment) {
+      csvContent += `Supervisor Comment,${timesheet.supervisor_comment}\n`;
+    }
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `timesheet_${month}_${year}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
+    link.href = URL.createObjectURL(blob);
+    link.download = `timesheet_${month}_${year}_${user?.fullName?.replace(/\s+/g, '_')}.csv`;
     link.click();
-    document.body.removeChild(link);
   };
 
   const handleExportPDF = () => {
@@ -478,6 +551,23 @@ export default function TimesheetPage() {
 
     return (
       <div className="space-y-4">
+        <div className="flex gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => document.getElementById(`signature-upload-${signatureModal.type}`).click()}
+            className="flex-1 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
+          >
+            <Upload size={16} className="inline mr-2" /> Upload Image/PDF
+          </button>
+          <input
+            id={`signature-upload-${signatureModal.type}`}
+            type="file"
+            accept="image/*,.pdf"
+            onChange={(e) => handleSignatureUpload(e, signatureModal.type)}
+            className="hidden"
+          />
+        </div>
+        <div className="text-center text-xs text-slate-500 mb-2">- OR -</div>
         <canvas
           ref={canvasRef}
           width={400}
@@ -488,15 +578,15 @@ export default function TimesheetPage() {
           onMouseUp={stopDrawing}
           onMouseLeave={stopDrawing}
         />
-        <div className="flex gap-2 justify-end">
-          <button type="button" onClick={clear} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+        <div className="flex gap-2">
+          <button type="button" onClick={clear} className="flex-1 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
             Clear
           </button>
-          <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
-            Cancel
+          <button type="button" onClick={save} className="flex-1 px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
+            Save
           </button>
-          <button type="button" onClick={save} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
-            Save Signature
+          <button type="button" onClick={onCancel} className="flex-1 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+            Cancel
           </button>
         </div>
       </div>
@@ -570,9 +660,40 @@ export default function TimesheetPage() {
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Period</label>
-            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
-              <Calendar size={16} className="text-slate-500" />
-              <span className="text-sm font-medium text-slate-900">{new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleMonthChange(-1)}
+                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                disabled={!canEdit}
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg flex-1 justify-center">
+                <Calendar size={16} className="text-slate-500" />
+                <span className="text-sm font-medium text-slate-900">
+                  {new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleMonthChange(1)}
+                className="p-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50"
+                disabled={!canEdit}
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Status</label>
+            <div className={`px-3 py-2 rounded-lg text-center text-sm font-medium ${
+              timesheet?.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
+              timesheet?.status === 'submitted' ? 'bg-amber-100 text-amber-700' :
+              timesheet?.status === 'rejected' ? 'bg-rose-100 text-rose-700' :
+              'bg-slate-100 text-slate-700'
+            }`}>
+              {timesheet?.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Draft'}
             </div>
           </div>
         </div>
@@ -661,9 +782,10 @@ export default function TimesheetPage() {
                           min="0"
                           max="8"
                           step="0.5"
-                          value={entry.partnerHours?.[partner] || 0}
+                          value={entry.partnerHours?.[partner] || ''}
                           onChange={(e) => handlePartnerHoursChange(day, partner, e.target.value)}
                           disabled={!canEdit || isWeekendDay}
+                          placeholder=""
                           className="w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
                         />
                       </td>
@@ -685,6 +807,24 @@ export default function TimesheetPage() {
                   </tr>
                 );
               })}
+              <tr className="bg-emerald-50 font-semibold">
+                <td colSpan={3 + (selectedPartners || []).length} className="px-3 py-3 border text-right text-slate-700">
+                  Total Hours
+                </td>
+                <td className="px-3 py-3 border text-center text-emerald-700">{totalHours.toFixed(1)}</td>
+                <td className="px-3 py-3 border text-center text-slate-500">-</td>
+              </tr>
+              <tr className="bg-slate-50">
+                <td colSpan={3 + (selectedPartners || []).length} className="px-3 py-3 border text-right text-slate-700">
+                  Level of Effort
+                </td>
+                <td colSpan="2" className="px-3 py-3 border text-center">
+                  <span className={`font-semibold ${parseFloat(levelOfEffort) >= 90 ? 'text-emerald-600' : parseFloat(levelOfEffort) >= 70 ? 'text-amber-600' : 'text-rose-600'}`}>
+                    {levelOfEffort}%
+                  </span>
+                  <span className="ml-2 text-xs text-slate-500">({totalHours.toFixed(1)} / {workingDays * 8} possible hours)</span>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
