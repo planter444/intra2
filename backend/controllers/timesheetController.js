@@ -396,11 +396,12 @@ const listTimesheets = async (req, res, next) => {
   try {
     const { status, month, year, supervisorId } = req.query;
     
-    // Approvers (admin, ceo) should only see submitted timesheets by default
-    // unless explicitly filtered
+    // Approvers (admin, ceo) can see all timesheets
+    // Regular users can only see their own timesheets
     let filterStatus = status;
     let filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
     
+    // For approvers without status filter, default to submitted
     if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
       filterStatus = 'submitted';
     }

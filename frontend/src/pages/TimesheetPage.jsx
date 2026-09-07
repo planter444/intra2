@@ -1037,18 +1037,18 @@ export default function TimesheetPage() {
         ]}
       >
         <div className="space-y-4">
-          {approvalModal.action === 'reject' && (
-            <div>
-              <label className="mb-2 block text-sm font-medium text-slate-700">Rejection Reason (Optional)</label>
-              <textarea
-                rows="3"
-                value={supervisorComment}
-                onChange={(e) => setSupervisorComment(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="Provide reason for rejection..."
-              />
-            </div>
-          )}
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">
+              {approvalModal.action === 'approve' ? 'Comment (Optional)' : 'Rejection Reason (Optional)'}
+            </label>
+            <textarea
+              rows="3"
+              value={supervisorComment}
+              onChange={(e) => setSupervisorComment(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              placeholder={approvalModal.action === 'approve' ? 'Add any comments for the employee...' : 'Provide reason for rejection...'}
+            />
+          </div>
         </div>
       </Modal>
 

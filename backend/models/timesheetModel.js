@@ -4,8 +4,8 @@ const TABLE_NAME = 'timesheets';
 
 const createTimesheet = async ({ userId, month, year, partners, dailyEntries }) => {
   const result = await query(
-    `INSERT INTO ${TABLE_NAME} (user_id, month, year, partners, daily_entries) 
-     VALUES ($1::BIGINT, $2::INTEGER, $3::INTEGER, $4::TEXT[], $5::JSONB) 
+    `INSERT INTO ${TABLE_NAME} (user_id, month, year, partners, daily_entries, status) 
+     VALUES ($1::BIGINT, $2::INTEGER, $3::INTEGER, $4::TEXT[], $5::JSONB, 'draft') 
      RETURNING *`,
     [userId, month, year, partners, JSON.stringify(dailyEntries)]
   );
