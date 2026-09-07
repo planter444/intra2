@@ -752,7 +752,7 @@ export default function TimesheetPage() {
       />
 
       <SectionCard title="Timesheet" description={`Fill in your daily hours for ${getMonthName(month)} ${year}`}>
-        {timesheet && timesheet.status !== 'draft' && (
+        {timesheet && timesheet.status !== 'draft' && !canApprove && (
           <div className={`mb-6 p-4 rounded-lg border ${
             timesheet.status === 'submitted' ? 'bg-amber-50 border-amber-200' :
             timesheet.status === 'approved' ? 'bg-emerald-50 border-emerald-200' :

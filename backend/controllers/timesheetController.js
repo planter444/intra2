@@ -296,8 +296,12 @@ const approveTimesheet = async (req, res, next) => {
     const { id } = req.params;
     const { supervisorSignature, supervisorComment } = req.body;
 
+    console.log('approveTimesheet called for ID:', id);
+
     const timesheet = await timesheetModel.listTimesheets({});
     const targetTimesheet = timesheet.find(t => String(t.id) === String(id));
+
+    console.log('Target timesheet found:', targetTimesheet ? `ID ${targetTimesheet.id}, status: ${targetTimesheet.status}` : 'None');
 
     if (!targetTimesheet) {
       return res.status(404).json({ message: 'Timesheet not found' });
@@ -311,14 +315,18 @@ const approveTimesheet = async (req, res, next) => {
       return res.status(400).json({ message: 'Supervisor signature is required' });
     }
 
-    const updated = await timesheetModel.updateTimesheet(id, {
+    const updates = {
       status: 'approved',
       supervisorId: req.user.id,
       supervisorSignature,
       supervisorSignatureDate: new Date(),
       supervisorComment,
       approvedAt: new Date()
-    });
+    };
+
+    console.log('Updating timesheet with:', updates);
+    const updated = await timesheetModel.updateTimesheet(id, updates);
+    console.log('Updated timesheet:', updated);
 
     // Send email to employee
     try {
@@ -341,12 +349,14 @@ const approveTimesheet = async (req, res, next) => {
       action: 'TIMESHEET_APPROVED',
       entityType: 'timesheet',
       entityId: String(id),
-      description: `${req.user.fullName} approved timesheet for ${targetTimesheet.employee_name}`,
+      description: `${req.user.fullName} approved timesheet for ${updated.month}/${updated.year}`,
+      metadata: { supervisorId: req.user.id },
       ipAddress: req.ip
     });
 
     res.json({ timesheet: updated });
   } catch (error) {
+    console.error('Error in approveTimesheet:', error);
     next(error);
   }
 };

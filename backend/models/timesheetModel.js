@@ -25,6 +25,8 @@ const updateTimesheet = async (id, updates) => {
   const values = [];
   let paramCount = 1;
 
+  console.log('updateTimesheet called with ID:', id, 'and updates:', Object.keys(updates));
+
   if (updates.partners !== undefined) {
     fields.push(`partners = $${paramCount}::TEXT[]`);
     values.push(Array.isArray(updates.partners) ? updates.partners : []);
@@ -110,10 +112,15 @@ const updateTimesheet = async (id, updates) => {
   }
   values.push(parsedId);
 
+  console.log('Executing UPDATE with fields:', fields.join(', '));
+  console.log('Values:', values);
+
   const result = await query(
     `UPDATE ${TABLE_NAME} SET ${fields.join(', ')} WHERE id = $${paramCount}::BIGINT RETURNING *`,
     values
   );
+  
+  console.log('Updated timesheet result:', result.rows[0]);
   return result.rows[0];
 };
 
