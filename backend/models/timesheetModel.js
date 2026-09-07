@@ -32,22 +32,25 @@ const updateTimesheet = async (id, updates) => {
   }
   if (updates.dailyEntries !== undefined) {
     fields.push(`daily_entries = $${paramCount}::JSONB`);
-    values.push(typeof updates.dailyEntries === 'object' ? JSON.stringify(updates.dailyEntries) : '{}');
+    const entries = typeof updates.dailyEntries === 'object' ? JSON.stringify(updates.dailyEntries) : '{}';
+    values.push(entries);
     paramCount++;
   }
   if (updates.totalHours !== undefined) {
     fields.push(`total_hours = $${paramCount}::NUMERIC(10,2)`);
-    values.push(parseFloat(updates.totalHours) || 0);
+    const hours = parseFloat(updates.totalHours);
+    values.push(isNaN(hours) ? 0 : hours);
     paramCount++;
   }
   if (updates.levelOfEffort !== undefined) {
     fields.push(`level_of_effort = $${paramCount}::NUMERIC(5,2)`);
-    values.push(parseFloat(updates.levelOfEffort) || 0);
+    const loe = parseFloat(updates.levelOfEffort);
+    values.push(isNaN(loe) ? 0 : loe);
     paramCount++;
   }
   if (updates.employeeSignature !== undefined) {
     fields.push(`employee_signature = $${paramCount}::TEXT`);
-    values.push(updates.employeeSignature || null);
+    values.push(updates.employeeSignature ? String(updates.employeeSignature) : null);
     paramCount++;
   }
   if (updates.employeeSignatureDate !== undefined) {
@@ -62,7 +65,7 @@ const updateTimesheet = async (id, updates) => {
   }
   if (updates.supervisorSignature !== undefined) {
     fields.push(`supervisor_signature = $${paramCount}::TEXT`);
-    values.push(updates.supervisorSignature || null);
+    values.push(updates.supervisorSignature ? String(updates.supervisorSignature) : null);
     paramCount++;
   }
   if (updates.supervisorSignatureDate !== undefined) {
@@ -72,7 +75,7 @@ const updateTimesheet = async (id, updates) => {
   }
   if (updates.supervisorComment !== undefined) {
     fields.push(`supervisor_comment = $${paramCount}::TEXT`);
-    values.push(updates.supervisorComment || null);
+    values.push(updates.supervisorComment ? String(updates.supervisorComment) : null);
     paramCount++;
   }
   if (updates.status !== undefined) {
@@ -97,7 +100,11 @@ const updateTimesheet = async (id, updates) => {
   }
 
   fields.push(`updated_at = CURRENT_TIMESTAMP`);
-  values.push(parseInt(id));
+  const parsedId = parseInt(id);
+  if (isNaN(parsedId)) {
+    throw new Error('Invalid timesheet ID');
+  }
+  values.push(parsedId);
   paramCount++;
 
   const result = await query(

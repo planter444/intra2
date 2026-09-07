@@ -155,22 +155,24 @@ const updateTimesheet = async (req, res, next) => {
       return res.status(400).json({ message: 'Cannot update a submitted timesheet' });
     }
 
-    const totalHours = calculateTotalHours(dailyEntries);
-    const levelOfEffort = calculateLevelOfEffort(totalHours, userTimesheet.month, userTimesheet.year);
+    const updates = {};
 
-    const updates = {
-      totalHours,
-      levelOfEffort
-    };
-
-    if (partners) updates.partners = partners;
-    if (dailyEntries) updates.dailyEntries = dailyEntries;
+    if (partners !== undefined && partners !== null) updates.partners = Array.isArray(partners) ? partners : [];
+    if (dailyEntries !== undefined && dailyEntries !== null) updates.dailyEntries = typeof dailyEntries === 'object' ? dailyEntries : {};
     if (employeeSignature) {
-      updates.employeeSignature = employeeSignature;
+      updates.employeeSignature = String(employeeSignature);
       updates.employeeSignatureDate = new Date();
     }
 
-    const updated = await timesheetModel.updateTimesheet(id, updates);
+    // Only calculate totalHours and levelOfEffort if dailyEntries is provided
+    if (dailyEntries !== undefined && dailyEntries !== null) {
+      const totalHours = calculateTotalHours(dailyEntries);
+      const levelOfEffort = calculateLevelOfEffort(totalHours, userTimesheet.month, userTimesheet.year);
+      updates.totalHours = parseFloat(totalHours);
+      updates.levelOfEffort = parseFloat(levelOfEffort);
+    }
+
+    const updated = await timesheetModel.updateTimesheet(parseInt(id), updates);
 
     await logAction({
       actorUserId: req.user.id,
