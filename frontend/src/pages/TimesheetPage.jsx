@@ -9,7 +9,7 @@ import { createTimesheet, getTimesheet, updateTimesheet, submitTimesheet, approv
 import { usePagePresentation } from '../hooks/usePagePresentation';
 
 const DEFAULT_PARTNERS = ['GIZ', 'CWF', 'Gogla', 'SNV'];
-const ABSENCE_TYPES = ['Sick Leave', 'Annual Leave', 'Training', 'Other', 'Public Holiday'];
+const ABSENCE_TYPES = ['Sick Leave', 'Annual Leave', 'Training', 'Other', 'Public Holiday', 'Did not work'];
 
 const getDaysInMonth = (month, year) => new Date(year, month, 0).getDate();
 const getDayOfWeek = (day, month, year) => new Date(year, month - 1, day).getDay();
@@ -55,10 +55,21 @@ const calculateWorkingDays = (month, year) => {
     return total;
   };
 
-const calculateLevelOfEffort = (totalHours, month, year) => {
+const calculateLevelOfEffort = (totalHours, month, year, dailyEntries) => {
   const workingDays = calculateWorkingDays(month, year);
-  const possibleHours = workingDays * 8;
-  if (possibleHours === 0) return 0;
+  let possibleHours = workingDays * 8;
+  
+  // Deduct 8 hours for each "Did not work" absence (person was supposed to work but didn't)
+  // Don't deduct for other absences (Sick Leave, Annual Leave, Training, Other, Public Holiday)
+  if (dailyEntries) {
+    Object.values(dailyEntries).forEach(entry => {
+      if (entry.absence === 'Did not work' && !isWeekend(parseInt(Object.keys(dailyEntries).find(k => dailyEntries[k] === entry)), month, year)) {
+        possibleHours -= 8;
+      }
+    });
+  }
+  
+  if (possibleHours <= 0) return 0;
   return ((totalHours / possibleHours) * 100).toFixed(2);
 };
 
@@ -86,7 +97,7 @@ export default function TimesheetPage() {
   const daysInMonth = useMemo(() => getDaysInMonth(month || 1, year || new Date().getFullYear()), [month, year]);
   const workingDays = useMemo(() => calculateWorkingDays(month || 1, year || new Date().getFullYear()), [month, year]);
   const totalHours = useMemo(() => calculateTotalHours(dailyEntries), [dailyEntries]);
-  const levelOfEffort = useMemo(() => calculateLevelOfEffort(totalHours, month || 1, year || new Date().getFullYear()), [totalHours, month, year]);
+  const levelOfEffort = useMemo(() => calculateLevelOfEffort(totalHours, month || 1, year || new Date().getFullYear(), dailyEntries), [totalHours, month, year, dailyEntries]);
 
   const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || settings?.timesheet?.supervisors?.includes(String(user?.id));
   const canEdit = !timesheet || timesheet.status === 'draft';
@@ -939,7 +950,7 @@ export default function TimesheetPage() {
                       </td>
                     ))}
                     <td className="px-3 py-2 border text-center font-medium text-slate-900">
-                      {entry.absence ? 'X' : (() => {
+                      {entry.absence ? 'N/A' : (() => {
                         let dayTotal = 0;
                         if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
                           dayTotal += parseFloat(entry.hours) || 0;

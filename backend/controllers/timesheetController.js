@@ -429,13 +429,17 @@ const listTimesheets = async (req, res, next) => {
     const { status, month, year, supervisorId } = req.query;
     
     // Approvers (admin, ceo) can see all timesheets except drafts
-    // Regular users can only see their own timesheets
+    // Regular users can see their own timesheets including drafts
     let filterStatus = status;
     let filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
     
-    // For approvers without status filter, show only submitted and approved (hide drafts)
+    // For approvers without status filter, show only submitted, approved, rejected (hide drafts)
     if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
       filterStatus = ['submitted', 'approved', 'rejected'];
+    }
+    // For regular users without status filter, show all statuses including draft
+    else if (!status && (req.user.role !== 'admin' && req.user.role !== 'ceo')) {
+      filterStatus = undefined; // Show all statuses for the user
     }
 
     const timesheets = await timesheetModel.listTimesheets({

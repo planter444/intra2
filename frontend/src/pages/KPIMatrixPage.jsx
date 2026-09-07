@@ -101,21 +101,21 @@ export default function KPIMatrixPage() {
   };
 
   const handleAddCoreRole = () => {
-    setEditForm({ ...editForm, coreRoles: [...editForm.coreRoles, ''] });
+    setEditForm({ ...editForm, coreRoles: [...editForm.coreRoles, { role: '', comment: '' }] });
   };
 
   const handleRemoveCoreRole = (index) => {
     setEditForm({ ...editForm, coreRoles: editForm.coreRoles.filter((_, i) => i !== index) });
   };
 
-  const handleCoreRoleChange = (index, value) => {
+  const handleCoreRoleChange = (index, field, value) => {
     const newRoles = [...editForm.coreRoles];
-    newRoles[index] = value;
+    newRoles[index] = { ...newRoles[index], [field]: value };
     setEditForm({ ...editForm, coreRoles: newRoles });
   };
 
   const handleAddIndicator = () => {
-    setEditForm({ ...editForm, indicators: [...editForm.indicators, { label: '', score: '', weight: '' }] });
+    setEditForm({ ...editForm, indicators: [...editForm.indicators, { label: '', score: '', weight: '', comment: '' }] });
   };
 
   const handleRemoveIndicator = (index) => {
@@ -290,21 +290,30 @@ export default function KPIMatrixPage() {
                   </div>
                   <div className="space-y-1.5">
                     {editForm.coreRoles.map((role, index) => (
-                      <div key={index} className="flex gap-2">
-                        <input
-                          type="text"
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
-                          value={role}
-                          onChange={(e) => handleCoreRoleChange(index, e.target.value)}
-                          placeholder="Enter core role..."
+                      <div key={index} className="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
+                            value={role.role || ''}
+                            onChange={(e) => handleCoreRoleChange(index, 'role', e.target.value)}
+                            placeholder="Enter core role..."
+                          />
+                          <button
+                            type="button"
+                            className="rounded-lg border border-rose-200 bg-white p-1.5 text-rose-600 hover:bg-rose-50"
+                            onClick={() => handleRemoveCoreRole(index)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                        <textarea
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
+                          value={role.comment || ''}
+                          onChange={(e) => handleCoreRoleChange(index, 'comment', e.target.value)}
+                          placeholder="Add optional comment for grading..."
+                          rows="2"
                         />
-                        <button
-                          type="button"
-                          className="rounded-lg border border-rose-200 bg-white p-1.5 text-rose-600 hover:bg-rose-50"
-                          onClick={() => handleRemoveCoreRole(index)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
                       </div>
                     ))}
                     {editForm.coreRoles.length === 0 && (
@@ -326,7 +335,7 @@ export default function KPIMatrixPage() {
                   </div>
                   <div className="space-y-2">
                     {editForm.indicators.map((indicator, index) => (
-                      <div key={index} className="rounded-lg border border-slate-200 bg-white p-3">
+                      <div key={index} className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
                         <div className="mb-2 flex gap-2">
                           <input
                             type="text"
@@ -363,6 +372,13 @@ export default function KPIMatrixPage() {
                             max="100"
                           />
                         </div>
+                        <textarea
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
+                          value={indicator.comment || ''}
+                          onChange={(e) => handleIndicatorChange(index, 'comment', e.target.value)}
+                          placeholder="Add optional comment for grading..."
+                          rows="2"
+                        />
                       </div>
                     ))}
                     {editForm.indicators.length === 0 && (

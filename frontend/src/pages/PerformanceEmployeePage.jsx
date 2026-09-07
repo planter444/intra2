@@ -106,6 +106,7 @@ export default function PerformanceEmployeePage() {
                 <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b; font-size: 14px;">Weight</th>
                 <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b; font-size: 14px;">Score</th>
                 <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b; font-size: 14px;">Performance</th>
+                <th style="padding: 12px; text-align: left; border: 1px solid #cbd5e1; color: #1e293b; font-size: 14px;">Comment</th>
               </tr>
             </thead>
             <tbody>
@@ -119,9 +120,10 @@ export default function PerformanceEmployeePage() {
                   <td style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #374151; font-size: 13px;">${indicator.weight || 0}%</td>
                   <td style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: ${scoreColor}; font-weight: bold; font-size: 14px;">${indicator.score ?? 'N/A'}</td>
                   <td style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: ${performanceColor}; font-weight: bold; font-size: 13px;">${performance}</td>
+                  <td style="padding: 12px; border: 1px solid #cbd5e1; color: #64748b; font-size: 12px; font-style: italic;">${indicator.comment || 'No comment'}</td>
                 </tr>
               `;
-              }).join('') || '<tr><td colspan="4" style="padding: 15px; text-align: center; border: 1px solid #cbd5e1; color: #64748b;">No KPI indicators configured</td></tr>'}
+              }).join('') || '<tr><td colspan="5" style="padding: 15px; text-align: center; border: 1px solid #cbd5e1; color: #64748b;">No KPI indicators configured</td></tr>'}
             </tbody>
           </table>
         </div>
@@ -240,9 +242,12 @@ export default function PerformanceEmployeePage() {
                 return (
                   <div key={`performance-row-${index}`} className="rounded-3xl border border-slate-200 bg-white p-5">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Performance KPI {index + 1}</p>
                         <p className="mt-2 text-sm font-semibold text-slate-900">{indicator.label || 'No KPI description set yet.'}</p>
+                        {indicator.comment && (
+                          <p className="mt-2 text-xs text-slate-500 italic">"{indicator.comment}"</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-3">
                         <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${value === null ? 'bg-slate-100 text-slate-600' : 'bg-fuchsia-100 text-fuchsia-700'}`}>
