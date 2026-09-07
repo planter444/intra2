@@ -7,8 +7,8 @@ export default function DataTable({ columns, rows, emptyLabel = 'No records foun
           <thead className="bg-slate-50">
             <tr>
               {(columns || []).map((column) => (
-                <th key={column.key} className="whitespace-nowrap px-4 py-3 text-left font-medium uppercase tracking-wide text-slate-500">
-                  {column.header}
+                <th key={column.key || column.label} className="whitespace-nowrap px-4 py-3 text-left font-medium uppercase tracking-wide text-slate-500">
+                  {column.label || column.header}
                 </th>
               ))}
             </tr>
@@ -18,12 +18,13 @@ export default function DataTable({ columns, rows, emptyLabel = 'No records foun
               safeRows.map((row, index) => {
                 const rowProps = getRowProps ? (getRowProps(row, index) || {}) : {};
                 const rowClassName = rowProps.className ? `align-top ${rowProps.className}` : 'align-top';
+                const { key, ...restRowProps } = rowProps;
 
                 return (
-                <tr key={row.id || index} {...rowProps} className={rowClassName}>
+                <tr key={key || row?.id || `row-${index}`} {...restRowProps} className={rowClassName}>
                   {(columns || []).map((column) => (
-                    <td key={column.key} className="px-4 py-3 text-slate-700">
-                      {column.render ? column.render(row) : row[column.key] ?? '-'}
+                    <td key={column.key || `col-${index}`} className="px-4 py-3 text-slate-700">
+                      {column.render ? column.render(row[column.key], row) : (row[column.key] ?? '-')}
                     </td>
                   ))}
                 </tr>
