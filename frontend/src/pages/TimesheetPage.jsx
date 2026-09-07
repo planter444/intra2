@@ -9,7 +9,7 @@ import { createTimesheet, getTimesheet, updateTimesheet, submitTimesheet, approv
 import { usePagePresentation } from '../hooks/usePagePresentation';
 
 const DEFAULT_PARTNERS = ['GIZ', 'CWF', 'Gogla', 'SNV'];
-const ABSENCE_TYPES = ['Sick Leave', 'Annual Leave', 'Training', 'Other'];
+const ABSENCE_TYPES = ['Sick Leave', 'Annual Leave', 'Training', 'Other', 'Public Holiday'];
 
 const getDaysInMonth = (month, year) => new Date(year, month, 0).getDate();
 const getDayOfWeek = (day, month, year) => new Date(year, month - 1, day).getDay();
@@ -113,12 +113,22 @@ export default function TimesheetPage() {
         setDailyEntries(existing.daily_entries || {});
         setSelectedPartners(existing.partners || []);
         setEmployeeSignature(existing.employee_signature || '');
+        setSupervisorSignature(existing.supervisor_signature || '');
       } else {
         setTimesheet(null);
+        setDailyEntries({});
+        setSelectedPartners([]);
+        setEmployeeSignature('');
+        setSupervisorSignature('');
         initializeDailyEntries();
       }
     } catch (error) {
+      console.error('Failed to load timesheet for month:', error);
       setTimesheet(null);
+      setDailyEntries({});
+      setSelectedPartners([]);
+      setEmployeeSignature('');
+      setSupervisorSignature('');
       initializeDailyEntries();
     }
   };
@@ -195,6 +205,14 @@ export default function TimesheetPage() {
 
   const handlePartnerHoursChange = (day, partner, value) => {
     const hours = parseFloat(value) || 0;
+    if (hours > 8) {
+      setNotice({
+        open: true,
+        title: 'Invalid Hours',
+        description: 'Maximum 8 hours per day allowed. Please enter 8 hours or less.'
+      });
+      return;
+    }
     setDailyEntries(prev => ({
       ...prev,
       [day]: {
@@ -800,7 +818,22 @@ export default function TimesheetPage() {
                         />
                       </td>
                     ))}
-                    <td className="px-3 py-2 border text-center font-medium text-slate-900">{entry.hours || 0}</td>
+                    <td className="px-3 py-2 border text-center font-medium text-slate-900">
+                      {(() => {
+                        let dayTotal = 0;
+                        if (entry.hours !== '' && entry.hours !== null && entry.hours !== undefined) {
+                          dayTotal += parseFloat(entry.hours) || 0;
+                        }
+                        if (entry.partnerHours) {
+                          Object.values(entry.partnerHours).forEach(hours => {
+                            if (hours !== '' && hours !== null && hours !== undefined) {
+                              dayTotal += parseFloat(hours) || 0;
+                            }
+                          });
+                        }
+                        return dayTotal > 0 ? dayTotal.toFixed(1) : '';
+                      })()}
+                    </td>
                     <td className="px-3 py-2 border">
                       <select
                         value={entry.absence || ''}

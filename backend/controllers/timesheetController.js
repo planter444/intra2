@@ -51,7 +51,7 @@ const calculateLevelOfEffort = (totalHours, month, year) => {
 
 const createTimesheet = async (req, res, next) => {
   try {
-    const { month, year, partners, dailyEntries } = req.body;
+    const { month, year, partners, dailyEntries, totalHours, levelOfEffort } = req.body;
     const userId = req.user.id;
 
     if (!month || !year) {
@@ -60,11 +60,30 @@ const createTimesheet = async (req, res, next) => {
 
     const existing = await timesheetModel.getTimesheet({ userId, month, year });
     if (existing) {
-      return res.status(400).json({ message: 'Timesheet for this month already exists' });
+      // Update existing timesheet instead of creating new one
+      const updated = await timesheetModel.updateTimesheet(existing.id, {
+        partners,
+        dailyEntries,
+        totalHours,
+        levelOfEffort
+      });
+      
+      await logAction({
+        actorUserId: req.user.id,
+        actorRole: req.user.role,
+        action: 'TIMESHEET_UPDATED',
+        entityType: 'timesheet',
+        entityId: String(existing.id),
+        description: `${req.user.fullName} updated timesheet for ${month}/${year}`,
+        metadata: { month, year },
+        ipAddress: req.ip
+      });
+
+      return res.json({ timesheet: updated });
     }
 
-    const totalHours = calculateTotalHours(dailyEntries);
-    const levelOfEffort = calculateLevelOfEffort(totalHours, month, year);
+    const calculatedTotalHours = calculateTotalHours(dailyEntries);
+    const calculatedLevelOfEffort = calculateLevelOfEffort(calculatedTotalHours, month, year);
 
     const timesheet = await timesheetModel.createTimesheet({
       userId,
@@ -75,8 +94,8 @@ const createTimesheet = async (req, res, next) => {
     });
 
     await timesheetModel.updateTimesheet(timesheet.id, {
-      totalHours,
-      levelOfEffort
+      totalHours: totalHours || calculatedTotalHours,
+      levelOfEffort: levelOfEffort || calculatedLevelOfEffort
     });
 
     await logAction({
