@@ -145,6 +145,9 @@ export default function TimesheetPage() {
       loadTimesheet();
     } else {
       initializeDailyEntries();
+      // Load signatures from localStorage for new timesheets
+      setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+      setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
     }
     setPartners(settings?.timesheet?.partners || DEFAULT_PARTNERS);
   }, [id, month, year]);
@@ -564,17 +567,27 @@ export default function TimesheetPage() {
               const dayOfWeek = getDayOfWeek(day, month, year);
               const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
               const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6;
+              const dayTotal = (selectedPartners || []).reduce((sum, p) => sum + (parseFloat(entry.partnerHours?.[p]) || 0), 0);
               return `
                 <tr style="background: ${isWeekendDay ? '#f1f5f9' : 'white'};">
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${day}</td>
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${day}/${month}/${year}</td>
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: ${isWeekendDay ? '#dc2626' : '#374151'}; font-weight: ${isWeekendDay ? 'bold' : 'normal'};">${dayNames[dayOfWeek]}</td>
                   ${(selectedPartners || []).map(p => `<td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${entry.partnerHours?.[p] || 0}</td>`).join('')}
-                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151; font-weight: bold;">${entry.hours || 0}</td>
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151; font-weight: bold;">${dayTotal || 0}</td>
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: ${entry.absence ? '#dc2626' : '#374151'};">${entry.absence || '-'}</td>
                 </tr>
               `;
             }).join('')}
+            <tr style="background: #059669; color: white; font-weight: bold;">
+              <td colspan="3" style="padding: 12px; text-align: center; border: 1px solid #cbd5e1;">Monthly Total</td>
+              ${(selectedPartners || []).map(p => {
+                const partnerTotal = Object.values(dailyEntries || {}).reduce((sum, entry) => sum + (parseFloat(entry.partnerHours?.[p]) || 0), 0);
+                return `<td style="padding: 12px; text-align: center; border: 1px solid #cbd5e1;">${partnerTotal.toFixed(2)}</td>`;
+              }).join('')}
+              <td style="padding: 12px; text-align: center; border: 1px solid #cbd5e1;">${totalHours}</td>
+              <td style="padding: 12px; text-align: center; border: 1px solid #cbd5e1;">-</td>
+            </tr>
           </tbody>
         </table>
 
@@ -582,15 +595,15 @@ export default function TimesheetPage() {
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
             <div>
               <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #059669; padding-bottom: 10px;">Employee Signature</h3>
-              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-                ${employeeSignature ? `<img src="${employeeSignature}" style="max-width: 100%; max-height: 80px;" alt="Employee Signature" />` : '<span style="color: #94a3b8;">No signature</span>'}
+              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                ${employeeSignature ? `<img src="${employeeSignature}" style="max-width: 100%; max-height: 40px;" alt="Employee Signature" />` : '<span style="color: #94a3b8;">No signature</span>'}
               </div>
               ${timesheet?.employee_signature_date ? `<p style="margin-top: 10px; font-size: 12px; color: #64748b;">Signed: ${new Date(timesheet.employee_signature_date).toLocaleString()}</p>` : ''}
             </div>
             <div>
               <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">Supervisor Signature</h3>
-              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px; display: flex; align-items: center; justify-content: center;">
-                ${supervisorSignature ? `<img src="${supervisorSignature}" style="max-width: 100%; max-height: 80px;" alt="Supervisor Signature" />` : '<span style="color: #94a3b8;">No signature</span>'}
+              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                ${supervisorSignature ? `<img src="${supervisorSignature}" style="max-width: 100%; max-height: 40px;" alt="Supervisor Signature" />` : '<span style="color: #94a3b8;">No signature</span>'}
               </div>
               ${timesheet?.supervisor_signature_date ? `<p style="margin-top: 10px; font-size: 12px; color: #64748b;">Signed: ${new Date(timesheet.supervisor_signature_date).toLocaleString()}</p>` : ''}
               ${timesheet?.supervisor_comment ? `<p style="margin-top: 10px; font-size: 12px; color: #64748b;"><strong>Comment:</strong> ${timesheet.supervisor_comment}</p>` : ''}

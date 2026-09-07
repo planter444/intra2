@@ -428,14 +428,14 @@ const listTimesheets = async (req, res, next) => {
   try {
     const { status, month, year, supervisorId } = req.query;
     
-    // Approvers (admin, ceo) can see all timesheets
+    // Approvers (admin, ceo) can see all timesheets except drafts
     // Regular users can only see their own timesheets
     let filterStatus = status;
     let filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
     
-    // For approvers without status filter, show all timesheets (submitted, approved, rejected)
+    // For approvers without status filter, show only submitted and approved (hide drafts)
     if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
-      filterStatus = undefined; // Show all statuses
+      filterStatus = ['submitted', 'approved', 'rejected'];
     }
 
     const timesheets = await timesheetModel.listTimesheets({
@@ -446,7 +446,17 @@ const listTimesheets = async (req, res, next) => {
       supervisorId
     });
 
-    res.json({ timesheets });
+    // Sort timesheets: submitted first, approved last, rejected in between
+    const sortedTimesheets = timesheets.sort((a, b) => {
+      const statusOrder = { submitted: 1, rejected: 2, approved: 3, draft: 4 };
+      const aOrder = statusOrder[a.status] || 4;
+      const bOrder = statusOrder[b.status] || 4;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      // If same status, sort by date descending
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+
+    res.json({ timesheets: sortedTimesheets });
   } catch (error) {
     next(error);
   }
