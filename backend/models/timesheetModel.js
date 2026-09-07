@@ -154,10 +154,10 @@ const deleteTimesheet = async (id) => {
 };
 
 module.exports = {
-  createTimesheetTable,
   createTimesheet,
   getTimesheet,
+  getTimesheetsByUser,
   updateTimesheet,
-  listTimesheets,
-  deleteTimesheet
+  deleteTimesheet,
+  listTimesheets
 };
