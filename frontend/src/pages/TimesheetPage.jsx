@@ -29,15 +29,15 @@ const calculateWorkingDays = (month, year) => {
   return workingDays;
 };
 
-const calculateTotalHours = (dailyEntries) => {
-  let total = 0;
-  Object.values(dailyEntries).forEach(entry => {
-    if (entry.hours) {
-      total += parseFloat(entry.hours) || 0;
-    }
-  });
-  return total;
-};
+  const calculateTotalHours = (dailyEntries) => {
+    let total = 0;
+    Object.values(dailyEntries || {}).forEach(entry => {
+      if (entry.hours) {
+        total += parseFloat(entry.hours) || 0;
+      }
+    });
+    return total;
+  };
 
 const calculateLevelOfEffort = (totalHours, month, year) => {
   const workingDays = calculateWorkingDays(month, year);
@@ -66,10 +66,10 @@ export default function TimesheetPage() {
   const [signatureModal, setSignatureModal] = useState({ open: false, type: '' });
   const [approvalModal, setApprovalModal] = useState({ open: false, action: '' });
 
-  const daysInMonth = useMemo(() => getDaysInMonth(month, year), [month, year]);
-  const workingDays = useMemo(() => calculateWorkingDays(month, year), [month, year]);
+  const daysInMonth = useMemo(() => getDaysInMonth(month || 1, year || new Date().getFullYear()), [month, year]);
+  const workingDays = useMemo(() => calculateWorkingDays(month || 1, year || new Date().getFullYear()), [month, year]);
   const totalHours = useMemo(() => calculateTotalHours(dailyEntries), [dailyEntries]);
-  const levelOfEffort = useMemo(() => calculateLevelOfEffort(totalHours, month, year), [totalHours, month, year]);
+  const levelOfEffort = useMemo(() => calculateLevelOfEffort(totalHours, month || 1, year || new Date().getFullYear()), [totalHours, month, year]);
 
   const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || settings?.timesheet?.supervisors?.includes(String(user?.id));
   const canEdit = !timesheet || timesheet.status === 'draft';
@@ -95,6 +95,9 @@ export default function TimesheetPage() {
       };
     }
     setDailyEntries(entries);
+    if (!selectedPartners || selectedPartners.length === 0) {
+      setSelectedPartners(partners || DEFAULT_PARTNERS);
+    }
   };
 
   const loadTimesheet = async () => {
@@ -121,9 +124,9 @@ export default function TimesheetPage() {
 
   const handlePartnerToggle = (partner) => {
     setSelectedPartners(prev => 
-      prev.includes(partner) 
-        ? prev.filter(p => p !== partner)
-        : [...prev, partner]
+      (prev || []).includes(partner) 
+        ? (prev || []).filter(p => p !== partner)
+        : [...(prev || []), partner]
     );
   };
 
@@ -287,7 +290,7 @@ export default function TimesheetPage() {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     
     let csvContent = 'Day,Date,Day of Week';
-    selectedPartners.forEach(partner => {
+    selectedPartners?.forEach(partner => {
       csvContent += `,${partner} (hrs)`;
     });
     csvContent += ',Total Hours,Absence\n';
@@ -297,7 +300,7 @@ export default function TimesheetPage() {
       const dayOfWeek = getDayOfWeek(day, month, year);
       
       csvContent += `${day},${day}/${month}/${year},${dayNames[dayOfWeek]}`;
-      selectedPartners.forEach(partner => {
+      selectedPartners?.forEach(partner => {
         csvContent += `,${entry.partnerHours?.[partner] || 0}`;
       });
       csvContent += `,${entry.hours || 0},${entry.absence || ''}\n`;
@@ -363,7 +366,7 @@ export default function TimesheetPage() {
               <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Day</th>
               <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Date</th>
               <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Day of Week</th>
-              ${selectedPartners.map(p => `<th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">${p} (hrs)</th>`).join('')}
+              ${(selectedPartners || []).map(p => `<th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">${p} (hrs)</th>`).join('')}
               <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Total</th>
               <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Absence</th>
             </tr>
@@ -380,7 +383,7 @@ export default function TimesheetPage() {
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${day}</td>
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${day}/${month}/${year}</td>
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: ${isWeekendDay ? '#dc2626' : '#374151'}; font-weight: ${isWeekendDay ? 'bold' : 'normal'};">${dayNames[dayOfWeek]}</td>
-                  ${selectedPartners.map(p => `<td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${entry.partnerHours?.[p] || 0}</td>`).join('')}
+                  ${(selectedPartners || []).map(p => `<td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${entry.partnerHours?.[p] || 0}</td>`).join('')}
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151; font-weight: bold;">${entry.hours || 0}</td>
                   <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: ${entry.absence ? '#dc2626' : '#374151'};">${entry.absence || '-'}</td>
                 </tr>
@@ -577,13 +580,13 @@ export default function TimesheetPage() {
           <div className="mb-6">
             <label className="mb-3 block text-sm font-medium text-slate-700">Select Partners</label>
             <div className="flex flex-wrap gap-2">
-              {partners.map(partner => (
+              {partners?.map(partner => (
                 <button
                   key={partner}
                   type="button"
                   onClick={() => handlePartnerToggle(partner)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedPartners.includes(partner)
+                    (selectedPartners || []).includes(partner)
                       ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500'
                       : 'bg-slate-100 text-slate-700 border-2 border-slate-200 hover:bg-slate-200'
                   }`}
@@ -628,7 +631,7 @@ export default function TimesheetPage() {
                 <th className="px-3 py-2 text-left font-medium text-slate-700 border">Day</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-700 border">Date</th>
                 <th className="px-3 py-2 text-left font-medium text-slate-700 border">Day</th>
-                {selectedPartners.map(partner => (
+                {(selectedPartners || []).map(partner => (
                   <th key={partner} className="px-3 py-2 text-center font-medium text-slate-700 border">{partner} (hrs)</th>
                 ))}
                 <th className="px-3 py-2 text-center font-medium text-slate-700 border">Total</th>
@@ -650,7 +653,7 @@ export default function TimesheetPage() {
                     <td className={`px-3 py-2 border font-medium ${isWeekendDay ? 'text-red-600' : 'text-slate-900'}`}>
                       {dayNames[dayOfWeek]}
                     </td>
-                    {selectedPartners.map(partner => (
+                    {(selectedPartners || []).map(partner => (
                       <td key={partner} className="px-3 py-2 border">
                         <input
                           type="number"
