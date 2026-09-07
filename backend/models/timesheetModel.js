@@ -109,7 +109,6 @@ const updateTimesheet = async (id, updates) => {
     throw new Error('Invalid timesheet ID');
   }
   values.push(parsedId);
-  paramCount++;
 
   const result = await query(
     `UPDATE ${TABLE_NAME} SET ${fields.join(', ')} WHERE id = $${paramCount}::BIGINT RETURNING *`,

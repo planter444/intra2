@@ -112,14 +112,15 @@ export default function TimesheetPage() {
         setTimesheet(existing);
         setDailyEntries(existing.daily_entries || {});
         setSelectedPartners(existing.partners || []);
-        setEmployeeSignature(existing.employee_signature || '');
-        setSupervisorSignature(existing.supervisor_signature || '');
+        setEmployeeSignature(existing.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+        setSupervisorSignature(existing.supervisor_signature || localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
       } else {
         setTimesheet(null);
         setDailyEntries({});
         setSelectedPartners([]);
-        setEmployeeSignature('');
-        setSupervisorSignature('');
+        // Use persisted signatures from localStorage
+        setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+        setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
         initializeDailyEntries();
       }
     } catch (error) {
@@ -127,8 +128,8 @@ export default function TimesheetPage() {
       setTimesheet(null);
       setDailyEntries({});
       setSelectedPartners([]);
-      setEmployeeSignature('');
-      setSupervisorSignature('');
+      setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+      setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
       initializeDailyEntries();
     }
   };
@@ -250,8 +251,10 @@ export default function TimesheetPage() {
         const base64 = reader.result;
         if (type === 'employee') {
           setEmployeeSignature(base64);
+          localStorage.setItem(`employeeSignature_${user?.id}`, base64);
         } else {
           setSupervisorSignature(base64);
+          localStorage.setItem(`supervisorSignature_${user?.id}`, base64);
         }
         setSignatureModal({ open: false, type: '' });
       };
@@ -266,7 +269,9 @@ export default function TimesheetPage() {
         partners: selectedPartners,
         dailyEntries,
         totalHours: parseFloat(totalHours) || 0,
-        levelOfEffort: parseFloat(levelOfEffort) || 0
+        levelOfEffort: parseFloat(levelOfEffort) || 0,
+        employeeSignature,
+        supervisorSignature
       };
       
       if (timesheet) {
@@ -278,7 +283,9 @@ export default function TimesheetPage() {
           partners: selectedPartners,
           dailyEntries,
           totalHours: parseFloat(totalHours) || 0,
-          levelOfEffort: parseFloat(levelOfEffort) || 0
+          levelOfEffort: parseFloat(levelOfEffort) || 0,
+          employeeSignature,
+          supervisorSignature
         });
         setTimesheet(newTimesheet);
       }
@@ -937,6 +944,20 @@ export default function TimesheetPage() {
           <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
             <p className="text-sm font-medium text-amber-900">Supervisor Comment:</p>
             <p className="text-sm text-amber-800">{timesheet.supervisor_comment}</p>
+          </div>
+        )}
+        
+        {canEdit && (
+          <div className="mt-6 flex justify-end">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={loading}
+              className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save size={16} />
+              {loading ? 'Saving...' : 'Save Timesheet'}
+            </button>
           </div>
         )}
       </SectionCard>
