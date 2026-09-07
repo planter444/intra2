@@ -33,10 +33,13 @@ export default function TimesheetsListPage() {
       if (filterMonth) params.month = filterMonth;
       if (filterYear) params.year = filterYear;
       
+      console.log('Loading timesheets with params:', params);
       const data = await listTimesheets(params);
+      console.log('Timesheets loaded:', data);
       setTimesheets(data || []);
     } catch (error) {
       console.error('Failed to load timesheets:', error);
+      console.error('Error response:', error.response?.data);
       setTimesheets([]);
     } finally {
       setLoading(false);

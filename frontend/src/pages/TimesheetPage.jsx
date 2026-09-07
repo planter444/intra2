@@ -284,8 +284,12 @@ export default function TimesheetPage() {
         supervisorSignature
       };
       
+      console.log('Saving timesheet with data:', saveData);
+      
       if (timesheet) {
-        await updateTimesheet(timesheet.id, saveData);
+        const updated = await updateTimesheet(timesheet.id, saveData);
+        console.log('Updated timesheet:', updated);
+        setTimesheet(updated);
       } else {
         const newTimesheet = await createTimesheet({
           month: parseInt(month),
@@ -297,6 +301,7 @@ export default function TimesheetPage() {
           employeeSignature,
           supervisorSignature
         });
+        console.log('Created new timesheet:', newTimesheet);
         setTimesheet(newTimesheet);
       }
       setNotice({
@@ -306,6 +311,7 @@ export default function TimesheetPage() {
       });
     } catch (error) {
       console.error('Failed to save timesheet:', error);
+      console.error('Error response:', error.response?.data);
       setNotice({
         open: true,
         title: 'Error',
