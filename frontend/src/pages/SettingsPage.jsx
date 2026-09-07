@@ -177,7 +177,7 @@ export default function SettingsPage() {
     [draft.kpi?.matrix, draft.kpi?.records]
   );
   const kpiEmployees = useMemo(
-    () => [...users].sort((left, right) => left.fullName.localeCompare(right.fullName)),
+    () => [...(users || [])].sort((left, right) => left.fullName.localeCompare(right.fullName)),
     [users]
   );
   const selectedKpiEmployee = useMemo(
@@ -201,12 +201,12 @@ export default function SettingsPage() {
   );
 
   useEffect(() => {
-    if (!kpiEmployees.length) {
+    if (!kpiEmployees?.length) {
       setSelectedKpiEmployeeId('');
       return;
     }
 
-    if (!kpiEmployees.some((employee) => String(employee.id) === String(selectedKpiEmployeeId))) {
+    if (!kpiEmployees?.some((employee) => String(employee.id) === String(selectedKpiEmployeeId))) {
       setSelectedKpiEmployeeId(String(kpiEmployees[0].id));
     }
   }, [kpiEmployees, selectedKpiEmployeeId]);
@@ -1735,7 +1735,7 @@ export default function SettingsPage() {
                       className="flex-1 max-w-md px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                       <option value="">No default</option>
-                      {kpiEmployees.map((employee) => (
+                      {kpiEmployees?.map((employee) => (
                         <option key={employee.id} value={String(employee.id)}>
                           {employee.fullName}
                         </option>
@@ -1745,7 +1745,7 @@ export default function SettingsPage() {
                   <div className="border-t border-slate-200 pt-4">
                     <h4 className="text-sm font-medium text-slate-700 mb-3">Employee-Specific Routing</h4>
                     <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white">
-                      {kpiEmployees.map((employee) => (
+                      {kpiEmployees?.map((employee) => (
                         <div key={employee.id} className="flex items-center gap-4 border-b border-slate-100 px-4 py-3 last:border-0">
                           <div className="flex-1">
                             <div className="text-sm font-medium text-slate-900">{employee.fullName}</div>
@@ -1766,7 +1766,7 @@ export default function SettingsPage() {
                             className="w-48 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
                           >
                             <option value="">Use default</option>
-                            {kpiEmployees.map((supervisor) => (
+                            {kpiEmployees?.map((supervisor) => (
                               <option key={supervisor.id} value={String(supervisor.id)}>
                                 {supervisor.fullName}
                               </option>
@@ -1861,7 +1861,7 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <p className="text-sm text-slate-500">Select employees who should have permission to approve timesheets.</p>
               <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white">
-                {kpiEmployees.map((employee) => (
+                {kpiEmployees?.map((employee) => (
                   <label key={employee.id} className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-slate-50">
                     <input
                       type="checkbox"
@@ -1932,7 +1932,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <p className="text-sm text-slate-500">Select employees who should have permission to edit KPIs (in addition to admin, CEO, and finance roles).</p>
                   <div className="max-h-64 overflow-y-auto rounded-xl border border-slate-200 bg-white">
-                    {kpiEmployees.map((employee) => (
+                    {kpiEmployees?.map((employee) => (
                       <label key={employee.id} className="flex items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-0 hover:bg-slate-50">
                         <input
                           type="checkbox"
@@ -2047,7 +2047,7 @@ export default function SettingsPage() {
                 onChange={(event) => setSelectedKpiEmployeeId(event.target.value)}
                 className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-100"
               >
-                {kpiEmployees.length ? kpiEmployees.map((employee) => {
+                {kpiEmployees?.length ? kpiEmployees.map((employee) => {
                   const employeeEntry = getNormalizedKpiEntry(draft.kpi?.records?.[String(employee.id)] || draft.kpi?.matrix?.[String(employee.id)] || {});
                   const employeeAverage = getAverageKpiScore(employeeEntry);
                   return (
@@ -2133,7 +2133,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <SectionCard title="Performance dashboard content" subtitle="The performance dashboard reflects the saved KPI records for each employee.">
             <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
-              <StatCard title="Employees ready" value={kpiEmployees.filter((employee) => getAverageKpiScore(getNormalizedKpiEntry(draft.kpi?.records?.[String(employee.id)] || draft.kpi?.matrix?.[String(employee.id)] || {})) !== null).length} helper="Employees with at least one KPI score saved" accent="from-emerald-700 to-green-500" />
+              <StatCard title="Employees ready" value={kpiEmployees?.filter((employee) => getAverageKpiScore(getNormalizedKpiEntry(draft.kpi?.records?.[String(employee.id)] || draft.kpi?.matrix?.[String(employee.id)] || {})) !== null).length || 0} helper="Employees with at least one KPI score saved" accent="from-emerald-700 to-green-500" />
               <StatCard title="KPI records" value={Object.keys(kpiRecordSource).length} helper="Employee records available to display" accent="from-sky-700 to-cyan-500" />
               <StatCard title="Editable roles" value="CEO, IT Officer, Finance" helper="People who can update KPI content" accent="from-violet-700 to-fuchsia-500" />
             </div>
