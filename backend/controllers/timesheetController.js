@@ -425,20 +425,28 @@ const rejectTimesheet = async (req, res, next) => {
 
 const listTimesheets = async (req, res, next) => {
   try {
-    const { status, month, year, supervisorId } = req.query;
+    const { status, month, year, supervisorId, userId } = req.query;
     
-    // Approvers (admin, ceo) can see all timesheets except drafts
-    // Regular users can see their own timesheets including drafts
+    // If userId is explicitly provided in query, use it (for month navigation)
+    // Otherwise, apply role-based filtering
     let filterStatus = status;
-    let filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
+    let filterUserId;
     
-    // For approvers without status filter, show only submitted, approved, rejected (hide drafts)
-    if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
-      filterStatus = ['submitted', 'approved', 'rejected'];
-    }
-    // For regular users without status filter, show all statuses including draft
-    else if (!status && (req.user.role !== 'admin' && req.user.role !== 'ceo')) {
-      filterStatus = undefined; // Show all statuses for the user
+    if (userId) {
+      // Respect the explicitly provided userId
+      filterUserId = userId;
+    } else {
+      // Apply role-based filtering
+      filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
+      
+      // For approvers without status filter, show only submitted, approved, rejected (hide drafts)
+      if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
+        filterStatus = ['submitted', 'approved', 'rejected'];
+      }
+      // For regular users without status filter, show all statuses including draft
+      else if (!status && (req.user.role !== 'admin' && req.user.role !== 'ceo')) {
+        filterStatus = undefined; // Show all statuses for the user
+      }
     }
 
     const timesheets = await timesheetModel.listTimesheets({

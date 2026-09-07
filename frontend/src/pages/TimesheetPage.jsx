@@ -164,13 +164,41 @@ export default function TimesheetPage() {
     if (id) {
       loadTimesheet();
     } else {
-      initializeDailyEntries();
-      // Load signatures from localStorage for new timesheets
-      setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
-      setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
+      // When creating a new timesheet (no ID), check if there's an existing one for this month/year
+      loadExistingTimesheetForMonth();
     }
     setPartners(settings?.timesheet?.partners || DEFAULT_PARTNERS);
   }, [id, month, year]);
+
+  const loadExistingTimesheetForMonth = async () => {
+    try {
+      const timesheets = await listTimesheets({ userId: user?.id, month, year });
+      const existing = timesheets?.[0];
+      if (existing) {
+        console.log('Loading existing timesheet for current month:', month, 'year:', year, 'status:', existing.status);
+        setTimesheet(existing);
+        setTimesheetOwnerId(existing.user_id);
+        setDailyEntries(existing.daily_entries || {});
+        setSelectedPartners(existing.partners || []);
+        setEmployeeSignature(existing.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+        setSupervisorSignature(existing.supervisor_signature || localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
+        setSupervisorComment(existing.supervisor_comment || '');
+      } else {
+        console.log('No existing timesheet for current month:', month, 'year:', year, 'initializing new');
+        initializeDailyEntries();
+        // Load signatures from localStorage for new timesheets
+        setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+        setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
+        setTimesheetOwnerId(user?.id);
+      }
+    } catch (error) {
+      console.error('Failed to load existing timesheet for month:', error);
+      initializeDailyEntries();
+      setEmployeeSignature(localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+      setSupervisorSignature(localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
+      setTimesheetOwnerId(user?.id);
+    }
+  };
 
   const initializeDailyEntries = () => {
     const entries = {};
