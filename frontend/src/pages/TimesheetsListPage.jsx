@@ -197,6 +197,9 @@ export default function TimesheetsListPage() {
             columns={columns}
             rows={timesheets || []}
             emptyLabel="No timesheets found"
+            getRowProps={(row, index) => ({
+              key: row?.id || `${row?.user_id}_${row?.month}_${row?.year}_${index}`
+            })}
           />
         )}
       </SectionCard>
