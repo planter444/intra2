@@ -100,8 +100,9 @@ export default function TimesheetPage() {
   const levelOfEffort = useMemo(() => calculateLevelOfEffort(totalHours, month || 1, year || new Date().getFullYear(), dailyEntries), [totalHours, month, year, dailyEntries]);
 
   const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || settings?.timesheet?.supervisors?.includes(String(user?.id));
-  const canEdit = !timesheet || timesheet.status === 'draft';
-  const canApprove = isSupervisor && timesheet?.status === 'submitted';
+  const isOwnTimesheet = timesheet?.user_id === user?.id;
+  const canEdit = !timesheet || timesheet.status === 'draft' || timesheet.status === 'submitted';
+  const canApprove = isSupervisor && timesheet?.status === 'submitted' && !isOwnTimesheet;
   const canDelete = user?.role === 'admin' && (!timesheet || timesheet.status === 'draft');
 
   const handleMonthChange = async (delta) => {

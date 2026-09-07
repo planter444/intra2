@@ -88,12 +88,20 @@ export default function PerformanceEmployeePage() {
         <div style="background: #ffffff; padding: 25px; border-radius: 16px; margin-bottom: 25px; border: 2px solid #e2e8f0;">
           <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 18px; border-bottom: 2px solid #059669; padding-bottom: 10px;">Core Roles</h3>
           <ul style="margin: 0; padding-left: 20px;">
-            ${entry.coreRoles.filter(r => r).map((role, index) => `
+            ${entry.coreRoles.filter(r => {
+              const roleText = typeof r === 'string' ? r : r?.role;
+              return roleText && String(roleText).trim();
+            }).map((role, index) => {
+              const roleText = typeof role === 'string' ? role : role?.role;
+              const commentText = typeof role === 'string' ? '' : role?.comment;
+              return `
               <li style="margin: 8px 0; color: #374151; font-size: 14px;">
                 <span style="display: inline-block; width: 24px; height: 24px; background: #059669; color: white; border-radius: 50%; text-align: center; line-height: 24px; margin-right: 10px; font-size: 12px;">${index + 1}</span>
-                ${role}
+                ${roleText}
+                ${commentText ? `<span style="display: block; margin-left: 34px; margin-top: 5px; color: #64748b; font-size: 12px; font-style: italic;">"${commentText}"</span>` : ''}
               </li>
-            `).join('') || '<li style="margin: 5px 0; color: #64748b;">No core roles defined</li>'}
+              `;
+            }).join('') || '<li style="margin: 5px 0; color: #64748b;">No core roles defined</li>'}
           </ul>
         </div>
 
