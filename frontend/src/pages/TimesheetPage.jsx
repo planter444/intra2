@@ -162,12 +162,21 @@ export default function TimesheetPage() {
     try {
       setLoading(true);
       const data = await getTimesheet(id);
+      if (!data) {
+        setNotice({
+          open: true,
+          title: 'Error',
+          description: 'Timesheet not found.'
+        });
+        initializeDailyEntries();
+        return;
+      }
       setTimesheet(data);
-      setMonth(data.month);
-      setYear(data.year);
+      setMonth(data.month || month || 1);
+      setYear(data.year || year || new Date().getFullYear());
       setSelectedPartners(data.partners || []);
       setDailyEntries(data.daily_entries || {});
-      setEmployeeSignature(data.employee_signature || '');
+      setEmployeeSignature(data.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
     } catch (error) {
       console.error('Failed to load timesheet:', error);
       setNotice({
@@ -175,6 +184,7 @@ export default function TimesheetPage() {
         title: 'Error',
         description: 'Failed to load timesheet. Please try again.'
       });
+      initializeDailyEntries();
     } finally {
       setLoading(false);
     }
@@ -395,55 +405,88 @@ export default function TimesheetPage() {
 
   const handleExportExcel = () => {
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     
     let csvContent = '\ufeff'; // BOM for Excel UTF-8
-    csvContent += 'TIMESHEET REPORT\n';
-    csvContent += `Employee,${user?.fullName || 'N/A'}\n`;
+    
+    // Header Section
+    csvContent += '====================================================================================================\n';
+    csvContent += `${settings?.branding?.organizationName || 'KEREA HRMS'} - TIMESHEET REPORT\n`;
+    csvContent += '====================================================================================================\n\n';
+    
+    // Employee Information
+    csvContent += 'EMPLOYEE INFORMATION\n';
+    csvContent += '----------------------------------------\n';
+    csvContent += `Employee Name,${user?.fullName || 'N/A'}\n`;
     csvContent += `Position,${user?.positionTitle || 'N/A'}\n`;
     csvContent += `Department,${user?.departmentName || 'N/A'}\n`;
-    csvContent += `Period,${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n`;
-    csvContent += `Working Days,${workingDays}\n`;
-    csvContent += `Total Hours,${totalHours.toFixed(1)}\n`;
-    csvContent += `Level of Effort,${levelOfEffort}%\n`;
-    csvContent += `Status,${timesheet?.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Draft'}\n\n`;
+    csvContent += `Employee ID,${user?.employeeId || 'N/A'}\n\n`;
     
+    // Timesheet Information
+    csvContent += 'TIMESHEET INFORMATION\n';
+    csvContent += '----------------------------------------\n';
+    csvContent += `Period,${monthNames[month - 1]} ${year}\n`;
+    csvContent += `Working Days,${workingDays}\n`;
+    csvContent += `Total Hours Worked,${totalHours.toFixed(1)}\n`;
+    csvContent += `Level of Effort,${levelOfEffort}%\n`;
+    csvContent += `Status,${timesheet?.status ? String(timesheet.status).charAt(0).toUpperCase() + String(timesheet.status).slice(1) : 'Draft'}\n\n`;
+    
+    // Daily Entries Table
     csvContent += 'DAILY ENTRIES\n';
+    csvContent += '====================================================================================================\n';
     csvContent += 'Day,Date,Day of Week';
     (selectedPartners || []).forEach(partner => {
-      csvContent += `,${partner} (hrs)`;
+      csvContent += `,${partner} (Hours)`;
     });
-    csvContent += ',Total Hours,Absence\n';
+    csvContent += ',Total Hours,Absence Type\n';
+    csvContent += '----------------------------------------------------------------------------------------------------\n';
 
     for (let day = 1; day <= daysInMonth; day++) {
       const entry = dailyEntries[day] || {};
       const dayOfWeek = getDayOfWeek(day, month, year);
+      const dateStr = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
       
-      csvContent += `${day},${day}/${month}/${year},${dayNames[dayOfWeek]}`;
+      csvContent += `${day},${dateStr},${dayNames[dayOfWeek]}`;
       (selectedPartners || []).forEach(partner => {
         csvContent += `,${entry.partnerHours?.[partner] || 0}`;
       });
-      csvContent += `,${entry.hours || 0},${entry.absence || ''}\n`;
+      const totalForDay = parseFloat(entry.hours || 0) + Object.values(entry.partnerHours || {}).reduce((sum, h) => sum + parseFloat(h || 0), 0);
+      csvContent += `,${totalForDay.toFixed(1)},${entry.absence || ''}\n`;
     }
 
-    csvContent += `\nSUMMARY\n`;
+    // Summary Section
+    csvContent += '\nSUMMARY\n';
+    csvContent += '====================================================================================================\n';
     csvContent += `Total Hours Worked,${totalHours.toFixed(1)}\n`;
-    csvContent += `Possible Hours,${workingDays * 8}\n`;
+    csvContent += `Possible Hours (${workingDays} days × 8 hours),${workingDays * 8}\n`;
     csvContent += `Level of Effort,${levelOfEffort}%\n`;
+    csvContent += `Completion Rate,${((totalHours / (workingDays * 8)) * 100).toFixed(1)}%\n\n`;
     
+    // Signature Information
+    csvContent += 'SIGNATURE INFORMATION\n';
+    csvContent += '====================================================================================================\n';
     if (timesheet?.employee_signature_date) {
-      csvContent += `\nEmployee Signed,${new Date(timesheet.employee_signature_date).toLocaleString()}\n`;
+      csvContent += `Employee Signed,${new Date(timesheet.employee_signature_date).toLocaleString()}\n`;
+    } else {
+      csvContent += `Employee Signature,Pending\n`;
     }
     if (timesheet?.supervisor_signature_date) {
       csvContent += `Supervisor Signed,${new Date(timesheet.supervisor_signature_date).toLocaleString()}\n`;
+    } else {
+      csvContent += `Supervisor Signature,Pending\n`;
     }
     if (timesheet?.supervisor_comment) {
-      csvContent += `Supervisor Comment,${timesheet.supervisor_comment}\n`;
+      csvContent += `\nSupervisor Comment,${timesheet.supervisor_comment}\n`;
     }
+    
+    csvContent += '\n====================================================================================================\n';
+    csvContent += `Report Generated,${new Date().toLocaleString()}\n`;
+    csvContent += '====================================================================================================\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `timesheet_${month}_${year}_${user?.fullName?.replace(/\s+/g, '_')}.csv`;
+    link.download = `Timesheet_${monthNames[month - 1]}_${year}_${user?.fullName?.replace(/\s+/g, '_')}.csv`;
     link.click();
   };
 
@@ -741,7 +784,7 @@ export default function TimesheetPage() {
               timesheet?.status === 'rejected' ? 'bg-rose-100 text-rose-700' :
               'bg-slate-100 text-slate-700'
             }`}>
-              {timesheet?.status ? timesheet.status.charAt(0).toUpperCase() + timesheet.status.slice(1) : 'Draft'}
+              {timesheet?.status ? String(timesheet.status).charAt(0).toUpperCase() + String(timesheet.status).slice(1) : 'Draft'}
             </div>
           </div>
         </div>
