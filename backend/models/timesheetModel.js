@@ -99,6 +99,10 @@ const updateTimesheet = async (id, updates) => {
     paramCount++;
   }
 
+  if (fields.length === 0) {
+    throw new Error('No fields to update');
+  }
+
   fields.push(`updated_at = CURRENT_TIMESTAMP`);
   const parsedId = parseInt(id);
   if (isNaN(parsedId)) {

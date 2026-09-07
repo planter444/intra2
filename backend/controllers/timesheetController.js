@@ -68,12 +68,20 @@ const createTimesheet = async (req, res, next) => {
       const calculatedTotalHours = calculateTotalHours(dailyEntries);
       const calculatedLevelOfEffort = calculateLevelOfEffort(calculatedTotalHours, parseInt(month), parseInt(year));
       
-      const updated = await timesheetModel.updateTimesheet(existing.id, {
+      const updates = {
         partners: Array.isArray(partners) ? partners : [],
-        dailyEntries: dailyEntries && typeof dailyEntries === 'object' ? dailyEntries : {},
-        totalHours: totalHours !== undefined && totalHours !== null ? parseFloat(totalHours) : calculatedTotalHours,
-        levelOfEffort: levelOfEffort !== undefined && levelOfEffort !== null ? parseFloat(levelOfEffort) : calculatedLevelOfEffort
-      });
+        dailyEntries: dailyEntries && typeof dailyEntries === 'object' ? dailyEntries : {}
+      };
+
+      // Only add totalHours and levelOfEffort if they're explicitly provided
+      if (totalHours !== undefined && totalHours !== null) {
+        updates.totalHours = parseFloat(totalHours);
+      }
+      if (levelOfEffort !== undefined && levelOfEffort !== null) {
+        updates.levelOfEffort = parseFloat(levelOfEffort);
+      }
+      
+      const updated = await timesheetModel.updateTimesheet(parseInt(existing.id), updates);
       
       await logAction({
         actorUserId: req.user.id,
