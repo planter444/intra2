@@ -127,15 +127,32 @@ const createTimesheet = async (req, res, next) => {
 const getTimesheet = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const timesheet = await timesheetModel.listTimesheets({ userId: req.user.id });
-    const userTimesheet = timesheet.find(t => String(t.id) === String(id));
+    
+    // Allow approvers (admin, ceo, or configured supervisor) to view submitted timesheets
+    if (req.user.role === 'admin' || req.user.role === 'ceo') {
+      const allTimesheets = await timesheetModel.listTimesheets({});
+      const timesheetData = allTimesheets.find(t => String(t.id) === String(id));
+      if (!timesheetData) {
+        return res.status(404).json({ message: 'Timesheet not found' });
+      }
+      return res.json({ timesheet: timesheetData });
+    }
 
-    if (!userTimesheet && req.user.role !== 'admin' && req.user.role !== 'ceo') {
+    // Check if user is the configured supervisor for this timesheet
+    const allTimesheets = await timesheetModel.listTimesheets({});
+    const timesheetData = allTimesheets.find(t => String(t.id) === String(id));
+    
+    if (!timesheetData) {
       return res.status(404).json({ message: 'Timesheet not found' });
     }
 
-    const timesheetData = userTimesheet || timesheet.find(t => String(t.id) === String(id));
-    res.json({ timesheet: timesheetData });
+    // Allow if user owns the timesheet or is the assigned supervisor
+    if (String(timesheetData.user_id) === String(req.user.id) || 
+        String(timesheetData.supervisor_id) === String(req.user.id)) {
+      return res.json({ timesheet: timesheetData });
+    }
+
+    return res.status(404).json({ message: 'Timesheet not found' });
   } catch (error) {
     next(error);
   }
@@ -378,11 +395,19 @@ const rejectTimesheet = async (req, res, next) => {
 const listTimesheets = async (req, res, next) => {
   try {
     const { status, month, year, supervisorId } = req.query;
-    const userId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
+    
+    // Approvers (admin, ceo) should only see submitted timesheets by default
+    // unless explicitly filtered
+    let filterStatus = status;
+    let filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
+    
+    if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
+      filterStatus = 'submitted';
+    }
 
     const timesheets = await timesheetModel.listTimesheets({
-      userId,
-      status,
+      userId: filterUserId,
+      status: filterStatus,
       month,
       year,
       supervisorId

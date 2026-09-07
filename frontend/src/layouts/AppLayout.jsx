@@ -8,6 +8,7 @@ import { fetchLeaveRequests } from '../services/leaveService';
 import { getPendingTravelRequestCount } from '../services/travelService';
 import { getPendingReviewCount } from '../utils/leave';
 import { getRedesignedTheme, isRedesignedActive, resolvePagePresentationKey, withOpacity } from '../hooks/usePagePresentation';
+import { getPendingTimesheetCount } from '../services/timesheetService';
 
 const SEEN_DOCUMENT_IDS_KEY = 'kerea_hrms_seen_document_ids';
 const getSeenDocumentIdsStorageKey = (userId) => `${SEEN_DOCUMENT_IDS_KEY}_${userId}`;
@@ -72,6 +73,7 @@ export default function AppLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [pendingTravelCount, setPendingTravelCount] = useState(0);
+  const [pendingTimesheetCount, setPendingTimesheetCount] = useState(0);
   const [documentNotificationCount, setDocumentNotificationCount] = useState(0);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -156,6 +158,31 @@ export default function AppLayout({ children }) {
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', refreshPendingTravelCount);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!['supervisor', 'admin', 'ceo'].includes(user?.role)) {
+      setPendingTimesheetCount(0);
+      return;
+    }
+
+    const refreshPendingTimesheetCount = () => {
+      getPendingTimesheetCount()
+        .then((count) => setPendingTimesheetCount(count))
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            setPendingTimesheetCount(0);
+          }
+        });
+    };
+
+    refreshPendingTimesheetCount();
+    const intervalId = window.setInterval(refreshPendingTimesheetCount, 60000);
+    window.addEventListener('focus', refreshPendingTimesheetCount);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshPendingTimesheetCount);
     };
   }, [user]);
 
@@ -400,6 +427,8 @@ export default function AppLayout({ children }) {
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
                         ) : item.key === 'travel' && pendingTravelCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
+                        ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
                         ) : item.key === 'documents' && documentNotificationCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{documentNotificationCount}</span>
                         ) : null}

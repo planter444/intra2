@@ -39,3 +39,15 @@ export const deleteTimesheet = async (id) => {
   const { data: response } = await api.delete(`/timesheets/${id}`);
   return response;
 };
+
+export const getPendingTimesheetCount = async () => {
+  try {
+    const { data: response } = await api.get('/timesheets', { params: { status: 'submitted' } });
+    return (response.timesheets || []).length;
+  } catch (error) {
+    if (error.response?.status !== 429) {
+      return 0;
+    }
+    throw error;
+  }
+};
