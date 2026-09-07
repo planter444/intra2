@@ -423,3 +423,34 @@ ALTER TABLE travel_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travel_notification_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travel_routing_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE travel_employee_routing ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS timesheets (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  month INTEGER NOT NULL,
+  year INTEGER NOT NULL,
+  partners TEXT[] NOT NULL DEFAULT '{}',
+  daily_entries JSONB NOT NULL DEFAULT '{}'::jsonb,
+  total_hours NUMERIC(10,2) DEFAULT 0,
+  level_of_effort NUMERIC(5,2) DEFAULT 0,
+  employee_signature TEXT,
+  employee_signature_date TIMESTAMPTZ,
+  supervisor_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  supervisor_signature TEXT,
+  supervisor_signature_date TIMESTAMPTZ,
+  supervisor_comment TEXT,
+  status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'approved', 'rejected')),
+  submitted_at TIMESTAMPTZ,
+  approved_at TIMESTAMPTZ,
+  rejected_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(user_id, month, year)
+);
+
+CREATE INDEX IF NOT EXISTS idx_timesheets_user ON timesheets(user_id);
+CREATE INDEX IF NOT EXISTS idx_timesheets_period ON timesheets(month, year);
+CREATE INDEX IF NOT EXISTS idx_timesheets_status ON timesheets(status);
+CREATE INDEX IF NOT EXISTS idx_timesheets_supervisor ON timesheets(supervisor_id);
+
+ALTER TABLE timesheets ENABLE ROW LEVEL SECURITY;

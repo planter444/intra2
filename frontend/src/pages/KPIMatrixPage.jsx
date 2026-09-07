@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BriefcaseBusiness, ChartColumnIncreasing, Lock, Unlock, Save, Plus, Trash2, Sparkles } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, ChartColumnIncreasing, Lock, Unlock, Save, Plus, Trash2, Sparkles, Settings } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';
@@ -28,7 +28,7 @@ export default function KPIMatrixPage() {
   const [editMode, setEditMode] = useState(false);
   const [editForm, setEditForm] = useState({});
   const { cardStyle, animationStyle } = usePagePresentation();
-  const canManageKpi = ['admin', 'ceo', 'finance'].includes(user?.role);
+  const canManageKpi = ['admin', 'ceo', 'finance'].includes(user?.role) || settings?.kpi?.editors?.includes(String(user?.id));
 
   useEffect(() => {
     fetchUsers().then((list) => setUsers(list)).catch(() => setUsers([]));
@@ -166,6 +166,16 @@ export default function KPIMatrixPage() {
       <PageHeader
         title="KPI Management"
         subtitle="Select an employee to view and manage their KPI configuration and scores."
+        actions={canManageKpi ? [
+          <Link
+            key="settings"
+            to="/settings"
+            state={{ settingsPage: 'kpi' }}
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <Settings size={16} /> KPI Settings
+          </Link>
+        ] : undefined}
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
@@ -199,7 +209,7 @@ export default function KPIMatrixPage() {
                 <p className="text-sm text-slate-500">{selectedEmployee.positionTitle || selectedEmployee.roleTitle || 'No designation'}</p>
               </div>
               <div className="flex gap-2">
-                {canManageKpi && (
+                {canManageKpi && !employeeKpiData.locked && (
                   <>
                     {editMode ? (
                       <button
@@ -218,34 +228,34 @@ export default function KPIMatrixPage() {
                         <BriefcaseBusiness size={16} /> Edit
                       </button>
                     )}
-                    {user.role === 'ceo' && (
-                      <div className="relative group">
-                        <button
-                          type="button"
-                          className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${employeeKpiData.locked ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-                          onClick={handleToggleLock}
-                        >
-                          {employeeKpiData.locked ? <Lock size={16} /> : <Unlock size={16} />}
-                          {employeeKpiData.locked ? 'Locked' : 'Lock'}
-                        </button>
-                        <div className="absolute right-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                          {employeeKpiData.locked 
-                            ? 'Click to unlock this KPI assessment. Once unlocked, edits will be allowed again.'
-                            : 'Click to lock this KPI assessment. Once locked, no further edits will be allowed by anyone.'}
-                        </div>
-                      </div>
-                    )}
                   </>
+                )}
+                {user.role === 'ceo' && (
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold ${employeeKpiData.locked ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+                      onClick={handleToggleLock}
+                    >
+                      {employeeKpiData.locked ? <Lock size={16} /> : <Unlock size={16} />}
+                      {employeeKpiData.locked ? 'Locked' : 'Lock'}
+                    </button>
+                    <div className="absolute right-0 top-full z-10 mt-2 w-64 rounded-lg border border-slate-200 bg-white p-3 text-xs text-slate-600 shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                      {employeeKpiData.locked 
+                        ? 'Click to unlock this KPI assessment. Once unlocked, edits will be allowed again.'
+                        : 'Click to lock this KPI assessment. Once locked, no further edits will be allowed by anyone.'}
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
             {editMode ? (
-              <div className="space-y-6 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">KPI Description</label>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">KPI Description</label>
                   <textarea
-                    rows="3"
+                    rows="2"
                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
@@ -254,7 +264,7 @@ export default function KPIMatrixPage() {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Assessment Frequency</label>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">Assessment Frequency</label>
                   <select
                     className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
                     value={editForm.assessmentFrequency}
@@ -268,7 +278,7 @@ export default function KPIMatrixPage() {
                 </div>
 
                 <div>
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-1.5 flex items-center justify-between">
                     <label className="block text-sm font-medium text-slate-700">Core Roles</label>
                     <button
                       type="button"
@@ -278,22 +288,22 @@ export default function KPIMatrixPage() {
                       <Plus size={14} /> Add
                     </button>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {editForm.coreRoles.map((role, index) => (
                       <div key={index} className="flex gap-2">
                         <input
                           type="text"
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
                           value={role}
                           onChange={(e) => handleCoreRoleChange(index, e.target.value)}
                           placeholder="Enter core role..."
                         />
                         <button
                           type="button"
-                          className="rounded-lg border border-rose-200 bg-white p-2 text-rose-600 hover:bg-rose-50"
+                          className="rounded-lg border border-rose-200 bg-white p-1.5 text-rose-600 hover:bg-rose-50"
                           onClick={() => handleRemoveCoreRole(index)}
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     ))}
@@ -304,7 +314,7 @@ export default function KPIMatrixPage() {
                 </div>
 
                 <div>
-                  <div className="mb-2 flex items-center justify-between">
+                  <div className="mb-1.5 flex items-center justify-between">
                     <label className="block text-sm font-medium text-slate-700">KPI Indicators</label>
                     <button
                       type="button"
@@ -314,13 +324,13 @@ export default function KPIMatrixPage() {
                       <Plus size={14} /> Add
                     </button>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {editForm.indicators.map((indicator, index) => (
                       <div key={index} className="rounded-lg border border-slate-200 bg-white p-3">
                         <div className="mb-2 flex gap-2">
                           <input
                             type="text"
-                            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                            className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
                             value={indicator.label}
                             onChange={(e) => handleIndicatorChange(index, 'label', e.target.value)}
                             placeholder="KPI indicator name..."
@@ -336,7 +346,7 @@ export default function KPIMatrixPage() {
                         <div className="grid gap-2 sm:grid-cols-2">
                           <input
                             type="number"
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
                             value={indicator.score}
                             onChange={(e) => handleIndicatorChange(index, 'score', e.target.value)}
                             placeholder="Score (0-100)"
@@ -345,7 +355,7 @@ export default function KPIMatrixPage() {
                           />
                           <input
                             type="number"
-                            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm"
                             value={indicator.weight}
                             onChange={(e) => handleIndicatorChange(index, 'weight', e.target.value)}
                             placeholder="Weight (%)"
@@ -362,20 +372,20 @@ export default function KPIMatrixPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">KPI Description</h4>
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">KPI Description</h4>
                   <p className="text-slate-700">{employeeKpiData.description || 'No description provided.'}</p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Assessment Frequency</h4>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Assessment Frequency</h4>
                   <p className="text-slate-700 capitalize">{employeeKpiData.assessmentFrequency || 'monthly'}</p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">Core Roles</h4>
-                  <div className="space-y-2">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Core Roles</h4>
+                  <div className="space-y-1.5">
                     {employeeKpiData.coreRoles?.filter((role) => String(role || '').trim()).length > 0 ? (
                       employeeKpiData.coreRoles.filter((role) => String(role || '').trim()).map((role, index) => (
                         <div key={index} className="flex items-center gap-2 text-slate-700">
@@ -389,17 +399,17 @@ export default function KPIMatrixPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">KPI Indicators & Scores</h4>
-                  <div className="space-y-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">KPI Indicators & Scores</h4>
+                  <div className="space-y-2">
                     {employeeKpiData.indicators?.filter((ind) => String(ind?.label || '').trim()).length > 0 ? (
                       employeeKpiData.indicators.filter((ind) => String(ind?.label || '').trim()).map((indicator, index) => (
-                        <div key={index} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                        <div key={index} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
                           <div className="flex-1">
-                            <p className="font-medium text-slate-900">{indicator.label}</p>
+                            <p className="font-medium text-slate-900 text-sm">{indicator.label}</p>
                             <p className="text-xs text-slate-500">Weight: {indicator.weight || 0}%</p>
                           </div>
-                          <span className={`rounded-full px-3 py-1 text-sm font-semibold ${indicator.score >= 80 ? 'bg-emerald-100 text-emerald-700' : indicator.score >= 60 ? 'bg-amber-100 text-amber-700' : indicator.score >= 40 ? 'bg-orange-100 text-orange-700' : 'bg-rose-100 text-rose-700'}`}>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${indicator.score >= 80 ? 'bg-emerald-100 text-emerald-700' : indicator.score >= 60 ? 'bg-amber-100 text-amber-700' : indicator.score >= 40 ? 'bg-orange-100 text-orange-700' : 'bg-rose-100 text-rose-700'}`}>
                             {indicator.score || 0}
                           </span>
                         </div>
@@ -411,12 +421,12 @@ export default function KPIMatrixPage() {
                 </div>
 
                 {employeeKpiData.locked && (
-                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3">
                     <div className="flex items-center gap-2 text-amber-800">
-                      <Lock size={16} />
-                      <span className="font-medium">KPI Assessment Locked</span>
+                      <Lock size={14} />
+                      <span className="font-medium text-sm">KPI Assessment Locked</span>
                     </div>
-                    <p className="mt-1 text-sm text-amber-700">This KPI assessment has been locked by CEO and cannot be modified.</p>
+                    <p className="mt-1 text-xs text-amber-700">This KPI assessment has been locked by CEO and cannot be modified.</p>
                   </div>
                 )}
               </div>

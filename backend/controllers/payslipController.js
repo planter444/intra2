@@ -9,6 +9,7 @@ const {
 } = require('../services/payslipPdfService');
 const { generateSystemPayslip } = require('../services/payslipDesignService');
 const settingsModel = require('../models/settingsModel');
+const { sendPayslipGeneratedEmail } = require('../services/mailService');
 
 const getPayslipHeader = async () => {
   const settings = await settingsModel.getGlobal();
@@ -224,6 +225,25 @@ const generatePayslips = async (req, res, next) => {
 
     const generated = results.filter((result) => result.payslipId);
     const failed = results.filter((result) => result.error);
+
+    // Send email notifications to employees whose payslips were generated
+    for (const result of generated) {
+      try {
+        const employee = await userModel.findById(result.userId);
+        if (employee && employee.email) {
+          await sendPayslipGeneratedEmail({
+            toEmail: employee.email,
+            toName: employee.fullName,
+            period,
+            generatedBy: req.user.fullName
+          });
+        }
+      } catch (emailError) {
+        console.error(`Failed to send payslip email to user ${result.userId}:`, emailError);
+        // Don't fail the entire operation if email fails
+      }
+    }
+
     res.json({ generated, failed });
   } catch (error) {
     next(error);

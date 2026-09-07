@@ -18,6 +18,7 @@ const payslipRoutes = require('./routes/payslipRoutes');
 const travelRoutes = require('./routes/travelRoutes');
 const leaveReportRoutes = require('./routes/leaveReportRoutes');
 const travelReportRoutes = require('./routes/travelReportRoutes');
+const timesheetRoutes = require('./routes/timesheetRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 const { bootstrapSystem } = require('./services/settingsService');
 const { hashPassword } = require('./services/authService');
@@ -76,6 +77,7 @@ const start = async () => {
   app.use('/api/travel', travelRoutes);
   app.use('/api/leave-report', leaveReportRoutes);
   app.use('/api/travel-report', travelReportRoutes);
+  app.use('/api/timesheets', timesheetRoutes);
 
   app.use(notFound);
   app.use(errorHandler);

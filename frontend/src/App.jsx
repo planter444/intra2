@@ -33,6 +33,8 @@ import LocalMovementReimbursementPage from './pages/LocalMovementReimbursementPa
 import LeaveReportPage from './pages/LeaveReportPage';
 import TravelReportPage from './pages/TravelReportPage';
 import ReportPage from './pages/ReportPage';
+import TimesheetsListPage from './pages/TimesheetsListPage';
+import TimesheetPage from './pages/TimesheetPage';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { isAuthenticated, loading, user } = useAuth();
@@ -102,6 +104,9 @@ export default function App() {
       <Route path="/report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><ReportPage /></ProtectedRoute>} />
       <Route path="/leave-report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><LeaveReportPage /></ProtectedRoute>} />
       <Route path="/travel-report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><TravelReportPage /></ProtectedRoute>} />
+      <Route path="/timesheets" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TimesheetsListPage /></ProtectedRoute>} />
+      <Route path="/timesheets/new" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TimesheetPage /></ProtectedRoute>} />
+      <Route path="/timesheets/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TimesheetPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );

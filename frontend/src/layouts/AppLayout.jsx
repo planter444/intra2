@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { BarChart2, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Table, User, Users, X, DollarSign, Plane } from 'lucide-react';
+import { BarChart2, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Table, User, Users, X, DollarSign, Plane, Clock } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +25,8 @@ const routeMap = {
   leave_status: '/leave-status',
   payslips: '/payslips',
   travel: '/travel',
-  report: '/report'
+  report: '/report',
+  timesheets: '/timesheets'
 };
 
 const labelKeyMap = {
@@ -53,16 +54,17 @@ const iconMap = {
   leave_status: ClipboardList,
   payslips: DollarSign,
   travel: Plane,
-  report: FileText
+  report: FileText,
+  timesheets: Clock
 };
 
 const defaultNavigationByRole = {
-  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel'],
-  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel'],
-  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel'],
-  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel'],
-  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel']
+  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel', 'timesheets'],
+  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel', 'timesheets'],
+  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets'],
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel', 'timesheets'],
+  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel', 'timesheets'],
+  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel', 'timesheets']
 };
 
 export default function AppLayout({ children }) {

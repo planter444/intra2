@@ -1,0 +1,804 @@
+import { useEffect, useMemo, useState, useRef } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Calendar, Clock, Download, FileSpreadsheet, Plus, Save, Send, CheckCircle2, XCircle, FileText, User, Building2, PenTool } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import SectionCard from '../components/SectionCard';
+import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
+import { createTimesheet, getTimesheet, updateTimesheet, submitTimesheet, approveTimesheet, rejectTimesheet, listTimesheets, deleteTimesheet } from '../services/timesheetService';
+import { usePagePresentation } from '../hooks/usePagePresentation';
+
+const DEFAULT_PARTNERS = ['GIZ', 'CWF', 'Gogla', 'SNV'];
+const ABSENCE_TYPES = ['Sick Leave', 'Annual Leave', 'Training', 'Other'];
+
+const getDaysInMonth = (month, year) => new Date(year, month, 0).getDate();
+const getDayOfWeek = (day, month, year) => new Date(year, month - 1, day).getDay();
+const isWeekend = (day, month, year) => {
+  const dayOfWeek = getDayOfWeek(day, month, year);
+  return dayOfWeek === 0 || dayOfWeek === 6;
+};
+
+const calculateWorkingDays = (month, year) => {
+  const daysInMonth = getDaysInMonth(month, year);
+  let workingDays = 0;
+  for (let day = 1; day <= daysInMonth; day++) {
+    if (!isWeekend(day, month, year)) {
+      workingDays++;
+    }
+  }
+  return workingDays;
+};
+
+const calculateTotalHours = (dailyEntries) => {
+  let total = 0;
+  Object.values(dailyEntries).forEach(entry => {
+    if (entry.hours) {
+      total += parseFloat(entry.hours) || 0;
+    }
+  });
+  return total;
+};
+
+const calculateLevelOfEffort = (totalHours, month, year) => {
+  const workingDays = calculateWorkingDays(month, year);
+  const possibleHours = workingDays * 8;
+  if (possibleHours === 0) return 0;
+  return ((totalHours / possibleHours) * 100).toFixed(2);
+};
+
+export default function TimesheetPage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, settings } = useAuth();
+  const { cardStyle, animationStyle } = usePagePresentation();
+  
+  const [loading, setLoading] = useState(false);
+  const [timesheet, setTimesheet] = useState(null);
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [year, setYear] = useState(new Date().getFullYear());
+  const [partners, setPartners] = useState([]);
+  const [dailyEntries, setDailyEntries] = useState({});
+  const [selectedPartners, setSelectedPartners] = useState([]);
+  const [employeeSignature, setEmployeeSignature] = useState('');
+  const [supervisorSignature, setSupervisorSignature] = useState('');
+  const [supervisorComment, setSupervisorComment] = useState('');
+  const [notice, setNotice] = useState({ open: false, title: '', description: '' });
+  const [signatureModal, setSignatureModal] = useState({ open: false, type: '' });
+  const [approvalModal, setApprovalModal] = useState({ open: false, action: '' });
+
+  const daysInMonth = useMemo(() => getDaysInMonth(month, year), [month, year]);
+  const workingDays = useMemo(() => calculateWorkingDays(month, year), [month, year]);
+  const totalHours = useMemo(() => calculateTotalHours(dailyEntries), [dailyEntries]);
+  const levelOfEffort = useMemo(() => calculateLevelOfEffort(totalHours, month, year), [totalHours, month, year]);
+
+  const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || settings?.timesheet?.supervisors?.includes(String(user?.id));
+  const canEdit = !timesheet || timesheet.status === 'draft';
+  const canApprove = isSupervisor && timesheet?.status === 'submitted';
+
+  useEffect(() => {
+    if (id) {
+      loadTimesheet();
+    } else {
+      initializeDailyEntries();
+    }
+    setPartners(settings?.timesheet?.partners || DEFAULT_PARTNERS);
+  }, [id, month, year]);
+
+  const initializeDailyEntries = () => {
+    const entries = {};
+    for (let day = 1; day <= daysInMonth; day++) {
+      entries[day] = {
+        hours: 0,
+        partnerHours: {},
+        absence: null,
+        isWeekend: isWeekend(day, month, year)
+      };
+    }
+    setDailyEntries(entries);
+  };
+
+  const loadTimesheet = async () => {
+    try {
+      setLoading(true);
+      const data = await getTimesheet(id);
+      setTimesheet(data);
+      setMonth(data.month);
+      setYear(data.year);
+      setSelectedPartners(data.partners || []);
+      setDailyEntries(data.daily_entries || {});
+      setEmployeeSignature(data.employee_signature || '');
+    } catch (error) {
+      console.error('Failed to load timesheet:', error);
+      setNotice({
+        open: true,
+        title: 'Error',
+        description: 'Failed to load timesheet. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePartnerToggle = (partner) => {
+    setSelectedPartners(prev => 
+      prev.includes(partner) 
+        ? prev.filter(p => p !== partner)
+        : [...prev, partner]
+    );
+  };
+
+  const handleDayHoursChange = (day, value) => {
+    const hours = parseFloat(value) || 0;
+    if (hours > 8) {
+      setNotice({
+        open: true,
+        title: 'Invalid Hours',
+        description: 'Maximum 8 hours per day allowed.'
+      });
+      return;
+    }
+    setDailyEntries(prev => ({
+      ...prev,
+      [day]: { ...prev[day], hours }
+    }));
+  };
+
+  const handlePartnerHoursChange = (day, partner, value) => {
+    const hours = parseFloat(value) || 0;
+    setDailyEntries(prev => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        partnerHours: { ...prev[day].partnerHours, [partner]: hours }
+      }
+    }));
+  };
+
+  const handleAbsenceChange = (day, value) => {
+    setDailyEntries(prev => ({
+      ...prev,
+      [day]: { ...prev[day], absence: value, hours: value ? 0 : prev[day].hours }
+    }));
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      if (timesheet) {
+        await updateTimesheet(timesheet.id, {
+          partners: selectedPartners,
+          dailyEntries,
+          employeeSignature
+        });
+      } else {
+        const newTimesheet = await createTimesheet({
+          month,
+          year,
+          partners: selectedPartners,
+          dailyEntries
+        });
+        setTimesheet(newTimesheet);
+      }
+      setNotice({
+        open: true,
+        title: 'Saved',
+        description: 'Timesheet saved successfully.'
+      });
+    } catch (error) {
+      console.error('Failed to save timesheet:', error);
+      setNotice({
+        open: true,
+        title: 'Error',
+        description: 'Failed to save timesheet. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!employeeSignature) {
+      setSignatureModal({ open: true, type: 'employee' });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      await submitTimesheet(timesheet.id, employeeSignature);
+      await loadTimesheet();
+      setNotice({
+        open: true,
+        title: 'Submitted',
+        description: 'Timesheet submitted for approval.'
+      });
+    } catch (error) {
+      console.error('Failed to submit timesheet:', error);
+      setNotice({
+        open: true,
+        title: 'Error',
+        description: 'Failed to submit timesheet. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!supervisorSignature) {
+      setSignatureModal({ open: true, type: 'supervisor' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await approveTimesheet(timesheet.id, supervisorSignature, supervisorComment);
+      await loadTimesheet();
+      setApprovalModal({ open: false, action: '' });
+      setNotice({
+        open: true,
+        title: 'Approved',
+        description: 'Timesheet approved successfully.'
+      });
+    } catch (error) {
+      console.error('Failed to approve timesheet:', error);
+      setNotice({
+        open: true,
+        title: 'Error',
+        description: 'Failed to approve timesheet. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      setLoading(true);
+      await rejectTimesheet(timesheet.id, supervisorComment);
+      await loadTimesheet();
+      setApprovalModal({ open: false, action: '' });
+      setNotice({
+        open: true,
+        title: 'Rejected',
+        description: 'Timesheet rejected successfully.'
+      });
+    } catch (error) {
+      console.error('Failed to reject timesheet:', error);
+      setNotice({
+        open: true,
+        title: 'Error',
+        description: 'Failed to reject timesheet. Please try again.'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignatureCapture = (signature) => {
+    if (signatureModal.type === 'employee') {
+      setEmployeeSignature(signature);
+    } else {
+      setSupervisorSignature(signature);
+    }
+    setSignatureModal({ open: false, type: '' });
+  };
+
+  const handleExportExcel = () => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    let csvContent = 'Day,Date,Day of Week';
+    selectedPartners.forEach(partner => {
+      csvContent += `,${partner} (hrs)`;
+    });
+    csvContent += ',Total Hours,Absence\n';
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const entry = dailyEntries[day] || {};
+      const dayOfWeek = getDayOfWeek(day, month, year);
+      
+      csvContent += `${day},${day}/${month}/${year},${dayNames[dayOfWeek]}`;
+      selectedPartners.forEach(partner => {
+        csvContent += `,${entry.partnerHours?.[partner] || 0}`;
+      });
+      csvContent += `,${entry.hours || 0},${entry.absence || ''}\n`;
+    }
+
+    csvContent += `\nEmployee,${user?.fullName || 'N/A'}\n`;
+    csvContent += `Position,${user?.positionTitle || 'N/A'}\n`;
+    csvContent += `Period,${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}\n`;
+    csvContent += `Total Hours,${totalHours}\n`;
+    csvContent += `Working Days,${workingDays}\n`;
+    csvContent += `Level of Effort,${levelOfEffort}%\n`;
+    csvContent += `Status,${timesheet?.status || 'Draft'}\n`;
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `timesheet_${month}_${year}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportPDF = () => {
+    const printContent = `
+      <div style="font-family: Arial, sans-serif; padding: 40px; max-width: 1200px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 3px solid #059669;">
+          <h1 style="color: #1e293b; margin: 0; font-size: 28px;">${settings?.branding?.organizationName || 'KEREA'}</h1>
+          <h2 style="color: #64748b; margin: 10px 0; font-size: 20px;">Monthly Timesheet</h2>
+        </div>
+        
+        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 25px; border-radius: 16px; margin-bottom: 25px; border-left: 5px solid #059669;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <p style="margin: 5px 0; color: #374151;"><strong>Employee:</strong> ${user?.fullName || 'N/A'}</p>
+            <p style="margin: 5px 0; color: #374151;"><strong>Position:</strong> ${user?.positionTitle || 'N/A'}</p>
+            <p style="margin: 5px 0; color: #374151;"><strong>Period:</strong> ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
+            <p style="margin: 5px 0; color: #374151;"><strong>Status:</strong> ${timesheet?.status || 'Draft'}</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+          <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); padding: 25px; border-radius: 16px; border-left: 5px solid #0ea5e9;">
+            <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px;">Total Hours Worked</h3>
+            <div style="font-size: 48px; font-weight: bold; color: #0ea5e9; margin: 10px 0;">${totalHours}</div>
+            <div style="font-size: 14px; color: #64748b;">hours this month</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 25px; border-radius: 16px; border-left: 5px solid #f59e0b;">
+            <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px;">Working Days</h3>
+            <div style="font-size: 48px; font-weight: bold; color: #f59e0b; margin: 10px 0;">${workingDays}</div>
+            <div style="font-size: 14px; color: #64748b;">days this month</div>
+          </div>
+          <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 25px; border-radius: 16px; border-left: 5px solid #059669;">
+            <h3 style="color: #1e293b; margin: 0 0 10px 0; font-size: 16px;">Level of Effort</h3>
+            <div style="font-size: 48px; font-weight: bold; color: #059669; margin: 10px 0;">${levelOfEffort}%</div>
+            <div style="font-size: 14px; color: #64748b;">productivity score</div>
+          </div>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 12px;">
+          <thead>
+            <tr style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);">
+              <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Day</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Date</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Day of Week</th>
+              ${selectedPartners.map(p => `<th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">${p} (hrs)</th>`).join('')}
+              <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Total</th>
+              <th style="padding: 12px; text-align: center; border: 1px solid #cbd5e1; color: #1e293b;">Absence</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const entry = dailyEntries[day] || {};
+              const dayOfWeek = getDayOfWeek(day, month, year);
+              const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+              const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6;
+              return `
+                <tr style="background: ${isWeekendDay ? '#f1f5f9' : 'white'};">
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${day}</td>
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${day}/${month}/${year}</td>
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: ${isWeekendDay ? '#dc2626' : '#374151'}; font-weight: ${isWeekendDay ? 'bold' : 'normal'};">${dayNames[dayOfWeek]}</td>
+                  ${selectedPartners.map(p => `<td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151;">${entry.partnerHours?.[p] || 0}</td>`).join('')}
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: #374151; font-weight: bold;">${entry.hours || 0}</td>
+                  <td style="padding: 10px; text-align: center; border: 1px solid #cbd5e1; color: ${entry.absence ? '#dc2626' : '#374151'};">${entry.absence || '-'}</td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
+            <div>
+              <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #059669; padding-bottom: 10px;">Employee Signature</h3>
+              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                ${employeeSignature ? `<img src="${employeeSignature}" style="max-width: 100%; max-height: 80px;" alt="Employee Signature" />` : '<span style="color: #94a3b8;">No signature</span>'}
+              </div>
+              ${timesheet?.employee_signature_date ? `<p style="margin-top: 10px; font-size: 12px; color: #64748b;">Signed: ${new Date(timesheet.employee_signature_date).toLocaleString()}</p>` : ''}
+            </div>
+            <div>
+              <h3 style="color: #1e293b; margin: 0 0 15px 0; font-size: 16px; border-bottom: 2px solid #0ea5e9; padding-bottom: 10px;">Supervisor Signature</h3>
+              <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                ${supervisorSignature ? `<img src="${supervisorSignature}" style="max-width: 100%; max-height: 80px;" alt="Supervisor Signature" />` : '<span style="color: #94a3b8;">No signature</span>'}
+              </div>
+              ${timesheet?.supervisor_signature_date ? `<p style="margin-top: 10px; font-size: 12px; color: #64748b;">Signed: ${new Date(timesheet.supervisor_signature_date).toLocaleString()}</p>` : ''}
+              ${timesheet?.supervisor_comment ? `<p style="margin-top: 10px; font-size: 12px; color: #64748b;"><strong>Comment:</strong> ${timesheet.supervisor_comment}</p>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0; text-align: center; color: #64748b; font-size: 12px;">
+          <p style="margin: 5px 0;">Generated on ${new Date().toLocaleString()}</p>
+          <p style="margin: 5px 0;">${settings?.branding?.organizationName || 'KEREA'} HRMS - Timesheet Management</p>
+        </div>
+      </div>
+    `;
+
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Timesheet - ${month}/${year}</title>
+        <style>
+          @media print {
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            @page { margin: 20px; }
+          }
+          body { margin: 0; padding: 0; }
+        </style>
+      </head>
+      <body>${printContent}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => printWindow.print(), 500);
+  };
+
+  const SignaturePad = ({ onSave, onCancel }) => {
+    const canvasRef = useRef(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+
+    const startDrawing = (e) => {
+      setIsDrawing(true);
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      canvas.getContext('2d').beginPath();
+      canvas.getContext('2d').moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    };
+
+    const draw = (e) => {
+      if (!isDrawing) return;
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      canvas.getContext('2d').lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      canvas.getContext('2d').stroke();
+    };
+
+    const stopDrawing = () => {
+      setIsDrawing(false);
+    };
+
+    const clear = () => {
+      const canvas = canvasRef.current;
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    const save = () => {
+      const canvas = canvasRef.current;
+      onSave(canvas.toDataURL());
+    };
+
+    return (
+      <div className="space-y-4">
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={150}
+          className="w-full border-2 border-slate-200 rounded-lg cursor-crosshair bg-white"
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+        />
+        <div className="flex gap-2 justify-end">
+          <button type="button" onClick={clear} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+            Clear
+          </button>
+          <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-medium text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50">
+            Cancel
+          </button>
+          <button type="button" onClick={save} className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700">
+            Save Signature
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={id ? `Timesheet - ${month}/${year}` : 'New Timesheet'}
+        subtitle={id ? `Status: ${timesheet?.status || 'Draft'}` : 'Create a new monthly timesheet'}
+        actions={[
+          <Link key="back" to="/timesheets" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700">
+            <ArrowLeft size={16} /> Back
+          </Link>,
+          canEdit && (
+            <button key="save" type="button" onClick={handleSave} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <Save size={16} /> Save
+            </button>
+          ),
+          canEdit && !id && (
+            <button key="submit" type="button" onClick={handleSubmit} className="inline-flex items-center gap-2 rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white hover:opacity-90">
+              <Send size={16} /> Submit
+            </button>
+          ),
+          <button key="pdf" type="button" onClick={handleExportPDF} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <FileText size={16} /> Export PDF
+          </button>,
+          <button key="excel" type="button" onClick={handleExportExcel} className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <FileSpreadsheet size={16} /> Export Excel
+          </button>,
+          canApprove && (
+            <>
+              <button key="approve" type="button" onClick={() => setApprovalModal({ open: true, action: 'approve' })} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700">
+                <CheckCircle2 size={16} /> Approve
+              </button>
+              <button key="reject" type="button" onClick={() => setApprovalModal({ open: true, action: 'reject' })} className="inline-flex items-center gap-2 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-semibold text-white hover:bg-rose-700">
+                <XCircle size={16} /> Reject
+              </button>
+            </>
+          )
+        ].filter(Boolean)}
+      />
+
+      <SectionCard title="Timesheet Information" style={{ ...cardStyle, ...animationStyle }}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Employee</label>
+            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+              <User size={16} className="text-slate-500" />
+              <span className="text-sm font-medium text-slate-900">{user?.fullName || 'N/A'}</span>
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Position</label>
+            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+              <Building2 size={16} className="text-slate-500" />
+              <span className="text-sm font-medium text-slate-900">{user?.positionTitle || 'N/A'}</span>
+            </div>
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Period</label>
+            <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg">
+              <Calendar size={16} className="text-slate-500" />
+              <span className="text-sm font-medium text-slate-900">{new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+            </div>
+          </div>
+        </div>
+
+        {canEdit && (
+          <div className="mb-6">
+            <label className="mb-3 block text-sm font-medium text-slate-700">Select Partners</label>
+            <div className="flex flex-wrap gap-2">
+              {partners.map(partner => (
+                <button
+                  key={partner}
+                  type="button"
+                  onClick={() => handlePartnerToggle(partner)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedPartners.includes(partner)
+                      ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500'
+                      : 'bg-slate-100 text-slate-700 border-2 border-slate-200 hover:bg-slate-200'
+                  }`}
+                >
+                  {partner}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+            <div className="flex items-center gap-2 text-blue-700 mb-2">
+              <Clock size={16} />
+              <span className="text-sm font-medium">Total Hours</span>
+            </div>
+            <div className="text-3xl font-bold text-blue-900">{totalHours}</div>
+          </div>
+          <div className="bg-amber-50 p-4 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-2 text-amber-700 mb-2">
+              <Calendar size={16} />
+              <span className="text-sm font-medium">Working Days</span>
+            </div>
+            <div className="text-3xl font-bold text-amber-900">{workingDays}</div>
+          </div>
+          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-700 mb-2">
+              <FileSpreadsheet size={16} />
+              <span className="text-sm font-medium">Level of Effort</span>
+            </div>
+            <div className="text-3xl font-bold text-emerald-900">{levelOfEffort}%</div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Daily Entries" style={{ ...cardStyle, ...animationStyle }}>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="px-3 py-2 text-left font-medium text-slate-700 border">Day</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-700 border">Date</th>
+                <th className="px-3 py-2 text-left font-medium text-slate-700 border">Day</th>
+                {selectedPartners.map(partner => (
+                  <th key={partner} className="px-3 py-2 text-center font-medium text-slate-700 border">{partner} (hrs)</th>
+                ))}
+                <th className="px-3 py-2 text-center font-medium text-slate-700 border">Total</th>
+                <th className="px-3 py-2 text-center font-medium text-slate-700 border">Absence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: daysInMonth }, (_, i) => {
+                const day = i + 1;
+                const entry = dailyEntries[day] || {};
+                const dayOfWeek = getDayOfWeek(day, month, year);
+                const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6;
+
+                return (
+                  <tr key={day} className={isWeekendDay ? 'bg-slate-50' : ''}>
+                    <td className="px-3 py-2 border text-slate-900">{day}</td>
+                    <td className="px-3 py-2 border text-slate-600">{day}/{month}/{year}</td>
+                    <td className={`px-3 py-2 border font-medium ${isWeekendDay ? 'text-red-600' : 'text-slate-900'}`}>
+                      {dayNames[dayOfWeek]}
+                    </td>
+                    {selectedPartners.map(partner => (
+                      <td key={partner} className="px-3 py-2 border">
+                        <input
+                          type="number"
+                          min="0"
+                          max="8"
+                          step="0.5"
+                          value={entry.partnerHours?.[partner] || 0}
+                          onChange={(e) => handlePartnerHoursChange(day, partner, e.target.value)}
+                          disabled={!canEdit || isWeekendDay}
+                          className="w-full px-2 py-1 text-center border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
+                        />
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 border text-center font-medium text-slate-900">{entry.hours || 0}</td>
+                    <td className="px-3 py-2 border">
+                      <select
+                        value={entry.absence || ''}
+                        onChange={(e) => handleAbsenceChange(day, e.target.value)}
+                        disabled={!canEdit || isWeekendDay}
+                        className="w-full px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:bg-slate-100"
+                      >
+                        <option value="">-</option>
+                        {ABSENCE_TYPES.map(type => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+
+      <SectionCard title="Signatures" style={{ ...cardStyle, ...animationStyle }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="mb-3 block text-sm font-medium text-slate-700">Employee Signature</label>
+            <div className="p-4 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 min-h-[100px] flex items-center justify-center">
+              {employeeSignature ? (
+                <img src={employeeSignature} alt="Employee Signature" className="max-h-24" />
+              ) : (
+                <span className="text-slate-400">No signature</span>
+              )}
+            </div>
+            {timesheet?.employee_signature_date && (
+              <p className="mt-2 text-xs text-slate-500">Signed: {new Date(timesheet.employee_signature_date).toLocaleString()}</p>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                onClick={() => setSignatureModal({ open: true, type: 'employee' })}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-lg hover:bg-emerald-200"
+              >
+                <PenTool size={16} /> {employeeSignature ? 'Update Signature' : 'Add Signature'}
+              </button>
+            )}
+          </div>
+          <div>
+            <label className="mb-3 block text-sm font-medium text-slate-700">Supervisor Signature</label>
+            <div className="p-4 bg-slate-50 rounded-lg border-2 border-dashed border-slate-300 min-h-[100px] flex items-center justify-center">
+              {supervisorSignature ? (
+                <img src={supervisorSignature} alt="Supervisor Signature" className="max-h-24" />
+              ) : (
+                <span className="text-slate-400">No signature</span>
+              )}
+            </div>
+            {timesheet?.supervisor_signature_date && (
+              <p className="mt-2 text-xs text-slate-500">Signed: {new Date(timesheet.supervisor_signature_date).toLocaleString()}</p>
+            )}
+            {canApprove && (
+              <button
+                type="button"
+                onClick={() => setSignatureModal({ open: true, type: 'supervisor' })}
+                className="mt-3 inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200"
+              >
+                <PenTool size={16} /> {supervisorSignature ? 'Update Signature' : 'Add Signature'}
+              </button>
+            )}
+          </div>
+        </div>
+        {timesheet?.supervisor_comment && (
+          <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
+            <p className="text-sm font-medium text-amber-900">Supervisor Comment:</p>
+            <p className="text-sm text-amber-800">{timesheet.supervisor_comment}</p>
+          </div>
+        )}
+      </SectionCard>
+
+      <Modal
+        open={signatureModal.open}
+        title={signatureModal.type === 'employee' ? 'Employee Signature' : 'Supervisor Signature'}
+        description="Draw your signature below"
+        onClose={() => setSignatureModal({ open: false, type: '' })}
+      >
+        <SignaturePad
+          onSave={handleSignatureCapture}
+          onCancel={() => setSignatureModal({ open: false, type: '' })}
+        />
+      </Modal>
+
+      <Modal
+        open={approvalModal.open}
+        title={approvalModal.action === 'approve' ? 'Approve Timesheet' : 'Reject Timesheet'}
+        description={approvalModal.action === 'approve' ? 'Confirm approval of this timesheet' : 'Provide reason for rejection'}
+        onClose={() => setApprovalModal({ open: false, action: '' })}
+        actions={[
+          <button key="cancel" type="button" onClick={() => setApprovalModal({ open: false, action: '' })} className="px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+            Cancel
+          </button>,
+          <button
+            key="confirm"
+            type="button"
+            onClick={approvalModal.action === 'approve' ? handleApprove : handleReject}
+            className={`px-4 py-2 text-sm font-medium text-white rounded-lg ${approvalModal.action === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
+          >
+            {approvalModal.action === 'approve' ? 'Approve' : 'Reject'}
+          </button>
+        ]}
+      >
+        <div className="space-y-4">
+          {approvalModal.action === 'reject' && (
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">Rejection Reason (Optional)</label>
+              <textarea
+                rows="3"
+                value={supervisorComment}
+                onChange={(e) => setSupervisorComment(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                placeholder="Provide reason for rejection..."
+              />
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      <Modal
+        open={notice.open}
+        title={notice.title}
+        description={notice.description}
+        onClose={() => setNotice({ open: false, title: '', description: '' })}
+        actions={[
+          <button key="close" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={() => setNotice({ open: false, title: '', description: '' })}>
+            Close
+          </button>
+        ]}
+      />
+    </div>
+  );
+}
