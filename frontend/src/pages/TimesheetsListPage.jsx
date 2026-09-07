@@ -46,6 +46,11 @@ export default function TimesheetsListPage() {
     }
   };
 
+  const handleView = (timesheet) => {
+    console.log('Viewing timesheet:', timesheet.id, 'status:', timesheet.status);
+    navigate(`/timesheets/${timesheet.id}`);
+  };
+
   const getStatusBadge = (status) => {
     const styles = {
       draft: 'bg-slate-100 text-slate-700',

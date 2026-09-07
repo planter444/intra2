@@ -113,12 +113,14 @@ export default function TimesheetPage() {
       const timesheets = await listTimesheets({ userId: user?.id, month: newMonth, year: newYear });
       const existing = timesheets?.[0];
       if (existing) {
+        console.log('Loading existing timesheet for month:', newMonth, 'year:', newYear, 'status:', existing.status);
         setTimesheet(existing);
         setDailyEntries(existing.daily_entries || {});
         setSelectedPartners(existing.partners || []);
         setEmployeeSignature(existing.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
         setSupervisorSignature(existing.supervisor_signature || localStorage.getItem(`supervisorSignature_${user?.id}`) || '');
       } else {
+        console.log('No existing timesheet for month:', newMonth, 'year:', newYear);
         setTimesheet(null);
         setDailyEntries({});
         setSelectedPartners([]);
@@ -369,6 +371,7 @@ export default function TimesheetPage() {
 
     try {
       setLoading(true);
+      console.log('Approving timesheet with signature:', supervisorSignature ? 'Present' : 'Missing');
       await approveTimesheet(timesheet.id, supervisorSignature, supervisorComment);
       await loadTimesheet();
       setApprovalModal({ open: false, action: '' });

@@ -69,6 +69,13 @@ const createTimesheet = async (req, res, next) => {
     console.log('Existing timesheet found:', existing ? `ID ${existing.id}` : 'None');
     
     if (existing) {
+      // Prevent updating if timesheet is already submitted, approved, or rejected
+      if (existing.status !== 'draft') {
+        return res.status(400).json({ 
+          message: `Cannot update a timesheet that is ${existing.status}. Please create a new timesheet for this month.` 
+        });
+      }
+      
       // Update existing timesheet instead of creating new one
       const calculatedTotalHours = calculateTotalHours(dailyEntries);
       const calculatedLevelOfEffort = calculateLevelOfEffort(calculatedTotalHours, parseInt(month), parseInt(year));
@@ -297,6 +304,7 @@ const approveTimesheet = async (req, res, next) => {
     const { supervisorSignature, supervisorComment } = req.body;
 
     console.log('approveTimesheet called for ID:', id);
+    console.log('supervisorSignature present:', !!supervisorSignature);
 
     const timesheet = await timesheetModel.listTimesheets({});
     const targetTimesheet = timesheet.find(t => String(t.id) === String(id));
@@ -324,9 +332,9 @@ const approveTimesheet = async (req, res, next) => {
       approvedAt: new Date()
     };
 
-    console.log('Updating timesheet with:', updates);
+    console.log('Updating timesheet with:', Object.keys(updates));
     const updated = await timesheetModel.updateTimesheet(id, updates);
-    console.log('Updated timesheet:', updated);
+    console.log('Updated timesheet result - supervisor_signature:', updated.supervisor_signature ? 'Present' : 'Missing');
 
     // Send email to employee
     try {
@@ -425,9 +433,9 @@ const listTimesheets = async (req, res, next) => {
     let filterStatus = status;
     let filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
     
-    // For approvers without status filter, default to submitted
+    // For approvers without status filter, show all timesheets (submitted, approved, rejected)
     if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
-      filterStatus = 'submitted';
+      filterStatus = undefined; // Show all statuses
     }
 
     const timesheets = await timesheetModel.listTimesheets({
