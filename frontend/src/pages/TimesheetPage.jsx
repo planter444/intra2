@@ -747,7 +747,30 @@ export default function TimesheetPage() {
         ].filter(Boolean)}
       />
 
-      <SectionCard title="Timesheet Information" style={{ ...cardStyle, ...animationStyle }}>
+      <SectionCard title="Timesheet" description={`Fill in your daily hours for ${monthName} ${year}`}>
+        {timesheet && timesheet.status !== 'draft' && (
+          <div className={`mb-6 p-4 rounded-lg border ${
+            timesheet.status === 'submitted' ? 'bg-amber-50 border-amber-200' :
+            timesheet.status === 'approved' ? 'bg-emerald-50 border-emerald-200' :
+            'bg-rose-50 border-rose-200'
+          }`}>
+            <div className="flex items-center gap-2">
+              {timesheet.status === 'submitted' && <Clock size={20} className="text-amber-600" />}
+              {timesheet.status === 'approved' && <CheckCircle2 size={20} className="text-emerald-600" />}
+              {timesheet.status === 'rejected' && <XCircle size={20} className="text-rose-600" />}
+              <p className={`font-medium ${
+                timesheet.status === 'submitted' ? 'text-amber-800' :
+                timesheet.status === 'approved' ? 'text-emerald-800' :
+                'text-rose-800'
+              }`}>
+                This timesheet has been {timesheet.status}. {timesheet.status === 'submitted' ? 'It is pending approval.' : ''}
+                {timesheet.status === 'rejected' ? ' You can create a new timesheet for this month.' : ''}
+                {timesheet.status !== 'draft' && ' Editing is disabled.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Employee</label>
