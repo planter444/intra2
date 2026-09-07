@@ -10,7 +10,7 @@ const {
   listTimesheets,
   deleteTimesheet
 } = require('../controllers/timesheetController');
-const { authenticate } = require('../middleware/auth');
+const { authenticate } = require('../middleware/authMiddleware');
 
 router.use(authenticate);
 
