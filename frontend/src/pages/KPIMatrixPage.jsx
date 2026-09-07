@@ -53,10 +53,25 @@ export default function KPIMatrixPage() {
     const emp = rows.find((e) => String(e.id) === String(employeeId));
     if (emp) {
       const kpiData = settings?.kpi?.records?.[String(employeeId)] || settings?.kpi?.matrix?.[String(employeeId)] || {};
+      
+      // Migrate old string-based coreRoles to object format
+      const migratedCoreRoles = (kpiData.coreRoles || []).map(role => {
+        if (typeof role === 'string') {
+          return { role, comment: '' };
+        }
+        return role;
+      });
+      
+      // Migrate old indicators without comment to include comment field
+      const migratedIndicators = (kpiData.indicators || []).map(indicator => ({
+        ...indicator,
+        comment: indicator.comment || ''
+      }));
+      
       setEditForm({
         description: kpiData.description || '',
-        coreRoles: kpiData.coreRoles || [],
-        indicators: kpiData.indicators || [],
+        coreRoles: migratedCoreRoles,
+        indicators: migratedIndicators,
         assessmentFrequency: kpiData.assessmentFrequency || 'monthly',
         locked: kpiData.locked || false
       });
@@ -402,13 +417,24 @@ export default function KPIMatrixPage() {
                 <div className="rounded-2xl border border-slate-200 bg-white p-4">
                   <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">Core Roles</h4>
                   <div className="space-y-1.5">
-                    {employeeKpiData.coreRoles?.filter((role) => String(role || '').trim()).length > 0 ? (
-                      employeeKpiData.coreRoles.filter((role) => String(role || '').trim()).map((role, index) => (
-                        <div key={index} className="flex items-center gap-2 text-slate-700">
-                          <BriefcaseBusiness size={16} className="text-emerald-600" />
-                          <span>{role}</span>
-                        </div>
-                      ))
+                    {employeeKpiData.coreRoles?.filter((role) => {
+                      const roleText = typeof role === 'string' ? role : role?.role;
+                      return String(roleText || '').trim();
+                    }).length > 0 ? (
+                      employeeKpiData.coreRoles.filter((role) => {
+                        const roleText = typeof role === 'string' ? role : role?.role;
+                        return String(roleText || '').trim();
+                      }).map((role, index) => {
+                        const roleText = typeof role === 'string' ? role : role?.role;
+                        const commentText = typeof role === 'string' ? '' : role?.comment;
+                        return (
+                          <div key={index} className="flex items-center gap-2 text-slate-700">
+                            <BriefcaseBusiness size={16} className="text-emerald-600" />
+                            <span>{roleText}</span>
+                            {commentText && <span className="text-xs text-slate-500 italic">- {commentText}</span>}
+                          </div>
+                        );
+                      })
                     ) : (
                       <p className="text-slate-500">No core roles configured.</p>
                     )}
