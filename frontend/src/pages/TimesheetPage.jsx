@@ -800,7 +800,7 @@ export default function TimesheetPage() {
               }`}>
                 This timesheet has been {timesheet.status}. {timesheet.status === 'submitted' ? 'It is pending approval.' : ''}
                 {timesheet.status === 'rejected' ? ' You can create a new timesheet for this month.' : ''}
-                {timesheet.status !== 'draft' && ' Editing is disabled.'}
+                {(timesheet.status === 'approved' || timesheet.status === 'rejected') && ' Editing is disabled.'}
               </p>
             </div>
           </div>

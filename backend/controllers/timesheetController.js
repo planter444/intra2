@@ -191,8 +191,8 @@ const updateTimesheet = async (req, res, next) => {
       return res.status(404).json({ message: 'Timesheet not found' });
     }
 
-    if (userTimesheet && userTimesheet.status !== 'draft') {
-      return res.status(400).json({ message: 'Cannot update a submitted timesheet' });
+    if (userTimesheet && (userTimesheet.status === 'approved' || userTimesheet.status === 'rejected')) {
+      return res.status(400).json({ message: 'Cannot update an approved or rejected timesheet' });
     }
 
     const updates = {};
