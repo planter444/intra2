@@ -52,7 +52,7 @@ export default function TimesheetsListPage() {
     };
     return (
       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[status] || styles.draft}`}>
-        {status?.charAt(0).toUpperCase() + status?.slice(1) || 'Draft'}
+        {status ? String(status).charAt(0).toUpperCase() + String(status).slice(1) : 'Draft'}
       </span>
     );
   };
