@@ -97,7 +97,7 @@ const updateTimesheet = async (id, updates) => {
   }
 
   fields.push(`updated_at = CURRENT_TIMESTAMP`);
-  values.push(id);
+  values.push(parseInt(id));
   paramCount++;
 
   const result = await query(
@@ -108,8 +108,8 @@ const updateTimesheet = async (id, updates) => {
 };
 
 const listTimesheets = async ({ userId, status, month, year, supervisorId } = {}) => {
-  let queryText = `SELECT t.*, u.full_name as employee_name, u.position_title, 
-                  s.full_name as supervisor_name 
+  let queryText = `SELECT t.*, u.first_name || ' ' || u.last_name as employee_name, u.position_title, 
+                  s.first_name || ' ' || s.last_name as supervisor_name 
                   FROM ${TABLE_NAME} t 
                   LEFT JOIN users u ON t.user_id = u.id 
                   LEFT JOIN users s ON t.supervisor_id = s.id WHERE 1=1`;
