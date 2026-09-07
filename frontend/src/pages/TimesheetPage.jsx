@@ -161,7 +161,9 @@ export default function TimesheetPage() {
   const loadTimesheet = async () => {
     try {
       setLoading(true);
+      console.log('Loading timesheet with ID:', id);
       const data = await getTimesheet(id);
+      console.log('Timesheet data loaded:', data);
       if (!data) {
         setNotice({
           open: true,
@@ -176,9 +178,15 @@ export default function TimesheetPage() {
       setYear(data.year || year || new Date().getFullYear());
       setSelectedPartners(data.partners || []);
       setDailyEntries(data.daily_entries || {});
-      setEmployeeSignature(data.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '');
+      const loadedEmployeeSig = data.employee_signature || localStorage.getItem(`employeeSignature_${user?.id}`) || '';
+      const loadedSupervisorSig = data.supervisor_signature || localStorage.getItem(`supervisorSignature_${user?.id}`) || '';
+      console.log('Loaded employee signature:', loadedEmployeeSig ? 'Yes' : 'No');
+      console.log('Loaded supervisor signature:', loadedSupervisorSig ? 'Yes' : 'No');
+      setEmployeeSignature(loadedEmployeeSig);
+      setSupervisorSignature(loadedSupervisorSig);
     } catch (error) {
       console.error('Failed to load timesheet:', error);
+      console.error('Error response:', error.response?.data);
       setNotice({
         open: true,
         title: 'Error',

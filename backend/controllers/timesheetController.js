@@ -51,8 +51,10 @@ const calculateLevelOfEffort = (totalHours, month, year) => {
 
 const createTimesheet = async (req, res, next) => {
   try {
-    const { month, year, partners, dailyEntries, totalHours, levelOfEffort } = req.body;
+    const { month, year, partners, dailyEntries, totalHours, levelOfEffort, employeeSignature, supervisorSignature } = req.body;
     const userId = req.user.id;
+
+    console.log('createTimesheet called with:', { userId, month, year, partnersCount: partners?.length });
 
     if (!month || !year) {
       return res.status(400).json({ message: 'Month and year are required' });
@@ -63,6 +65,9 @@ const createTimesheet = async (req, res, next) => {
       month: parseInt(month), 
       year: parseInt(year) 
     });
+    
+    console.log('Existing timesheet found:', existing ? `ID ${existing.id}` : 'None');
+    
     if (existing) {
       // Update existing timesheet instead of creating new one
       const calculatedTotalHours = calculateTotalHours(dailyEntries);
@@ -72,10 +77,14 @@ const createTimesheet = async (req, res, next) => {
         partners: Array.isArray(partners) ? partners : [],
         dailyEntries: dailyEntries && typeof dailyEntries === 'object' ? dailyEntries : {},
         totalHours: parseFloat(totalHours) || 0,
-        levelOfEffort: parseFloat(levelOfEffort) || 0
+        levelOfEffort: parseFloat(levelOfEffort) || 0,
+        employeeSignature,
+        supervisorSignature
       };
       
+      console.log('Updating existing timesheet with:', updates);
       const updated = await timesheetModel.updateTimesheet(parseInt(existing.id), updates);
+      console.log('Updated timesheet:', updated);
       
       await logAction({
         actorUserId: req.user.id,
@@ -102,9 +111,13 @@ const createTimesheet = async (req, res, next) => {
       dailyEntries
     });
 
+    console.log('Created new timesheet with ID:', timesheet.id);
+
     await timesheetModel.updateTimesheet(timesheet.id, {
       totalHours: totalHours || calculatedTotalHours,
-      levelOfEffort: levelOfEffort || calculatedLevelOfEffort
+      levelOfEffort: levelOfEffort || calculatedLevelOfEffort,
+      employeeSignature,
+      supervisorSignature
     });
 
     await logAction({
@@ -120,6 +133,7 @@ const createTimesheet = async (req, res, next) => {
 
     res.json({ timesheet });
   } catch (error) {
+    console.error('Error in createTimesheet:', error);
     next(error);
   }
 };
