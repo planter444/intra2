@@ -139,8 +139,13 @@ const listTimesheets = async ({ userId, status, month, year, supervisorId } = {}
     paramCount++;
   }
   if (status) {
-    queryText += ` AND t.status = $${paramCount}`;
-    params.push(status);
+    if (Array.isArray(status)) {
+      queryText += ` AND t.status = ANY($${paramCount})`;
+      params.push(status);
+    } else {
+      queryText += ` AND t.status = $${paramCount}`;
+      params.push(status);
+    }
     paramCount++;
   }
   if (month) {
