@@ -86,12 +86,13 @@ export default function TimesheetPage() {
 
   const initializeDailyEntries = () => {
     const entries = {};
-    for (let day = 1; day <= daysInMonth; day++) {
+    const days = daysInMonth || 31;
+    for (let day = 1; day <= days; day++) {
       entries[day] = {
         hours: 0,
         partnerHours: {},
         absence: null,
-        isWeekend: isWeekend(day, month, year)
+        isWeekend: isWeekend(day, month || 1, year || new Date().getFullYear())
       };
     }
     setDailyEntries(entries);
@@ -372,7 +373,7 @@ export default function TimesheetPage() {
             </tr>
           </thead>
           <tbody>
-            ${Array.from({ length: daysInMonth }, (_, i) => {
+            ${Array.from({ length: daysInMonth || 31 }, (_, i) => {
               const day = i + 1;
               const entry = dailyEntries[day] || {};
               const dayOfWeek = getDayOfWeek(day, month, year);
@@ -639,7 +640,7 @@ export default function TimesheetPage() {
               </tr>
             </thead>
             <tbody>
-              {Array.from({ length: daysInMonth }, (_, i) => {
+              {Array.from({ length: daysInMonth || 31 }, (_, i) => {
                 const day = i + 1;
                 const entry = dailyEntries[day] || {};
                 const dayOfWeek = getDayOfWeek(day, month, year);

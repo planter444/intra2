@@ -98,7 +98,7 @@ export default function AppLayout({ children }) {
     const configuredItems = settings?.navigation?.[user?.role] || [];
     const restrictedItems = user?.role === 'admin' ? [] : ['audit'];
     const navItems = [...new Set([...fallbackItems, ...configuredItems])].filter((key) => !restrictedItems.includes(key));
-    return navItems.map((key) => ({
+    return (navItems || []).map((key) => ({
       key,
       label: user?.role === 'supervisor' && key === 'employees'
         ? 'My Team'
@@ -172,7 +172,7 @@ export default function AppLayout({ children }) {
           const legacySeenIds = JSON.parse(localStorage.getItem(SEEN_DOCUMENT_IDS_KEY) || '[]');
           const seenDocumentIds = new Set((Array.isArray(scopedSeenIds) ? scopedSeenIds : legacySeenIds).map(String));
           setDocumentNotificationCount(
-            documents.filter((document) => document.folderType !== 'branding' && document.folderType !== 'profile')
+            (documents || []).filter((document) => document.folderType !== 'branding' && document.folderType !== 'profile')
               .filter((document) => String(document.uploadedBy) !== String(user?.id) && !seenDocumentIds.has(String(document.id))).length
           );
         })
@@ -375,7 +375,7 @@ export default function AppLayout({ children }) {
           </div>
 
           <nav className="mt-8 space-y-2 md:min-h-0 md:flex-1 md:overflow-y-auto md:pr-1">
-            {navigation.map((item) => {
+            {(navigation || []).map((item) => {
               const Icon = iconMap[item.key] || User;
 
               return (

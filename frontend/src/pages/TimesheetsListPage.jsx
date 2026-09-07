@@ -19,7 +19,7 @@ export default function TimesheetsListPage() {
   const [filterMonth, setFilterMonth] = useState('');
   const [filterYear, setFilterYear] = useState('');
 
-  const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || settings?.timesheet?.supervisors?.includes(String(user?.id));
+  const isSupervisor = user?.role === 'admin' || user?.role === 'ceo' || (settings?.timesheet?.supervisors || []).includes(String(user?.id));
 
   useEffect(() => {
     loadTimesheets();
@@ -34,9 +34,10 @@ export default function TimesheetsListPage() {
       if (filterYear) params.year = filterYear;
       
       const data = await listTimesheets(params);
-      setTimesheets(data);
+      setTimesheets(data || []);
     } catch (error) {
       console.error('Failed to load timesheets:', error);
+      setTimesheets([]);
     } finally {
       setLoading(false);
     }
@@ -62,15 +63,15 @@ export default function TimesheetsListPage() {
       label: 'Employee',
       render: (value, row) => (
         <div>
-          <div className="font-medium text-slate-900">{value}</div>
-          <div className="text-xs text-slate-500">{row.position_title}</div>
+          <div className="font-medium text-slate-900">{value || '-'}</div>
+          <div className="text-xs text-slate-500">{row?.position_title || '-'}</div>
         </div>
       )
     },
     {
       key: 'period',
       label: 'Period',
-      render: (value, row) => `${row.month}/${row.year}`
+      render: (value, row) => `${row?.month || 1}/${row?.year || new Date().getFullYear()}`
     },
     {
       key: 'total_hours',
@@ -87,7 +88,7 @@ export default function TimesheetsListPage() {
       label: 'Level of Effort',
       render: (value) => (
         <div className="flex items-center gap-2">
-          <span className={`font-medium ${parseFloat(value) >= 90 ? 'text-emerald-600' : parseFloat(value) >= 70 ? 'text-amber-600' : 'text-rose-600'}`}>
+          <span className={`font-medium ${parseFloat(value || 0) >= 90 ? 'text-emerald-600' : parseFloat(value || 0) >= 70 ? 'text-amber-600' : 'text-rose-600'}`}>
             {value || 0}%
           </span>
         </div>
@@ -109,7 +110,7 @@ export default function TimesheetsListPage() {
       render: (value, row) => (
         <div className="flex gap-2">
           <Link
-            to={`/timesheets/${row.id}`}
+            to={`/timesheets/${row?.id}`}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200"
           >
             <FileText size={14} /> View
@@ -189,12 +190,15 @@ export default function TimesheetsListPage() {
       </SectionCard>
 
       <SectionCard style={{ ...cardStyle, ...animationStyle }}>
-        <DataTable
-          columns={columns}
-          data={timesheets}
-          loading={loading}
-          emptyMessage="No timesheets found"
-        />
+        {loading ? (
+          <div className="py-8 text-center text-slate-500">Loading timesheets...</div>
+        ) : (
+          <DataTable
+            columns={columns}
+            rows={timesheets || []}
+            emptyLabel="No timesheets found"
+          />
+        )}
       </SectionCard>
     </div>
   );
