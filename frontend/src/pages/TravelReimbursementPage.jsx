@@ -210,7 +210,7 @@ export default function TravelReimbursementPage() {
   useEffect(() => {
     console.log('Calculation triggered:', { designation: form.designation, category: form.travelCategory, startDate: form.startDate, endDate: form.endDate, settings });
 
-    if (form.designation && form.travelCategory && form.startDate && form.endDate) {
+    if (form.travelCategory && form.startDate && form.endDate) {
       const needsTravelType = form.travelCategory === 'Within Kenya';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
 
@@ -266,7 +266,7 @@ export default function TravelReimbursementPage() {
         }));
       }
     }
-  }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
+  }, [form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
 
   const loadSettings = async () => {
     try {

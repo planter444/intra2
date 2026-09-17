@@ -1107,11 +1107,33 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">DSA:</span>
-                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {((request.dsaProvided ? 0 : request.dsaAmount) || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(() => {
+                          const dsaAmount = (request.dsaProvided ? 0 : request.dsaAmount) || 0;
+                          if (dsaAmount > 0) return dsaAmount.toLocaleString();
+                          // Fallback calculation
+                          if (!request.startDate || !request.endDate) return '0';
+                          const rate = request.travelCategory === 'Within Kenya' ? 2000 :
+                                      request.travelCategory === 'East Africa' ? 40 :
+                                      request.travelCategory === 'International' ? 50 : 0;
+                          const start = new Date(request.startDate);
+                          const end = new Date(request.endDate);
+                          const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                          return ((diffDays + 1) * rate).toLocaleString();
+                        })()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Accommodation:</span>
-                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {((request.accommodationProvided ? 0 : request.accommodationAmount) || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {(() => {
+                          const accommodationAmount = (request.accommodationProvided ? 0 : request.accommodationAmount) || 0;
+                          if (accommodationAmount > 0) return accommodationAmount.toLocaleString();
+                          // Fallback calculation
+                          if (!request.startDate || !request.endDate) return '0';
+                          const rate = 4000;
+                          const start = new Date(request.startDate);
+                          const end = new Date(request.endDate);
+                          const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                          return (nights * rate).toLocaleString();
+                        })()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Transportation Cost Incurred:</span>
@@ -1124,12 +1146,39 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
-                          {request.currency || 'KES'} {(
-                            ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                            ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                            (request.transportationCost || 0) +
-                            (request.estimatedCost || 0)
-                          ).toLocaleString()}
+                          {request.currency || 'KES'} {(() => {
+                            const dsaAmount = (request.dsaProvided ? 0 : request.dsaAmount) || 0;
+                            const accommodationAmount = (request.accommodationProvided ? 0 : request.accommodationAmount) || 0;
+
+                            // Fallback DSA calculation
+                            const effectiveDSA = dsaAmount > 0 ? dsaAmount : (() => {
+                              if (!request.startDate || !request.endDate) return 0;
+                              const rate = request.travelCategory === 'Within Kenya' ? 2000 :
+                                          request.travelCategory === 'East Africa' ? 40 :
+                                          request.travelCategory === 'International' ? 50 : 0;
+                              const start = new Date(request.startDate);
+                              const end = new Date(request.endDate);
+                              const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                              return (diffDays + 1) * rate;
+                            })();
+
+                            // Fallback accommodation calculation
+                            const effectiveAccommodation = accommodationAmount > 0 ? accommodationAmount : (() => {
+                              if (!request.startDate || !request.endDate) return 0;
+                              const rate = 4000;
+                              const start = new Date(request.startDate);
+                              const end = new Date(request.endDate);
+                              const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                              return nights * rate;
+                            })();
+
+                            return (
+                              effectiveDSA +
+                              effectiveAccommodation +
+                              (request.transportationCost || 0) +
+                              (request.estimatedCost || 0)
+                            ).toLocaleString();
+                          })()}
                         </span>
                       </div>
                     </div>
