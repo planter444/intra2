@@ -29,26 +29,12 @@ export default function LocalMovementReimbursementPage() {
     receipts: [],
     referenceNumber: '',
     fullDayEvent: false,
-    dsaProvided: false,
-    dsaRate: 0,
-    dsaCurrency: 'KES',
-    dsaAmount: 0
+    dsaProvided: false
   });
 
   useEffect(() => {
     loadSettings();
   }, []);
-
-  // Calculate DSA when fullDayEvent changes
-  useEffect(() => {
-    const dsaRate = form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0;
-    setForm(prev => ({
-      ...prev,
-      dsaRate: dsaRate,
-      dsaCurrency: 'KES',
-      dsaAmount: dsaRate
-    }));
-  }, [form.fullDayEvent, settings]);
 
   const loadSettings = async () => {
     try {
@@ -79,6 +65,9 @@ export default function LocalMovementReimbursementPage() {
         dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
         dsaCurrency: 'KES',
         dsaAmount: dsaAmount,
+        accommodationRate: 0,
+        accommodationCurrency: 'KES',
+        accommodationAmount: 0,
         dsaProvided: form.dsaProvided,
         fullDayEvent: form.fullDayEvent,
         receipts: receipts.map(r => ({

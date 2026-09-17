@@ -28,29 +28,12 @@ export default function LocalMovementBookingPage() {
     reason: '',
     supportingDocuments: [],
     referenceNumber: '',
-    fullDayEvent: false,
-    dsaRate: 0,
-    dsaCurrency: 'KES',
-    dsaAmount: 0
+    fullDayEvent: false
   });
 
   useEffect(() => {
     loadSettings();
   }, []);
-
-  // Calculate total cost when fullDayEvent or estimatedCost changes
-  useEffect(() => {
-    const baseCost = parseFloat(form.estimatedCost) || 0;
-    const dsaAmount = form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0;
-    const totalCost = baseCost + dsaAmount;
-
-    setForm(prev => ({
-      ...prev,
-      dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
-      dsaCurrency: 'KES',
-      dsaAmount: dsaAmount
-    }));
-  }, [form.fullDayEvent, form.estimatedCost, settings]);
 
   const loadSettings = async () => {
     try {
@@ -80,6 +63,9 @@ export default function LocalMovementBookingPage() {
         dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
         dsaCurrency: 'KES',
         dsaAmount: dsaAmount,
+        accommodationRate: 0,
+        accommodationCurrency: 'KES',
+        accommodationAmount: 0,
         fullDayEvent: form.fullDayEvent,
         supportingDocuments: documents.map(doc => doc.name)
       };

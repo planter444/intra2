@@ -155,6 +155,10 @@ export default function TravelDetailPage() {
             dsaRate = 2000;
             dsaCurrency = 'KES';
             calculatedDSAAmount = dsaRate; // Per event, not per day
+          } else {
+            dsaRate = 0;
+            dsaCurrency = 'KES';
+            calculatedDSAAmount = 0;
           }
         } else if (editForm.travelCategory === 'Within Kenya') {
           dsaRate = 2000;
@@ -177,8 +181,12 @@ export default function TravelDetailPage() {
         }
       }
 
-      // Calculate accommodation - NOT for Local Movement
-      if (editForm.travelCategory && editForm.travelCategory !== 'Local Movement' && editForm.startDate && editForm.endDate) {
+      // Calculate accommodation - NOT for Local Movement (always zero for Local Movement)
+      if (editForm.travelCategory === 'Local Movement') {
+        accommodationRate = 0;
+        accommodationCurrency = 'KES';
+        calculatedAccommodationAmount = 0;
+      } else if (editForm.travelCategory && editForm.startDate && editForm.endDate) {
         accommodationRate = 4000;
         accommodationCurrency = 'KES';
 
@@ -751,28 +759,74 @@ export default function TravelDetailPage() {
                 </div>
               )}
 
-              {/* DSA Provided Checkbox in Edit Mode */}
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <label className="flex cursor-pointer items-start gap-3">
-                  <input
-                    type="checkbox"
-                    checked={editForm.dsaProvided || false}
-                    onChange={(e) => setEditForm({ ...editForm, dsaProvided: e.target.checked })}
-                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
-                    <p className="mt-1 text-xs text-slate-600">
-                      {editForm.dsaProvided
-                        ? 'DSA will be excluded from the total reimbursement amount.'
-                        : 'DSA will be included in the total reimbursement amount.'}
-                    </p>
-                  </div>
-                </label>
-              </div>
+              {/* Full Day Event Checkbox (only for Local Movement) */}
+              {editForm.travelCategory === 'Local Movement' && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={editForm.fullDayEvent || false}
+                      onChange={(e) => setEditForm({ ...editForm, fullDayEvent: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-slate-900">Full day event</span>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {editForm.fullDayEvent
+                          ? 'DSA of KES 2,000 will be included for this full day event.'
+                          : 'No DSA will be included (not a full day event). Only transportation cost.'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
 
-              {/* Accommodation Provided Checkbox in Edit Mode - NOT for Local Movement */}
-              {editForm.travelCategory !== 'Local Movement' && (
+              {/* DSA Provided Checkbox in Edit Mode - Only for Reimbursement and Official Travel */}
+              {editForm.travelType === 'reimbursement' && editForm.travelCategory !== 'Local Movement' && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={editForm.dsaProvided || false}
+                      onChange={(e) => setEditForm({ ...editForm, dsaProvided: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {editForm.dsaProvided
+                          ? 'DSA will be excluded from the total reimbursement amount.'
+                          : 'DSA will be included in the total reimbursement amount.'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* DSA Provided Checkbox for Local Movement Reimbursement */}
+              {editForm.travelType === 'reimbursement' && editForm.travelCategory === 'Local Movement' && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={editForm.dsaProvided || false}
+                      onChange={(e) => setEditForm({ ...editForm, dsaProvided: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {editForm.dsaProvided
+                          ? 'DSA will be excluded from the total reimbursement amount.'
+                          : 'DSA will be included in the total reimbursement amount.'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Accommodation Provided Checkbox in Edit Mode - Only for Official Travel Reimbursement */}
+              {editForm.travelType === 'reimbursement' && editForm.travelCategory !== 'Local Movement' && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
