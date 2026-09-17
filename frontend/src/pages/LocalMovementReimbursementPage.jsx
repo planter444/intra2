@@ -77,13 +77,16 @@ export default function LocalMovementReimbursementPage() {
 
       // Upload receipts after creating the request
       if (receipts.length > 0) {
+        console.log('Uploading receipts...');
         for (const receipt of receipts) {
           if (receipt.file) {
             try {
+              console.log('Uploading receipt:', receipt.name);
               await uploadTravelReceipt({
                 receipt: receipt.file,
                 travelRequestId: request.id
               });
+              console.log('Receipt uploaded successfully');
             } catch (receiptError) {
               console.error('Failed to upload receipt:', receiptError);
             }

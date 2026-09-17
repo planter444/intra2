@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { createTravelRequest } from '../services/travelService';
+import { createTravelRequest, updateTravelRequest } from '../services/travelService';
 import { uploadDocument } from '../services/documentService';
 import { fetchSettings } from '../services/settingsService';
 
@@ -77,20 +77,16 @@ export default function LocalMovementBookingPage() {
       // Upload supporting document after creating the request
       if (documents.length > 0 && documents[0].file) {
         try {
+          console.log('Uploading supporting document...');
           const document = await uploadDocument({
             file: documents[0].file,
             folderType: 'travel'
           });
+          console.log('Document uploaded:', document);
           // Update the travel request with the supporting document ID
-          const token = localStorage.getItem('token');
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests/${request.id}`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ supportingDocumentId: document.id })
-          });
+          console.log('Updating travel request with document ID:', document.id);
+          await updateTravelRequest(request.id, { supportingDocumentId: document.id });
+          console.log('Travel request updated successfully');
         } catch (docError) {
           console.error('Failed to upload supporting document:', docError);
         }
