@@ -369,19 +369,30 @@ export default function TravelPage() {
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             {request.currency || 'KES'} {(
-                              ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                              ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                              (request.transportationCost || 0) +
-                              (request.estimatedCost || 0)
+                              isLocalMovement(request)
+                                ? (
+                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                                  (request.transportationCost || 0)
+                                ) // For local movement reimbursement: DSA + transportation
+                                : (
+                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                                  ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                                  (request.transportationCost || 0) +
+                                  (request.estimatedCost || 0)
+                                )
                             ).toLocaleString()}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             {request.currency || 'KES'} {(
-                              ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                              ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                              (request.estimatedCost || 0)
+                              isLocalMovement(request)
+                                ? (request.estimatedCost || 0) // For local movement, estimatedCost is already the total
+                                : (
+                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                                  ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                                  (request.estimatedCost || 0)
+                                )
                             ).toLocaleString()}
                           </span>
                         )}
@@ -490,19 +501,30 @@ export default function TravelPage() {
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
                             {request.currency || 'KES'} {(
-                              ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                              ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                              (request.transportationCost || 0) +
-                              (request.estimatedCost || 0)
+                              isLocalMovement(request)
+                                ? (
+                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                                  (request.transportationCost || 0)
+                                ) // For local movement reimbursement: DSA + transportation
+                                : (
+                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                                  ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                                  (request.transportationCost || 0) +
+                                  (request.estimatedCost || 0)
+                                )
                             ).toLocaleString()}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
                             {request.currency || 'KES'} {(
-                              ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                              ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                              (request.estimatedCost || 0)
+                              isLocalMovement(request)
+                                ? (request.estimatedCost || 0) // For local movement, estimatedCost is already the total
+                                : (
+                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                                  ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                                  (request.estimatedCost || 0)
+                                )
                             ).toLocaleString()}
                           </span>
                         )}
