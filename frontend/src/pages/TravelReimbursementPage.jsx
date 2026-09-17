@@ -454,19 +454,19 @@ export default function TravelReimbursementPage() {
                 )}
               </h4>
               <p className="mb-3 text-xs text-slate-600">
-                {form.dsaProvided 
-                  ? 'DSA was provided during travel and will not be reimbursed.' 
+                {form.dsaProvided
+                  ? 'DSA was provided during travel and will not be reimbursed.'
                   : 'Covers accommodation, meals, and incidental costs - included in reimbursement.'}
               </p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
-                  <span className="font-medium text-slate-900">{form.dsaRate || 'Calculating...'} {form.dsaCurrency}</span>
+                  <span className="font-medium text-slate-900">{form.dsaRate !== '' ? form.dsaRate.toLocaleString() : '0.00'} {form.dsaCurrency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total DSA:</span>
                   <span className={`font-semibold ${form.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
-                    {form.dsaAmount || 'Calculating...'} {form.dsaCurrency}
+                    {form.dsaAmount !== '' ? form.dsaAmount.toLocaleString() : '0.00'} {form.dsaCurrency}
                   </span>
                 </div>
               </div>
@@ -508,19 +508,19 @@ export default function TravelReimbursementPage() {
                 )}
               </h4>
               <p className="mb-3 text-xs text-slate-600">
-                {form.accommodationProvided 
-                  ? 'Accommodation was provided during travel and will not be reimbursed.' 
+                {form.accommodationProvided
+                  ? 'Accommodation was provided during travel and will not be reimbursed.'
                   : 'Accommodation allowance per night - included in reimbursement.'}
               </p>
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
-                  <span className="font-medium text-slate-900">{form.accommodationRate || 'Calculating...'} {form.accommodationCurrency}</span>
+                  <span className="font-medium text-slate-900">{form.accommodationRate !== '' ? form.accommodationRate.toLocaleString() : '0.00'} {form.accommodationCurrency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total Accommodation:</span>
                   <span className={`font-semibold ${form.accommodationProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
-                    {form.accommodationAmount || 'Calculating...'} {form.accommodationCurrency}
+                    {form.accommodationAmount !== '' ? form.accommodationAmount.toLocaleString() : '0.00'} {form.accommodationCurrency}
                   </span>
                 </div>
               </div>
@@ -583,7 +583,7 @@ export default function TravelReimbursementPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Total Cost for Reimbursement (Optional)</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Other Costs (Optional)</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 {form.currency === 'KES' ? 'KES' : form.currency}
@@ -596,7 +596,7 @@ export default function TravelReimbursementPage() {
                 className="bg-slate-50 pl-16"
               />
             </div>
-            <p className="mt-1 text-xs text-slate-500">Total amount to be reimbursed (includes all expenses). Leave blank if calculating from individual components.</p>
+            <p className="mt-1 text-xs text-slate-500">Any additional costs not covered by DSA, accommodation, or transportation. Leave blank if none.</p>
           </div>
 
           {/* DSA Section */}

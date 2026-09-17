@@ -364,6 +364,12 @@ export default function TravelPage() {
                           </span>
                         ) : (
                           <>
+                            {request.estimatedCost && parseFloat(request.estimatedCost) > 0 && (
+                              <span className="flex items-center gap-1.5">
+                                <DollarSign size={10} className="sm:size-10" />
+                                Est. Transport: {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                              </span>
+                            )}
                             {request.accommodationAmount && parseFloat(request.accommodationAmount) > 0 && (
                               <span className="flex items-center gap-1.5">
                                 <DollarSign size={10} className="sm:size-10" />

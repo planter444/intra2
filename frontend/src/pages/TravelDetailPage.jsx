@@ -142,26 +142,74 @@ export default function TravelDetailPage() {
 
   const handleUpdate = async () => {
     try {
-      // For reimbursement requests, use the stored values and recalculate based on new dates
-      // For booking requests, calculate from settings
-      let dsaRate, calculatedDSAAmount, accommodationRate, accommodationCurrency, calculatedAccommodationAmount;
-      
-      if (request.travelType === 'reimbursement') {
-        // Use existing rates from the request
-        dsaRate = request.dsaRate || 0;
-        calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, dsaRate);
-        accommodationRate = request.accommodationRate || 0;
-        accommodationCurrency = request.accommodationCurrency || 'KES';
-        calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
-      } else {
-        // Calculate from settings for booking requests
-        dsaRate = request.dsaRate || settings?.travel?.dsa?.rate || 0;
-        calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, dsaRate);
-        accommodationRate = request.accommodationRate || settings?.travel?.accommodation?.rate || 4000;
-        accommodationCurrency = request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES';
-        calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
+      // Calculate DSA and accommodation from settings for both booking and reimbursement
+      // This ensures consistency with the application page
+      let dsaRate = 0, dsaCurrency = 'KES', calculatedDSAAmount = 0;
+      let accommodationRate = 0, accommodationCurrency = 'KES', calculatedAccommodationAmount = 0;
+
+      // Calculate DSA using the same logic as the application page
+      if (editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && settings) {
+        const needsTravelType = editForm.travelCategory === 'Within Kenya';
+        const hasRequiredFields = needsTravelType ? editForm.travelTypeDetail : true;
+
+        if (hasRequiredFields) {
+          // Use the same getDSARate logic from TravelReimbursementPage
+          const dsaMode = settings?.travel?.dsa?.mode || 'standard';
+          const dsaSettings = settings?.travel?.dsa;
+
+          if (dsaMode === 'standard') {
+            const applicableTo = dsaSettings?.applicableTo || ['all'];
+            const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+
+            if (isApplicable) {
+              if (editForm.travelCategory === 'Within Kenya') {
+                dsaRate = dsaSettings?.kenyaRate || 2000;
+                dsaCurrency = dsaSettings?.kenyaCurrency || 'KES';
+              } else if (editForm.travelCategory === 'East Africa') {
+                dsaRate = dsaSettings?.eastAfricaRate || 40;
+                dsaCurrency = dsaSettings?.eastAfricaCurrency || 'USD';
+              } else if (editForm.travelCategory === 'International') {
+                dsaRate = dsaSettings?.internationalRate || 50;
+                dsaCurrency = dsaSettings?.internationalCurrency || 'USD';
+              }
+            }
+          }
+
+          // Calculate DSA amount
+          if (dsaRate > 0) {
+            const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
+            const start = new Date(editForm.startDate);
+            const end = new Date(editForm.endDate);
+            const diffTime = end - start;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (calculationBasis === 'nights') {
+              calculatedDSAAmount = diffDays * dsaRate;
+            } else {
+              calculatedDSAAmount = (diffDays + 1) * dsaRate;
+            }
+          }
+        }
+
+        // Calculate accommodation
+        const accommodationSettings = settings?.travel?.accommodation;
+        if (accommodationSettings?.enabled && accommodationSettings?.rate) {
+          const applicableTo = accommodationSettings?.applicableTo || ['all'];
+          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+
+          if (isApplicable) {
+            accommodationRate = accommodationSettings.rate;
+            accommodationCurrency = accommodationSettings.currency || 'KES';
+
+            const start = new Date(editForm.startDate);
+            const end = new Date(editForm.endDate);
+            const diffTime = end - start;
+            const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            calculatedAccommodationAmount = nights * accommodationRate;
+          }
+        }
       }
-      
+
       const updateData = {
         startDate: editForm.startDate,
         endDate: editForm.endDate,
@@ -174,7 +222,7 @@ export default function TravelDetailPage() {
         travelTypeDetail: editForm.travelTypeDetail,
         projectProgramme: editForm.projectProgramme,
         dsaRate: dsaRate,
-        dsaCurrency: request.dsaCurrency || 'KES',
+        dsaCurrency: dsaCurrency,
         dsaAmount: calculatedDSAAmount,
         dsaProvided: editForm.dsaProvided || false,
         accommodationRate: accommodationRate,
@@ -183,10 +231,10 @@ export default function TravelDetailPage() {
         accommodationProvided: editForm.accommodationProvided || false,
         transportationCost: editForm.transportationCost || null
       };
-      
+
       console.log('Sending update data:', updateData);
       console.log('Calculated DSA:', calculatedDSAAmount, 'Calculated Accommodation:', calculatedAccommodationAmount);
-      
+
       await updateTravelRequest(id, updateData);
       setEditMode(false);
       setNotice({
@@ -600,7 +648,7 @@ export default function TravelDetailPage() {
               </div>
 
               {/* DSA Calculation in Edit Mode */}
-              {(request.dsaRate || request.travelType === 'reimbursement') && (
+              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && settings && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-emerald-900">
                     <DollarSign size={18} />
@@ -609,7 +657,25 @@ export default function TravelDetailPage() {
                   <div className="grid gap-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-600">Rate:</span>
-                      <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {request.dsaRate?.toLocaleString() || (request.travelType === 'reimbursement' ? '2000' : 'Calculating...')}</span>
+                      <span className="font-medium text-slate-900">
+                        {(() => {
+                          const dsaMode = settings?.travel?.dsa?.mode || 'standard';
+                          const dsaSettings = settings?.travel?.dsa;
+                          const applicableTo = dsaSettings?.applicableTo || ['all'];
+                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+
+                          if (!isApplicable) return '0.00 KES';
+
+                          if (editForm.travelCategory === 'Within Kenya') {
+                            return `${(dsaSettings?.kenyaRate || 2000).toLocaleString()} ${dsaSettings?.kenyaCurrency || 'KES'}`;
+                          } else if (editForm.travelCategory === 'East Africa') {
+                            return `${(dsaSettings?.eastAfricaRate || 40).toLocaleString()} ${dsaSettings?.eastAfricaCurrency || 'USD'}`;
+                          } else if (editForm.travelCategory === 'International') {
+                            return `${(dsaSettings?.internationalRate || 50).toLocaleString()} ${dsaSettings?.internationalCurrency || 'USD'}`;
+                          }
+                          return '0.00 KES';
+                        })()}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Number of {settings?.travel?.dsa?.calculationBasis === 'nights' ? 'Nights' : 'Days'}:</span>
@@ -624,7 +690,35 @@ export default function TravelDetailPage() {
                     <div className="flex justify-between border-t border-emerald-200 pt-2">
                       <span className="font-semibold text-slate-900">Total DSA:</span>
                       <span className="font-semibold text-emerald-700">
-                        {request.dsaCurrency || 'KES'} {calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate || (request.travelType === 'reimbursement' ? 2000 : 0)).toLocaleString()}
+                        {(() => {
+                          const dsaMode = settings?.travel?.dsa?.mode || 'standard';
+                          const dsaSettings = settings?.travel?.dsa;
+                          const applicableTo = dsaSettings?.applicableTo || ['all'];
+                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+
+                          if (!isApplicable || !editForm.startDate || !editForm.endDate) return '0.00 KES';
+
+                          let rate = 0, currency = 'KES';
+                          if (editForm.travelCategory === 'Within Kenya') {
+                            rate = dsaSettings?.kenyaRate || 2000;
+                            currency = dsaSettings?.kenyaCurrency || 'KES';
+                          } else if (editForm.travelCategory === 'East Africa') {
+                            rate = dsaSettings?.eastAfricaRate || 40;
+                            currency = dsaSettings?.eastAfricaCurrency || 'USD';
+                          } else if (editForm.travelCategory === 'International') {
+                            rate = dsaSettings?.internationalRate || 50;
+                            currency = dsaSettings?.internationalCurrency || 'USD';
+                          }
+
+                          const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
+                          const start = new Date(editForm.startDate);
+                          const end = new Date(editForm.endDate);
+                          const diffTime = end - start;
+                          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                          const amount = calculationBasis === 'nights' ? diffDays * rate : (diffDays + 1) * rate;
+                          return `${amount.toLocaleString()} ${currency}`;
+                        })()}
                       </span>
                     </div>
                   </div>
@@ -632,7 +726,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* Accommodation Calculation in Edit Mode */}
-              {(settings?.travel?.accommodation?.enabled || request.travelType === 'reimbursement') && (
+              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && settings?.travel?.accommodation?.enabled && (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-blue-900">
                     <Building2 size={18} />
@@ -642,7 +736,17 @@ export default function TravelDetailPage() {
                     <div className="flex justify-between">
                       <span className="text-slate-600">Rate per Night:</span>
                       <span className="font-medium text-slate-900">
-                        {request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES'} {request.accommodationRate?.toLocaleString() || settings?.travel?.accommodation?.rate?.toLocaleString() || (request.travelType === 'reimbursement' ? '4000' : 0)}
+                        {(() => {
+                          const accommodationSettings = settings?.travel?.accommodation;
+                          const applicableTo = accommodationSettings?.applicableTo || ['all'];
+                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+
+                          if (!isApplicable) return '0.00 KES';
+
+                          const rate = accommodationSettings?.rate || 4000;
+                          const currency = accommodationSettings?.currency || 'KES';
+                          return `${rate.toLocaleString()} ${currency}`;
+                        })()}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -656,7 +760,24 @@ export default function TravelDetailPage() {
                     <div className="flex justify-between border-t border-blue-200 pt-2">
                       <span className="font-semibold text-slate-900">Total Accommodation:</span>
                       <span className="font-semibold text-blue-700">
-                        {request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES'} {calculateAccommodationAmount(editForm.startDate, editForm.endDate).toLocaleString()}
+                        {(() => {
+                          const accommodationSettings = settings?.travel?.accommodation;
+                          const applicableTo = accommodationSettings?.applicableTo || ['all'];
+                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+
+                          if (!isApplicable || !editForm.startDate || !editForm.endDate) return '0.00 KES';
+
+                          const rate = accommodationSettings?.rate || 4000;
+                          const currency = accommodationSettings?.currency || 'KES';
+
+                          const start = new Date(editForm.startDate);
+                          const end = new Date(editForm.endDate);
+                          const diffTime = end - start;
+                          const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                          const amount = nights * rate;
+
+                          return `${amount.toLocaleString()} ${currency}`;
+                        })()}
                       </span>
                     </div>
                   </div>
@@ -863,7 +984,7 @@ export default function TravelDetailPage() {
                 <h4 className="text-sm font-semibold text-slate-900">Cost Breakdown</h4>
                 
                 {/* DSA Section */}
-                {(request.dsaAmount && request.dsaRate) || request.travelType === 'reimbursement' ? (
+                {request.travelType === 'booking' || request.travelType === 'reimbursement' ? (
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-emerald-600" />
@@ -872,11 +993,11 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate:</span>
-                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {request.dsaRate?.toLocaleString() || '0'}</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(request.dsaRate || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
-                        <span className="font-semibold text-emerald-700">{request.dsaCurrency || 'KES'} {request.dsaAmount?.toLocaleString() || '0'}</span>
+                        <span className="font-semibold text-emerald-700">{request.dsaCurrency || 'KES'} {(request.dsaAmount || 0).toLocaleString()}</span>
                       </div>
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-emerald-200 pt-2">
@@ -889,7 +1010,7 @@ export default function TravelDetailPage() {
                 ) : null}
 
                 {/* Accommodation Section */}
-                {(request.accommodationAmount && request.accommodationRate) || request.travelType === 'reimbursement' ? (
+                {request.travelType === 'booking' || request.travelType === 'reimbursement' ? (
                   <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Building2 size={16} className="text-blue-600" />
@@ -898,7 +1019,7 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate per Night:</span>
-                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {request.accommodationRate?.toLocaleString() || '0'}</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {(request.accommodationRate || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Nights:</span>
@@ -910,7 +1031,7 @@ export default function TravelDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total Accommodation:</span>
-                        <span className="font-semibold text-blue-700">{request.accommodationCurrency || 'KES'} {request.accommodationAmount?.toLocaleString() || '0'}</span>
+                        <span className="font-semibold text-blue-700">{request.accommodationCurrency || 'KES'} {(request.accommodationAmount || 0).toLocaleString()}</span>
                       </div>
                       {request.accommodationProvided && (
                         <div className="flex justify-between border-t border-blue-200 pt-2">
@@ -922,8 +1043,8 @@ export default function TravelDetailPage() {
                   </div>
                 ) : null}
 
-                {/* Transportation Cost Section */}
-                {request.transportationCost && request.travelType === 'reimbursement' ? (
+                {/* Transportation Cost Section - For Booking */}
+                {request.estimatedCost && request.travelType === 'booking' ? (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-amber-600" />
@@ -931,15 +1052,67 @@ export default function TravelDetailPage() {
                     </div>
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Transportation Cost Incurred:</span>
+                        <span className="text-slate-600">Amount:</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {request.estimatedCost.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Transportation Cost Section - For Reimbursement */}
+                {request.transportationCost && request.travelType === 'reimbursement' ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-amber-600" />
+                      <h5 className="text-sm font-semibold text-amber-900">Transportation Cost Incurred</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Amount:</span>
                         <span className="font-semibold text-amber-700">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
                 ) : null}
 
-                {/* Computed Total Cost Section for Approvers */}
-                {isApprover && (
+                {/* Computed Total Amount Section for Approvers - Booking */}
+                {isApprover && request.travelType === 'booking' && (
+                  <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-purple-600" />
+                      <h5 className="text-sm font-semibold text-purple-900">Total Amount</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">DSA:</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {((request.dsaProvided ? 0 : request.dsaAmount) || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Accommodation:</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {((request.accommodationProvided ? 0 : request.accommodationAmount) || 0).toLocaleString()}</span>
+                      </div>
+                      {request.estimatedCost && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Estimated Transportation Cost:</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {request.estimatedCost.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-purple-200 pt-2">
+                        <span className="font-semibold text-slate-900">Total:</span>
+                        <span className="font-bold text-purple-700 text-lg">
+                          {request.currency || 'KES'} {(
+                            ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                            ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                            (request.estimatedCost || 0)
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Computed Total Reimbursement Amount Section for Approvers - Reimbursement */}
+                {isApprover && request.travelType === 'reimbursement' && (
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-purple-600" />
@@ -954,37 +1127,24 @@ export default function TravelDetailPage() {
                         <span className="text-slate-600">Accommodation:</span>
                         <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {((request.accommodationProvided ? 0 : request.accommodationAmount) || 0).toLocaleString()}</span>
                       </div>
-                      {request.transportationCost && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">Transportation:</span>
-                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Transportation Cost Incurred:</span>
+                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Other Costs:</span>
+                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
+                      </div>
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
                           {request.currency || 'KES'} {(
                             ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
                             ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                            (request.transportationCost || 0)
+                            (request.transportationCost || 0) +
+                            (request.estimatedCost || 0)
                           ).toLocaleString()}
                         </span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Total Cost Section (User Entered) */}
-                {request.estimatedCost && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <DollarSign size={16} className="text-slate-600" />
-                      <h5 className="text-sm font-semibold text-slate-900">User-Entered Total Cost</h5>
-                    </div>
-                    <div className="grid gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Amount:</span>
-                        <span className="font-semibold text-slate-900">{request.currency || 'KES'} {request.estimatedCost.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
