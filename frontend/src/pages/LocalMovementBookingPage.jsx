@@ -68,17 +68,44 @@ export default function LocalMovementBookingPage() {
         accommodationCurrency: 'KES',
         accommodationAmount: 0,
         fullDayEvent: form.fullDayEvent,
-        projectProgramme: form.projectProgramme || null, // Convert empty string to null
-        supportingDocuments: documents.map(doc => ({
-          name: doc.name,
-          size: doc.size, // Use actual size in bytes
-          type: doc.file?.type || 'application/octet-stream',
-          storedName: doc.name,
-          storagePath: null
-        }))
+        projectProgramme: form.projectProgramme || null // Convert empty string to null
       };
 
-      await createTravelRequest(payload);
+      const { request } = await createTravelRequest(payload);
+
+      // Upload supporting document after creating the request
+      if (documents.length > 0 && documents[0].file) {
+        const token = localStorage.getItem('token');
+        const formData = new FormData();
+        formData.append('file', documents[0].file);
+        formData.append('folderType', 'travel');
+
+        try {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/documents/upload`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+
+          if (response.ok) {
+            const { document } = await response.json();
+            // Update the travel request with the supporting document ID
+            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests/${request.id}`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ supportingDocumentId: document.id })
+            });
+          }
+        } catch (docError) {
+          console.error('Failed to upload supporting document:', docError);
+        }
+      }
+
       setNotice({
         open: true,
         title: 'Local movement booking submitted',

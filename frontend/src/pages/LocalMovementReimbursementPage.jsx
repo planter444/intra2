@@ -70,17 +70,35 @@ export default function LocalMovementReimbursementPage() {
         accommodationAmount: 0,
         dsaProvided: form.dsaProvided,
         fullDayEvent: form.fullDayEvent,
-        projectProgramme: form.projectProgramme || null, // Convert empty string to null
-        receipts: receipts.map(r => ({
-          name: r.name,
-          size: r.size, // Use actual size in bytes
-          type: r.file?.type || 'application/octet-stream',
-          storedName: r.name,
-          storagePath: null
-        }))
+        projectProgramme: form.projectProgramme || null // Convert empty string to null
       };
 
-      await createTravelRequest(payload);
+      const { request } = await createTravelRequest(payload);
+
+      // Upload receipts after creating the request
+      if (receipts.length > 0) {
+        const token = localStorage.getItem('token');
+        for (const receipt of receipts) {
+          if (receipt.file) {
+            const formData = new FormData();
+            formData.append('receipt', receipt.file);
+            formData.append('travelRequestId', request.id);
+
+            try {
+              await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+                body: formData
+              });
+            } catch (receiptError) {
+              console.error('Failed to upload receipt:', receiptError);
+            }
+          }
+        }
+      }
+
       setNotice({
         open: true,
         title: 'Local movement reimbursement submitted',

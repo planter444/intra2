@@ -285,13 +285,6 @@ export default function TravelReimbursementPage() {
       const payload = {
         ...form,
         userId: user.id,
-        receipts: receipts.map(r => ({
-          name: r.name,
-          size: r.size,
-          type: r.file?.type || 'application/octet-stream',
-          storedName: r.name,
-          storagePath: null
-        })),
         dsaAmount: parseFloat(form.dsaAmount) || 0,
         estimatedCost: parseFloat(form.estimatedCost) || 0,
         transportationCost: parseFloat(form.transportationCost) || 0,
@@ -300,7 +293,32 @@ export default function TravelReimbursementPage() {
         accommodationProvided: form.accommodationProvided || false
       };
 
-      await createTravelRequest(payload);
+      const { request } = await createTravelRequest(payload);
+
+      // Upload receipts after creating the request
+      if (receipts.length > 0) {
+        const token = localStorage.getItem('token');
+        for (const receipt of receipts) {
+          if (receipt.file) {
+            const formData = new FormData();
+            formData.append('receipt', receipt.file);
+            formData.append('travelRequestId', request.id);
+
+            try {
+              await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                },
+                body: formData
+              });
+            } catch (receiptError) {
+              console.error('Failed to upload receipt:', receiptError);
+            }
+          }
+        }
+      }
+
       setNotice({
         open: true,
         title: 'Travel reimbursement submitted',
