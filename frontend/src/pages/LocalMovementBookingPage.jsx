@@ -27,12 +27,30 @@ export default function LocalMovementBookingPage() {
     currency: 'KES',
     reason: '',
     supportingDocuments: [],
-    referenceNumber: ''
+    referenceNumber: '',
+    fullDayEvent: false,
+    dsaRate: 0,
+    dsaCurrency: 'KES',
+    dsaAmount: 0
   });
 
   useEffect(() => {
     loadSettings();
   }, []);
+
+  // Calculate total cost when fullDayEvent or estimatedCost changes
+  useEffect(() => {
+    const baseCost = parseFloat(form.estimatedCost) || 0;
+    const dsaAmount = form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0;
+    const totalCost = baseCost + dsaAmount;
+
+    setForm(prev => ({
+      ...prev,
+      dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
+      dsaCurrency: 'KES',
+      dsaAmount: dsaAmount
+    }));
+  }, [form.fullDayEvent, form.estimatedCost, settings]);
 
   const loadSettings = async () => {
     try {
@@ -48,13 +66,21 @@ export default function LocalMovementBookingPage() {
     setLoading(true);
 
     try {
+      const baseCost = parseFloat(form.estimatedCost) || 0;
+      const dsaAmount = form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0;
+      const totalCost = baseCost + dsaAmount;
+
       const payload = {
         ...form,
         userId: user.id,
         travelCategory: 'Local Movement',
         startDate: form.travelDate,
         endDate: form.travelDate,
-        estimatedCost: parseFloat(form.estimatedCost) || 0,
+        estimatedCost: totalCost,
+        dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
+        dsaCurrency: 'KES',
+        dsaAmount: dsaAmount,
+        fullDayEvent: form.fullDayEvent,
         supportingDocuments: documents.map(doc => doc.name)
       };
 
@@ -204,6 +230,26 @@ export default function LocalMovementBookingPage() {
               className="bg-slate-50"
               required
             />
+          </div>
+
+          {/* Full Day Event Checkbox */}
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={form.fullDayEvent}
+                onChange={(e) => setForm((current) => ({ ...current, fullDayEvent: e.target.checked }))}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div>
+                <span className="text-sm font-medium text-slate-900">Full day event</span>
+                <p className="mt-1 text-xs text-slate-600">
+                  {form.fullDayEvent
+                    ? `DSA of KES ${(settings?.travel?.dsa?.localMovementRate || 2000).toLocaleString()} will be added to the estimated cost.`
+                    : 'No DSA will be included. Only the estimated transportation cost.'}
+                </p>
+              </div>
+            </label>
           </div>
 
           {/* Supporting Documents (Optional) */}

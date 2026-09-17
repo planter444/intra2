@@ -334,13 +334,15 @@ export default function TravelPage() {
                         </span>
                         <span className="text-xs text-slate-400 truncate">{request.employeeName}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
-                          request.travelCategory === 'Local Movement' 
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
-                            : request.travelType === 'booking' 
-                              ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                          request.travelCategory === 'Local Movement'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                            : request.travelType === 'booking'
+                              ? 'bg-blue-50 text-blue-600 border-blue-200'
                               : 'bg-purple-50 text-purple-600 border-purple-200'
                         } border`}>
-                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
+                          {request.travelCategory === 'Local Movement'
+                            ? (request.travelType === 'booking' ? 'Local Booking' : 'Local Reimbursement')
+                            : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
                         </span>
                       </div>
                       <h3 className="mt-2 text-base sm:text-lg font-semibold text-slate-900 truncate">
@@ -453,13 +455,15 @@ export default function TravelPage() {
                         </span>
                         <span className="text-sm text-slate-400">{request.employeeName}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
-                          request.travelCategory === 'Local Movement' 
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200' 
-                            : request.travelType === 'booking' 
-                              ? 'bg-blue-50 text-blue-600 border-blue-200' 
+                          request.travelCategory === 'Local Movement'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                            : request.travelType === 'booking'
+                              ? 'bg-blue-50 text-blue-600 border-blue-200'
                               : 'bg-purple-50 text-purple-600 border-purple-200'
                         } border`}>
-                          {request.travelCategory === 'Local Movement' ? 'Local Movement' : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
+                          {request.travelCategory === 'Local Movement'
+                            ? (request.travelType === 'booking' ? 'Local Booking' : 'Local Reimbursement')
+                            : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
                         </span>
                       </div>
                       <h3 className="mt-2 text-lg font-semibold text-slate-900">
