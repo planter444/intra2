@@ -114,6 +114,16 @@ export default function TravelDetailPage() {
       // Detect if this is local movement for edit form
       const isLocalRequest = isLocalMovement(data);
 
+      // For local movement booking, extract transportation cost from estimatedCost (which is total)
+      // For local movement reimbursement, use transportationCost directly
+      let transportationValue = data.transportationCost || '';
+      if (isLocalRequest && data.travelType === 'booking' && !data.transportationCost) {
+        // If no transportationCost stored, estimate it from estimatedCost minus DSA
+        const dsaValue = data.dsaAmount || 0;
+        const totalValue = data.estimatedCost || 0;
+        transportationValue = (totalValue - dsaValue).toString();
+      }
+
       setEditForm({
         startDate: data.startDate,
         endDate: data.endDate,
@@ -133,7 +143,7 @@ export default function TravelDetailPage() {
         accommodationCurrency: data.accommodationCurrency || 'KES',
         accommodationAmount: data.accommodationAmount || '',
         accommodationProvided: data.accommodationProvided || false,
-        transportationCost: isLocalRequest ? (data.transportationCost || data.estimatedCost || '') : (data.transportationCost || ''),
+        transportationCost: transportationValue,
         fullDayEvent: data.fullDayEvent || false
       });
       
@@ -219,10 +229,27 @@ export default function TravelDetailPage() {
         calculatedAccommodationAmount = nights * accommodationRate;
       }
 
-      // For local movement, estimatedCost should be used for other costs (not total)
-      // transportationCost should be the actual transportation cost
-      const finalEstimatedCost = isLocalMovementEdit ? 0 : (editForm.estimatedCost || null);
-      const finalTransportationCost = isLocalMovementEdit ? (editForm.transportationCost || editForm.estimatedCost || null) : (editForm.transportationCost || null);
+      // For local movement booking, estimatedCost is total (transportation + DSA)
+      // For local movement reimbursement, estimatedCost is 0
+      const isBooking = editForm.travelType === 'booking';
+      let finalEstimatedCost, finalTransportationCost;
+
+      if (isLocalMovementEdit) {
+        if (isBooking) {
+          // For booking: estimatedCost = total (transportation + DSA)
+          const transportValue = parseFloat(editForm.transportationCost || 0);
+          const dsaValue = editForm.fullDayEvent ? 2000 : 0;
+          finalEstimatedCost = transportValue + dsaValue;
+          finalTransportationCost = transportValue;
+        } else {
+          // For reimbursement: estimatedCost = 0, transportationCost = actual value
+          finalEstimatedCost = 0;
+          finalTransportationCost = editForm.transportationCost || null;
+        }
+      } else {
+        finalEstimatedCost = editForm.estimatedCost || null;
+        finalTransportationCost = editForm.transportationCost || null;
+      }
 
       const updateData = {
         startDate: editForm.startDate,
@@ -672,8 +699,8 @@ export default function TravelDetailPage() {
                 </select>
               </div>
 
-              {/* DSA Calculation in Edit Mode */}
-              {editForm.travelCategory && editForm.startDate && editForm.endDate && (
+              {/* DSA Calculation in Edit Mode - NOT for Local Movement */}
+              {editForm.travelCategory && editForm.startDate && editForm.endDate && !isLocalMovement(editForm) && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-emerald-900">
                     <DollarSign size={18} />
@@ -738,8 +765,8 @@ export default function TravelDetailPage() {
                 </div>
               )}
 
-              {/* Accommodation Calculation in Edit Mode */}
-              {editForm.travelCategory && editForm.startDate && editForm.endDate && (
+              {/* Accommodation Calculation in Edit Mode - NOT for Local Movement */}
+              {editForm.travelCategory && editForm.startDate && editForm.endDate && !isLocalMovement(editForm) && (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-blue-900">
                     <Building2 size={18} />
@@ -812,13 +839,25 @@ export default function TravelDetailPage() {
                 </div>
               )}
 
-              {/* DEBUG: Show travel category for debugging */}
-              <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-xs">
-                <p>DEBUG: travelCategory={editForm.travelCategory}</p>
-                <p>DEBUG: isLocalMovement={isLocalMovement(editForm).toString()}</p>
-                <p>DEBUG: accommodationRate={editForm.accommodationRate}</p>
-                <p>DEBUG: fullDayEvent={editForm.fullDayEvent.toString()}</p>
-              </div>
+              {/* DSA Calculation for Local Movement in Edit Mode */}
+              {isLocalMovement(editForm) && editForm.fullDayEvent && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-emerald-900">
+                    <DollarSign size={18} />
+                    DSA Calculation
+                  </h4>
+                  <div className="grid gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Rate:</span>
+                      <span className="font-medium text-slate-900">KES 2,000</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total DSA:</span>
+                      <span className="font-semibold text-emerald-700">KES 2,000</span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* DSA Provided Checkbox in Edit Mode - Only for Reimbursement and Official Travel */}
               {editForm.travelType === 'reimbursement' && !isLocalMovement(editForm) && (
@@ -893,7 +932,7 @@ export default function TravelDetailPage() {
                   <input
                     type="number"
                     className="bg-white"
-                    value={editForm.transportationCost || ''}
+                    value={isLocalMovement(editForm) ? (editForm.transportationCost || editForm.estimatedCost || '') : (editForm.transportationCost || '')}
                     onChange={(e) => setEditForm({ ...editForm, transportationCost: e.target.value })}
                     placeholder="0.00"
                   />
@@ -1147,7 +1186,9 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Amount:</span>
-                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(isLocalMovement(request) ? (request.transportationCost || 0) : (request.estimatedCost || 0)).toLocaleString()}</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(isLocalMovement(request)
+                          ? ((request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0))
+                          : (request.estimatedCost || 0)).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1209,6 +1250,12 @@ export default function TravelDetailPage() {
                           <span className="font-medium text-slate-900">{request.currency || 'KES'} {request.estimatedCost.toLocaleString()}</span>
                         </div>
                       )}
+                      {isLocalMovement(request) && request.travelType === 'booking' && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Estimated Transportation Cost:</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {((request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0)).toLocaleString()}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
@@ -1244,11 +1291,20 @@ export default function TravelDetailPage() {
                               return nights * rate;
                             })());
 
-                            const transportationValue = isLocalMovement(request)
-                              ? (request.transportationCost || 0)
-                              : (request.estimatedCost || 0);
+                            let transportationValue;
+                            if (isLocalMovement(request)) {
+                              if (request.travelType === 'booking') {
+                                // For booking: estimatedCost is total, extract transportation
+                                transportationValue = (request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0);
+                              } else {
+                                // For reimbursement: use transportationCost directly
+                                transportationValue = request.transportationCost || 0;
+                              }
+                            } else {
+                              transportationValue = request.estimatedCost || 0;
+                            }
 
-                            // For local movement, estimatedCost is not used in total (it's set to 0)
+                            // For local movement, estimatedCost is the total (transportation + DSA)
                             const otherCosts = isLocalMovement(request) ? 0 : 0;
 
                             return (
@@ -1350,10 +1406,12 @@ export default function TravelDetailPage() {
                         <span className="text-slate-600">Transportation Cost Incurred:</span>
                         <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Other Costs:</span>
-                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
-                      </div>
+                      {!isLocalMovement(request) && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Other Costs:</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
@@ -1389,11 +1447,20 @@ export default function TravelDetailPage() {
                               return nights * rate;
                             })());
 
-                            const transportationValue = isLocalMovement(request)
-                              ? (request.transportationCost || 0)
-                              : (request.estimatedCost || 0);
+                            let transportationValue;
+                            if (isLocalMovement(request)) {
+                              if (request.travelType === 'booking') {
+                                // For booking: estimatedCost is total, extract transportation
+                                transportationValue = (request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0);
+                              } else {
+                                // For reimbursement: use transportationCost directly
+                                transportationValue = request.transportationCost || 0;
+                              }
+                            } else {
+                              transportationValue = request.estimatedCost || 0;
+                            }
 
-                            // For local movement, estimatedCost is not used in total (it's set to 0)
+                            // For local movement, estimatedCost is the total (transportation + DSA)
                             const otherCosts = isLocalMovement(request) ? 0 : 0;
 
                             return (

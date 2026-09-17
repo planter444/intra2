@@ -59,7 +59,7 @@ export default function LocalMovementBookingPage() {
         travelCategory: 'Local Movement',
         startDate: form.travelDate,
         endDate: form.travelDate,
-        estimatedCost: 0, // For local movement, estimatedCost is 0 (not used for total)
+        estimatedCost: totalCost, // Store total cost for booking
         transportationCost: baseCost, // Store transportation cost separately
         dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
         dsaCurrency: 'KES',
