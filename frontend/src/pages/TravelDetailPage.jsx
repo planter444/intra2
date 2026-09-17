@@ -111,6 +111,9 @@ export default function TravelDetailPage() {
       console.log('Travel category:', data.travelCategory);
       console.log('Travel type:', data.travelType);
       setRequest(data);
+      // Detect if this is local movement for edit form
+      const isLocalRequest = isLocalMovement(data);
+
       setEditForm({
         startDate: data.startDate,
         endDate: data.endDate,
@@ -119,7 +122,7 @@ export default function TravelDetailPage() {
         reason: data.reason,
         estimatedCost: data.estimatedCost || '',
         designation: data.designation || '',
-        travelCategory: data.travelCategory || '',
+        travelCategory: isLocalRequest ? 'Local Movement' : (data.travelCategory || ''),
         travelTypeDetail: data.travelTypeDetail || '',
         projectProgramme: data.projectProgramme || '',
         dsaRate: data.dsaRate || '',
@@ -130,7 +133,7 @@ export default function TravelDetailPage() {
         accommodationCurrency: data.accommodationCurrency || 'KES',
         accommodationAmount: data.accommodationAmount || '',
         accommodationProvided: data.accommodationProvided || false,
-        transportationCost: data.transportationCost || '',
+        transportationCost: isLocalRequest ? (data.transportationCost || data.estimatedCost || '') : (data.transportationCost || ''),
         fullDayEvent: data.fullDayEvent || false
       });
       
@@ -164,8 +167,8 @@ export default function TravelDetailPage() {
       let accommodationRate = 0, accommodationCurrency = 'KES', calculatedAccommodationAmount = 0;
 
       // Calculate DSA - use travel category even if designation is empty
-      if (editForm.travelCategory && editForm.startDate && editForm.endDate) {
-        const isLocalMovementEdit = editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local';
+      if (editForm.startDate && editForm.endDate) {
+        const isLocalMovementEdit = isLocalMovement(editForm);
 
         if (isLocalMovementEdit) {
           // Only apply DSA if it's a full day event
@@ -200,12 +203,12 @@ export default function TravelDetailPage() {
       }
 
       // Calculate accommodation - NOT for Local Movement (always zero for Local Movement)
-      const isLocalMovementEdit = editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local';
+      const isLocalMovementEdit = isLocalMovement(editForm);
       if (isLocalMovementEdit) {
         accommodationRate = 0;
         accommodationCurrency = 'KES';
         calculatedAccommodationAmount = 0;
-      } else if (editForm.travelCategory && editForm.startDate && editForm.endDate) {
+      } else if (editForm.startDate && editForm.endDate) {
         accommodationRate = 4000;
         accommodationCurrency = 'KES';
 
@@ -779,7 +782,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* Full Day Event Checkbox (only for Local Movement) */}
-              {(editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local') && (
+              {isLocalMovement(editForm) && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
@@ -801,7 +804,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* DSA Provided Checkbox in Edit Mode - Only for Reimbursement and Official Travel */}
-              {editForm.travelType === 'reimbursement' && editForm.travelCategory !== 'Local Movement' && editForm.travelCategory !== 'local movement' && editForm.travelCategory !== 'Local' && (
+              {editForm.travelType === 'reimbursement' && !isLocalMovement(editForm) && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
@@ -823,7 +826,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* DSA Provided Checkbox for Local Movement Reimbursement */}
-              {editForm.travelType === 'reimbursement' && (editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local') && (
+              {editForm.travelType === 'reimbursement' && isLocalMovement(editForm) && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
@@ -845,7 +848,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* Accommodation Provided Checkbox in Edit Mode - Only for Official Travel Reimbursement */}
-              {editForm.travelType === 'reimbursement' && editForm.travelCategory !== 'Local Movement' && editForm.travelCategory !== 'local movement' && editForm.travelCategory !== 'Local' && (
+              {editForm.travelType === 'reimbursement' && !isLocalMovement(editForm) && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <label className="flex cursor-pointer items-start gap-3">
                     <input
@@ -1052,7 +1055,7 @@ export default function TravelDetailPage() {
                                       request.travelCategory === 'East Africa' ? 40 :
                                       request.travelCategory === 'International' ? 50 : 0;
                           // For Local Movement, it's per event (1 day), not calculated from dates
-                          if (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') {
+                          if (isLocalMovement(request)) {
                             return rate;
                           }
                           const start = new Date(request.startDate);
@@ -1203,7 +1206,7 @@ export default function TravelDetailPage() {
                                           request.travelCategory === 'East Africa' ? 40 :
                                           request.travelCategory === 'International' ? 50 : 0;
                               // For Local Movement, it's per event
-                              if (request.travelCategory === 'Local Movement') {
+                              if (isLocalMovement(request)) {
                                 return rate;
                               }
                               const start = new Date(request.startDate);
@@ -1224,9 +1227,14 @@ export default function TravelDetailPage() {
                               return nights * rate;
                             })());
 
+                            const transportationValue = isLocalMovement(request)
+                              ? (request.travelType === 'reimbursement' ? (request.transportationCost || 0) : (request.estimatedCost || 0))
+                              : (request.transportationCost || 0);
+
                             return (
                               effectiveDSA +
                               effectiveAccommodation +
+                              transportationValue +
                               (request.estimatedCost || 0)
                             ).toLocaleString();
                           })()}
@@ -1246,7 +1254,7 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Amount:</span>
-                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(isLocalMovement(request) ? (request.transportationCost || request.estimatedCost || 0) : (request.transportationCost || 0)).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1320,7 +1328,7 @@ export default function TravelDetailPage() {
                       )}
                       <div className="flex justify-between">
                         <span className="text-slate-600">Transportation Cost Incurred:</span>
-                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(isLocalMovement(request) ? (request.transportationCost || request.estimatedCost || 0) : (request.transportationCost || 0)).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Other Costs:</span>
@@ -1340,7 +1348,7 @@ export default function TravelDetailPage() {
                                           request.travelCategory === 'East Africa' ? 40 :
                                           request.travelCategory === 'International' ? 50 : 0;
                               // For Local Movement, it's per event
-                              if (request.travelCategory === 'Local Movement') {
+                              if (isLocalMovement(request)) {
                                 return rate;
                               }
                               const start = new Date(request.startDate);
@@ -1361,10 +1369,14 @@ export default function TravelDetailPage() {
                               return nights * rate;
                             })());
 
+                            const transportationValue = isLocalMovement(request)
+                              ? (request.transportationCost || request.estimatedCost || 0)
+                              : (request.transportationCost || 0);
+
                             return (
                               effectiveDSA +
                               effectiveAccommodation +
-                              (request.transportationCost || 0) +
+                              transportationValue +
                               (request.estimatedCost || 0)
                             ).toLocaleString();
                           })()}
