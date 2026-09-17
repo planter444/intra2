@@ -43,12 +43,20 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
     return null;
   }
 
-  const dsaMode = settings?.travel?.dsa?.mode || 'designation';
+  const dsaMode = settings?.travel?.dsa?.mode || 'standard';
+  const dsaSettings = settings?.travel?.dsa;
   console.log('DSA Mode:', dsaMode);
 
   // Standard DSA Mode - use admin-configured rates
   if (dsaMode === 'standard') {
-    const dsaSettings = settings?.travel?.dsa;
+    // Check if this designation is applicable to the configured rate
+    const applicableTo = dsaSettings?.applicableTo || ['all'];
+    const isApplicable = applicableTo.includes('all') || applicableTo.includes(designation?.toLowerCase().replace(/\s+/g, ''));
+    
+    if (!isApplicable) {
+      console.log('Designation not applicable to standard DSA rate');
+      return null;
+    }
     
     if (travelCategory === 'Within Kenya') {
       return { 
@@ -77,7 +85,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
     return null;
   }
 
-  // Designation-Based DSA Mode - use existing logic
+  // Designation-Based DSA Mode - use existing logic (kept for backward compatibility)
   if (!designation) {
     console.log('Missing designation for designation-based mode');
     return null;
@@ -88,7 +96,7 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
   console.log('Normalized designation:', normalizedDesignation);
 
   // Get the calculation basis from settings to determine the unit
-  const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'nights';
+  const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
   const unit = calculationBasis === 'nights' ? 'per night' : 'per day';
 
   // Within Kenya - Official Overnight Travel
@@ -152,7 +160,7 @@ const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail, setti
   const diffTime = end - start;
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'nights';
+  const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
   console.log('Calculation basis:', calculationBasis);
 
   if (calculationBasis === 'nights') {
@@ -169,7 +177,7 @@ const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail, setti
 };
 
 // Calculate accommodation amount based on nights
-const calculateAccommodationAmount = (startDate, endDate, accommodationRate, settings) => {
+const calculateAccommodationAmount = (startDate, endDate, accommodationRate) => {
   if (!startDate || !endDate || !accommodationRate) return 0;
 
   const start = new Date(startDate);
@@ -253,17 +261,31 @@ export default function TravelApplyPage() {
   useEffect(() => {
     const accommodationEnabled = settings?.travel?.accommodation?.enabled;
     if (accommodationEnabled && form.startDate && form.endDate) {
-      const accommodationRate = settings?.travel?.accommodation?.rate || 4000;
-      const accommodationCurrency = settings?.travel?.accommodation?.currency || 'KES';
+      // Check if this designation is applicable to the configured accommodation rate
+      const applicableTo = settings?.travel?.accommodation?.applicableTo || ['all'];
+      const isApplicable = applicableTo.includes('all') || applicableTo.includes(form.designation?.toLowerCase().replace(/\s+/g, ''));
       
-      const accommodationAmount = calculateAccommodationAmount(form.startDate, form.endDate, accommodationRate, settings);
-      
-      setForm(prev => ({
-        ...prev,
-        accommodationRate,
-        accommodationCurrency,
-        accommodationAmount
-      }));
+      if (isApplicable) {
+        const accommodationRate = settings?.travel?.accommodation?.rate || 4000;
+        const accommodationCurrency = settings?.travel?.accommodation?.currency || 'KES';
+
+        const accommodationAmount = calculateAccommodationAmount(form.startDate, form.endDate, accommodationRate);
+
+        setForm(prev => ({
+          ...prev,
+          accommodationRate,
+          accommodationCurrency,
+          accommodationAmount
+        }));
+      } else {
+        // Clear accommodation fields if not applicable
+        setForm(prev => ({
+          ...prev,
+          accommodationRate: '',
+          accommodationCurrency: 'KES',
+          accommodationAmount: ''
+        }));
+      }
     } else if (!accommodationEnabled) {
       // Clear accommodation fields if disabled
       setForm(prev => ({
@@ -273,7 +295,7 @@ export default function TravelApplyPage() {
         accommodationAmount: ''
       }));
     }
-  }, [form.startDate, form.endDate, settings]);
+  }, [form.startDate, form.endDate, form.designation, settings]);
 
   // Check for preferred hotels based on destination
   const getPreferredHotels = () => {

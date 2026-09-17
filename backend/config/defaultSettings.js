@@ -250,6 +250,29 @@ module.exports = {
       assessmentFrequency: 'quarterly'
     }
   },
+  travel: {
+    projects: ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA'],
+    dsa: {
+      mode: 'standard',
+      calculationBasis: 'days',
+      kenyaRate: 2000,
+      kenyaCurrency: 'KES',
+      eastAfricaRate: 40,
+      eastAfricaCurrency: 'USD',
+      internationalRate: 50,
+      internationalCurrency: 'USD',
+      applicableTo: ['all'],
+      description: 'Covers accommodation, meals, and incidental costs'
+    },
+    accommodation: {
+      enabled: true,
+      rate: 4000,
+      currency: 'KES',
+      description: 'Accommodation allowance per night',
+      applicableTo: ['all']
+    },
+    hotels: []
+  },
   leaveTypes: [
     { code: 'annual', label: 'Annual Leave', defaultDays: 21, requiresCeoApproval: false, isPaid: true, requiresDocument: false, canCarryForward: true },
     { code: 'sick', label: 'Sick Leave', defaultDays: 14, requiresCeoApproval: false, isPaid: true, requiresDocument: false, canCarryForward: false },
