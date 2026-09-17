@@ -186,6 +186,7 @@ module.exports = {
     { code: 'addendum', label: 'Addendum' },
     { code: 'branding', label: 'Branding' },
     { code: 'profile', label: 'Profile Photos' },
+    { code: 'travel', label: 'Travel Documents' },
     { code: 'other', label: 'Other' }
   ],
   documentCategories: [
