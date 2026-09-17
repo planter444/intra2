@@ -238,7 +238,7 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
   return findTravelRequestById(id);
 };
 
-const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent }) => {
+const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent, supportingDocumentId }) => {
   let result;
   console.log('MODEL UPDATE - Received params:', {
     id,
@@ -277,10 +277,11 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
           accommodation_provided = $19,
           transportation_cost = $20,
           full_day_event = $21,
+          supporting_document_id = $22,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent]
+      [id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent, supportingDocumentId]
     );
     console.log('MODEL UPDATE - Query executed successfully, rows affected:', result.rowCount);
   } catch (error) {

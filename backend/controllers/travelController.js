@@ -105,8 +105,8 @@ const createTravelRequest = async (req, res, next) => {
     let supportingDocumentId = null;
     let supportingDocumentPath = null;
     
-    // Handle supporting document upload for booking type
-    if (travelType === 'booking' && req.file) {
+    // Handle supporting document upload for both booking and reimbursement
+    if (req.file) {
       try {
         const { storedName, targetPath } = await saveDocument({
           userId: String(req.user.id),
@@ -251,7 +251,7 @@ const createTravelRequest = async (req, res, next) => {
 const updateTravelRequest = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent } = req.body;
+    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent, supportingDocumentId } = req.body;
     const request = await travelModel.findTravelRequestById(id);
 
     console.log('UPDATE REQUEST - Received:', {
@@ -261,7 +261,8 @@ const updateTravelRequest = async (req, res, next) => {
       accommodationProvided,
       transportationCost,
       projectProgramme,
-      travelCategory
+      travelCategory,
+      supportingDocumentId
     });
 
     if (!request) {
@@ -301,12 +302,16 @@ const updateTravelRequest = async (req, res, next) => {
       accommodationAmount: accommodationAmount !== undefined ? Number(accommodationAmount) : request.accommodationAmount,
       accommodationProvided: accommodationProvided !== undefined ? (accommodationProvided === true || accommodationProvided === 'true') : request.accommodationProvided,
       transportationCost: transportationCost !== undefined && transportationCost !== '' ? Number(transportationCost) : request.transportationCost,
-      fullDayEvent: fullDayEvent !== undefined ? (fullDayEvent === true || fullDayEvent === 'true') : request.full_day_event
+      fullDayEvent: fullDayEvent !== undefined ? (fullDayEvent === true || fullDayEvent === 'true') : request.full_day_event,
+      supportingDocumentId: supportingDocumentId !== undefined ? (supportingDocumentId === null || supportingDocumentId === '' ? null : Number(supportingDocumentId)) : request.supportingDocumentId
     };
 
     console.log('UPDATE REQUEST - Sending to model:', updateParams);
 
     const updatedRequest = await travelModel.updateTravelRequestDetails(updateParams);
+
+    // Include receipts in the response
+    const receipts = await travelModel.listTravelReceipts({ travelRequestId: id });
 
     await logAction({
       actorUserId: req.user.id,
@@ -319,7 +324,7 @@ const updateTravelRequest = async (req, res, next) => {
       ipAddress: req.ip
     });
 
-    res.json({ request: updatedRequest });
+    res.json({ request: { ...updatedRequest, receipts } });
   } catch (error) {
     next(error);
   }

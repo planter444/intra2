@@ -356,7 +356,7 @@ export default function TravelDetailPage() {
     try {
       const formData = new FormData();
       formData.append('file', supportingDocModal.file);
-      formData.append('documentType', 'supporting_document');
+      formData.append('folderType', 'travel');
 
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/documents/upload`, {
         method: 'POST',
@@ -367,10 +367,12 @@ export default function TravelDetailPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Upload failed');
       }
 
-      const { documentId } = await response.json();
+      const { document } = await response.json();
+      const documentId = document.id;
 
       await updateTravelRequest(id, { supportingDocumentId: documentId });
       setSupportingDocModal({ open: false, file: null });
