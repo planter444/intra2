@@ -142,72 +142,40 @@ export default function TravelDetailPage() {
 
   const handleUpdate = async () => {
     try {
-      // Calculate DSA and accommodation from settings for both booking and reimbursement
-      // This ensures consistency with the application page
+      // Calculate DSA and accommodation using simplified logic
       let dsaRate = 0, dsaCurrency = 'KES', calculatedDSAAmount = 0;
       let accommodationRate = 0, accommodationCurrency = 'KES', calculatedAccommodationAmount = 0;
 
-      // Calculate DSA using the same logic as the application page
-      if (editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && settings) {
-        const needsTravelType = editForm.travelCategory === 'Within Kenya';
-        const hasRequiredFields = needsTravelType ? editForm.travelTypeDetail : true;
-
-        if (hasRequiredFields) {
-          // Use the same getDSARate logic from TravelReimbursementPage
-          const dsaMode = settings?.travel?.dsa?.mode || 'standard';
-          const dsaSettings = settings?.travel?.dsa;
-
-          if (dsaMode === 'standard') {
-            const applicableTo = dsaSettings?.applicableTo || ['all'];
-            const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
-
-            if (isApplicable) {
-              if (editForm.travelCategory === 'Within Kenya') {
-                dsaRate = dsaSettings?.kenyaRate || 2000;
-                dsaCurrency = dsaSettings?.kenyaCurrency || 'KES';
-              } else if (editForm.travelCategory === 'East Africa') {
-                dsaRate = dsaSettings?.eastAfricaRate || 40;
-                dsaCurrency = dsaSettings?.eastAfricaCurrency || 'USD';
-              } else if (editForm.travelCategory === 'International') {
-                dsaRate = dsaSettings?.internationalRate || 50;
-                dsaCurrency = dsaSettings?.internationalCurrency || 'USD';
-              }
-            }
-          }
-
-          // Calculate DSA amount
-          if (dsaRate > 0) {
-            const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
-            const start = new Date(editForm.startDate);
-            const end = new Date(editForm.endDate);
-            const diffTime = end - start;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (calculationBasis === 'nights') {
-              calculatedDSAAmount = diffDays * dsaRate;
-            } else {
-              calculatedDSAAmount = (diffDays + 1) * dsaRate;
-            }
-          }
+      // Calculate DSA
+      if (editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate) {
+        if (editForm.travelCategory === 'Within Kenya') {
+          dsaRate = 2000;
+          dsaCurrency = 'KES';
+        } else if (editForm.travelCategory === 'East Africa') {
+          dsaRate = 40;
+          dsaCurrency = 'USD';
+        } else if (editForm.travelCategory === 'International') {
+          dsaRate = 50;
+          dsaCurrency = 'USD';
         }
 
-        // Calculate accommodation
-        const accommodationSettings = settings?.travel?.accommodation;
-        if (accommodationSettings?.enabled && accommodationSettings?.rate) {
-          const applicableTo = accommodationSettings?.applicableTo || ['all'];
-          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+        const start = new Date(editForm.startDate);
+        const end = new Date(editForm.endDate);
+        const diffTime = end - start;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        calculatedDSAAmount = (diffDays + 1) * dsaRate;
+      }
 
-          if (isApplicable) {
-            accommodationRate = accommodationSettings.rate;
-            accommodationCurrency = accommodationSettings.currency || 'KES';
+      // Calculate accommodation
+      if (editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate) {
+        accommodationRate = 4000;
+        accommodationCurrency = 'KES';
 
-            const start = new Date(editForm.startDate);
-            const end = new Date(editForm.endDate);
-            const diffTime = end - start;
-            const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            calculatedAccommodationAmount = nights * accommodationRate;
-          }
-        }
+        const start = new Date(editForm.startDate);
+        const end = new Date(editForm.endDate);
+        const diffTime = end - start;
+        const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        calculatedAccommodationAmount = nights * accommodationRate;
       }
 
       const updateData = {
@@ -612,10 +580,18 @@ export default function TravelDetailPage() {
                   <input type="text" className="bg-white" value={editForm.destination} onChange={(e) => setEditForm({ ...editForm, destination: e.target.value })} />
                 </div>
               </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-700">Estimated cost</label>
-                <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} />
-              </div>
+              {request.travelType === 'booking' ? (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Transportation Cost</label>
+                  <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} />
+                </div>
+              ) : (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Other Costs (Optional)</label>
+                  <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} placeholder="0.00" />
+                  <p className="mt-1 text-xs text-slate-500">Any additional costs not covered by DSA, accommodation, or transportation</p>
+                </div>
+              )}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Reason</label>
                 <textarea rows="3" className="bg-white" value={editForm.reason} onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })} />
@@ -648,7 +624,7 @@ export default function TravelDetailPage() {
               </div>
 
               {/* DSA Calculation in Edit Mode */}
-              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && settings && (
+              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-emerald-900">
                     <DollarSign size={18} />
@@ -659,31 +635,26 @@ export default function TravelDetailPage() {
                       <span className="text-slate-600">Rate:</span>
                       <span className="font-medium text-slate-900">
                         {(() => {
-                          const dsaMode = settings?.travel?.dsa?.mode || 'standard';
-                          const dsaSettings = settings?.travel?.dsa;
-                          const applicableTo = dsaSettings?.applicableTo || ['all'];
-                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
-
-                          if (!isApplicable) return '0.00 KES';
-
+                          let rate = 0, currency = 'KES';
                           if (editForm.travelCategory === 'Within Kenya') {
-                            return `${(dsaSettings?.kenyaRate || 2000).toLocaleString()} ${dsaSettings?.kenyaCurrency || 'KES'}`;
+                            rate = 2000;
+                            currency = 'KES';
                           } else if (editForm.travelCategory === 'East Africa') {
-                            return `${(dsaSettings?.eastAfricaRate || 40).toLocaleString()} ${dsaSettings?.eastAfricaCurrency || 'USD'}`;
+                            rate = 40;
+                            currency = 'USD';
                           } else if (editForm.travelCategory === 'International') {
-                            return `${(dsaSettings?.internationalRate || 50).toLocaleString()} ${dsaSettings?.internationalCurrency || 'USD'}`;
+                            rate = 50;
+                            currency = 'USD';
                           }
-                          return '0.00 KES';
+                          return `${rate.toLocaleString()} ${currency}`;
                         })()}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Number of {settings?.travel?.dsa?.calculationBasis === 'nights' ? 'Nights' : 'Days'}:</span>
+                      <span className="text-slate-600">Number of Days:</span>
                       <span className="font-medium text-slate-900">
                         {editForm.startDate && editForm.endDate ? (
-                          settings?.travel?.dsa?.calculationBasis === 'nights'
-                            ? Math.ceil((new Date(editForm.endDate) - new Date(editForm.startDate)) / (1000 * 60 * 60 * 24))
-                            : Math.ceil((new Date(editForm.endDate) - new Date(editForm.startDate)) / (1000 * 60 * 60 * 24)) + 1
+                          Math.ceil((new Date(editForm.endDate) - new Date(editForm.startDate)) / (1000 * 60 * 60 * 24)) + 1
                         ) : 0}
                       </span>
                     </div>
@@ -691,32 +662,25 @@ export default function TravelDetailPage() {
                       <span className="font-semibold text-slate-900">Total DSA:</span>
                       <span className="font-semibold text-emerald-700">
                         {(() => {
-                          const dsaMode = settings?.travel?.dsa?.mode || 'standard';
-                          const dsaSettings = settings?.travel?.dsa;
-                          const applicableTo = dsaSettings?.applicableTo || ['all'];
-                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
-
-                          if (!isApplicable || !editForm.startDate || !editForm.endDate) return '0.00 KES';
-
                           let rate = 0, currency = 'KES';
                           if (editForm.travelCategory === 'Within Kenya') {
-                            rate = dsaSettings?.kenyaRate || 2000;
-                            currency = dsaSettings?.kenyaCurrency || 'KES';
+                            rate = 2000;
+                            currency = 'KES';
                           } else if (editForm.travelCategory === 'East Africa') {
-                            rate = dsaSettings?.eastAfricaRate || 40;
-                            currency = dsaSettings?.eastAfricaCurrency || 'USD';
+                            rate = 40;
+                            currency = 'USD';
                           } else if (editForm.travelCategory === 'International') {
-                            rate = dsaSettings?.internationalRate || 50;
-                            currency = dsaSettings?.internationalCurrency || 'USD';
+                            rate = 50;
+                            currency = 'USD';
                           }
 
-                          const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
+                          if (!editForm.startDate || !editForm.endDate) return '0.00 KES';
+
                           const start = new Date(editForm.startDate);
                           const end = new Date(editForm.endDate);
                           const diffTime = end - start;
                           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-                          const amount = calculationBasis === 'nights' ? diffDays * rate : (diffDays + 1) * rate;
+                          const amount = (diffDays + 1) * rate;
                           return `${amount.toLocaleString()} ${currency}`;
                         })()}
                       </span>
@@ -726,7 +690,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* Accommodation Calculation in Edit Mode */}
-              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && settings?.travel?.accommodation?.enabled && (
+              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-blue-900">
                     <Building2 size={18} />
@@ -737,14 +701,8 @@ export default function TravelDetailPage() {
                       <span className="text-slate-600">Rate per Night:</span>
                       <span className="font-medium text-slate-900">
                         {(() => {
-                          const accommodationSettings = settings?.travel?.accommodation;
-                          const applicableTo = accommodationSettings?.applicableTo || ['all'];
-                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
-
-                          if (!isApplicable) return '0.00 KES';
-
-                          const rate = accommodationSettings?.rate || 4000;
-                          const currency = accommodationSettings?.currency || 'KES';
+                          const rate = 4000;
+                          const currency = 'KES';
                           return `${rate.toLocaleString()} ${currency}`;
                         })()}
                       </span>
@@ -761,14 +719,10 @@ export default function TravelDetailPage() {
                       <span className="font-semibold text-slate-900">Total Accommodation:</span>
                       <span className="font-semibold text-blue-700">
                         {(() => {
-                          const accommodationSettings = settings?.travel?.accommodation;
-                          const applicableTo = accommodationSettings?.applicableTo || ['all'];
-                          const isApplicable = applicableTo.includes('all') || applicableTo.includes(editForm.designation?.toLowerCase().replace(/\s+/g, ''));
+                          const rate = 4000;
+                          const currency = 'KES';
 
-                          if (!isApplicable || !editForm.startDate || !editForm.endDate) return '0.00 KES';
-
-                          const rate = accommodationSettings?.rate || 4000;
-                          const currency = accommodationSettings?.currency || 'KES';
+                          if (!editForm.startDate || !editForm.endDate) return '0.00 KES';
 
                           const start = new Date(editForm.startDate);
                           const end = new Date(editForm.endDate);
@@ -785,48 +739,44 @@ export default function TravelDetailPage() {
               )}
 
               {/* DSA Provided Checkbox in Edit Mode */}
-              {(request.dsaRate || request.travelType === 'reimbursement') && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <label className="flex cursor-pointer items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={editForm.dsaProvided || false}
-                      onChange={(e) => setEditForm({ ...editForm, dsaProvided: e.target.checked })}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
-                      <p className="mt-1 text-xs text-slate-600">
-                        {editForm.dsaProvided 
-                          ? 'DSA will be excluded from the total reimbursement amount.' 
-                          : 'DSA will be included in the total reimbursement amount.'}
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              )}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={editForm.dsaProvided || false}
+                    onChange={(e) => setEditForm({ ...editForm, dsaProvided: e.target.checked })}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {editForm.dsaProvided
+                        ? 'DSA will be excluded from the total reimbursement amount.'
+                        : 'DSA will be included in the total reimbursement amount.'}
+                    </p>
+                  </div>
+                </label>
+              </div>
 
               {/* Accommodation Provided Checkbox in Edit Mode */}
-              {(settings?.travel?.accommodation?.enabled || request.travelType === 'reimbursement') && (
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <label className="flex cursor-pointer items-start gap-3">
-                    <input
-                      type="checkbox"
-                      checked={editForm.accommodationProvided || false}
-                      onChange={(e) => setEditForm({ ...editForm, accommodationProvided: e.target.checked })}
-                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <div>
-                      <span className="text-sm font-medium text-slate-900">Accommodation was provided during travel</span>
-                      <p className="mt-1 text-xs text-slate-600">
-                        {editForm.accommodationProvided 
-                          ? 'Accommodation will be excluded from the total reimbursement amount.' 
-                          : 'Accommodation will be included in the total reimbursement amount.'}
-                      </p>
-                    </div>
-                  </label>
-                </div>
-              )}
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <label className="flex cursor-pointer items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={editForm.accommodationProvided || false}
+                    onChange={(e) => setEditForm({ ...editForm, accommodationProvided: e.target.checked })}
+                    className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-slate-900">Accommodation was provided during travel</span>
+                    <p className="mt-1 text-xs text-slate-600">
+                      {editForm.accommodationProvided
+                        ? 'Accommodation will be excluded from the total reimbursement amount.'
+                        : 'Accommodation will be included in the total reimbursement amount.'}
+                    </p>
+                  </div>
+                </label>
+              </div>
 
               {/* Transportation Cost in Edit Mode */}
               {request.travelType === 'reimbursement' && (
