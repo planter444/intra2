@@ -101,7 +101,17 @@ export default function TravelDetailPage() {
         origin: data.origin,
         destination: data.destination,
         reason: data.reason,
-        estimatedCost: data.estimatedCost || ''
+        estimatedCost: data.estimatedCost || '',
+        designation: data.designation || '',
+        travelCategory: data.travelCategory || '',
+        travelTypeDetail: data.travelTypeDetail || '',
+        projectProgramme: data.projectProgramme || '',
+        dsaRate: data.dsaRate || '',
+        dsaCurrency: data.dsaCurrency || 'KES',
+        dsaAmount: data.dsaAmount || '',
+        accommodationRate: data.accommodationRate || '',
+        accommodationCurrency: data.accommodationCurrency || 'KES',
+        accommodationAmount: data.accommodationAmount || ''
       });
       
       // Load approver for this employee
@@ -129,7 +139,18 @@ export default function TravelDetailPage() {
 
   const handleUpdate = async () => {
     try {
-      await updateTravelRequest(id, editForm);
+      // Calculate DSA and accommodation amounts based on current dates
+      const calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate);
+      const calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
+      
+      const updateData = {
+        ...editForm,
+        estimatedCost: editForm.estimatedCost || null,
+        dsaAmount: calculatedDSAAmount,
+        accommodationAmount: calculatedAccommodationAmount
+      };
+      
+      await updateTravelRequest(id, updateData);
       setEditMode(false);
       setNotice({
         open: true,
@@ -512,6 +533,46 @@ export default function TravelDetailPage() {
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Reason</label>
                 <textarea rows="3" className="bg-white" value={editForm.reason} onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })} />
+              </div>
+              
+              {/* Additional travel details */}
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Designation</label>
+                  <input type="text" className="bg-white" value={editForm.designation} onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })} />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Travel Category</label>
+                  <select className="bg-white" value={editForm.travelCategory} onChange={(e) => setEditForm({ ...editForm, travelCategory: e.target.value })}>
+                    <option value="">Select category</option>
+                    <option value="Within Kenya">Within Kenya</option>
+                    <option value="Outside Kenya">Outside Kenya</option>
+                  </select>
+                </div>
+              </div>
+              {editForm.travelCategory === 'Within Kenya' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Travel Type</label>
+                  <select className="bg-white" value={editForm.travelTypeDetail} onChange={(e) => setEditForm({ ...editForm, travelTypeDetail: e.target.value })}>
+                    <option value="">Select type</option>
+                    <option value="Domestic">Domestic</option>
+                    <option value="International">International</option>
+                  </select>
+                </div>
+              )}
+              {editForm.travelCategory === 'Outside Kenya' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Travel Type</label>
+                  <select className="bg-white" value={editForm.travelTypeDetail} onChange={(e) => setEditForm({ ...editForm, travelTypeDetail: e.target.value })}>
+                    <option value="">Select type</option>
+                    <option value="Regional">Regional</option>
+                    <option value="International">International</option>
+                  </select>
+                </div>
+              )}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Project / Programme / Activity</label>
+                <input type="text" className="bg-white" value={editForm.projectProgramme} onChange={(e) => setEditForm({ ...editForm, projectProgramme: e.target.value })} />
               </div>
 
               {/* DSA Calculation in Edit Mode */}

@@ -226,7 +226,7 @@ const createTravelRequest = async (req, res, next) => {
 const updateTravelRequest = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { startDate, endDate, origin, destination, reason, estimatedCost } = req.body;
+    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount } = req.body;
     const request = await travelModel.findTravelRequestById(id);
 
     if (!request) {
@@ -252,7 +252,17 @@ const updateTravelRequest = async (req, res, next) => {
       origin: origin || request.origin,
       destination: destination || request.destination,
       reason: reason ?? request.reason,
-      estimatedCost: estimatedCost !== undefined ? estimatedCost : request.estimatedCost
+      estimatedCost: estimatedCost !== undefined && estimatedCost !== '' ? Number(estimatedCost) : request.estimatedCost,
+      designation: designation ?? request.designation,
+      travelCategory: travelCategory ?? request.travelCategory,
+      travelTypeDetail: travelTypeDetail ?? request.travelTypeDetail,
+      projectProgramme: projectProgramme ?? request.projectProgramme,
+      dsaRate: dsaRate !== undefined && dsaRate !== '' ? Number(dsaRate) : request.dsaRate,
+      dsaCurrency: dsaCurrency ?? request.dsaCurrency,
+      dsaAmount: dsaAmount !== undefined && dsaAmount !== '' ? Number(dsaAmount) : request.dsaAmount,
+      accommodationRate: accommodationRate !== undefined && accommodationRate !== '' ? Number(accommodationRate) : request.accommodationRate,
+      accommodationCurrency: accommodationCurrency ?? request.accommodationCurrency,
+      accommodationAmount: accommodationAmount !== undefined && accommodationAmount !== '' ? Number(accommodationAmount) : request.accommodationAmount
     });
 
     await logAction({

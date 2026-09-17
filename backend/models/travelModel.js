@@ -257,22 +257,59 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
   return findTravelRequestById(id);
 };
 
-const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost }) => {
-  await query(
-    `
-      UPDATE travel_requests
-      SET
-        start_date = COALESCE($2, start_date),
-        end_date = COALESCE($3, end_date),
-        origin = COALESCE($4, origin),
-        destination = COALESCE($5, destination),
-        reason = COALESCE($6, reason),
-        estimated_cost = COALESCE($7, estimated_cost),
-        updated_at = NOW()
-      WHERE id = $1
-    `,
-    [id, startDate, endDate, origin, destination, reason, estimatedCost]
-  );
+const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount }) => {
+  let result;
+  try {
+    result = await query(
+      `
+        UPDATE travel_requests
+        SET
+          start_date = COALESCE($2, start_date),
+          end_date = COALESCE($3, end_date),
+          origin = COALESCE($4, origin),
+          destination = COALESCE($5, destination),
+          reason = COALESCE($6, reason),
+          estimated_cost = COALESCE($7, estimated_cost),
+          designation = COALESCE($8, designation),
+          travel_category = COALESCE($9, travel_category),
+          travel_type_detail = COALESCE($10, travel_type_detail),
+          project_programme = COALESCE($11, project_programme),
+          dsa_rate = COALESCE($12, dsa_rate),
+          dsa_currency = COALESCE($13, dsa_currency),
+          dsa_amount = COALESCE($14, dsa_amount),
+          accommodation_rate = COALESCE($15, accommodation_rate),
+          accommodation_currency = COALESCE($16, accommodation_currency),
+          accommodation_amount = COALESCE($17, accommodation_amount),
+          updated_at = NOW()
+        WHERE id = $1
+      `,
+      [id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount]
+    );
+  } catch (error) {
+    console.error('Travel request update error:', error.message);
+    // If new columns don't exist, retry with basic columns
+    console.warn('Retrying travel request update with basic columns');
+    try {
+      result = await query(
+        `
+          UPDATE travel_requests
+          SET
+            start_date = COALESCE($2, start_date),
+            end_date = COALESCE($3, end_date),
+            origin = COALESCE($4, origin),
+            destination = COALESCE($5, destination),
+            reason = COALESCE($6, reason),
+            estimated_cost = COALESCE($7, estimated_cost),
+            updated_at = NOW()
+          WHERE id = $1
+        `,
+        [id, startDate, endDate, origin, destination, reason, estimatedCost]
+      );
+    } catch (fallbackError) {
+      console.error('Fallback travel request update also failed:', fallbackError.message);
+      throw fallbackError;
+    }
+  }
 
   return findTravelRequestById(id);
 };
