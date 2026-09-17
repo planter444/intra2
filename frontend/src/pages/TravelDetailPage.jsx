@@ -794,7 +794,10 @@ export default function TravelDetailPage() {
                     <input
                       type="checkbox"
                       checked={editForm.fullDayEvent || false}
-                      onChange={(e) => setEditForm({ ...editForm, fullDayEvent: e.target.checked })}
+                      onChange={(e) => {
+                        console.log('Full day event changed:', e.target.checked);
+                        setEditForm({ ...editForm, fullDayEvent: e.target.checked });
+                      }}
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     <div>
@@ -808,6 +811,14 @@ export default function TravelDetailPage() {
                   </label>
                 </div>
               )}
+
+              {/* DEBUG: Show travel category for debugging */}
+              <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-xs">
+                <p>DEBUG: travelCategory={editForm.travelCategory}</p>
+                <p>DEBUG: isLocalMovement={isLocalMovement(editForm).toString()}</p>
+                <p>DEBUG: accommodationRate={editForm.accommodationRate}</p>
+                <p>DEBUG: fullDayEvent={editForm.fullDayEvent.toString()}</p>
+              </div>
 
               {/* DSA Provided Checkbox in Edit Mode - Only for Reimbursement and Official Travel */}
               {editForm.travelType === 'reimbursement' && !isLocalMovement(editForm) && (
