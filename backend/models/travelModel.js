@@ -110,33 +110,8 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
     );
   } catch (error) {
     console.error('Travel request insert error:', error.message);
-    // If new columns don't exist, retry with basic columns
-    console.warn('Retrying travel request insert with basic columns');
-    try {
-      result = await query(
-        `
-          INSERT INTO travel_requests (
-            user_id,
-            travel_type,
-            start_date,
-            end_date,
-            origin,
-            destination,
-            reason,
-            estimated_cost,
-            currency,
-            supporting_document_id,
-            status
-          )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending')
-          RETURNING id
-        `,
-        [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null]
-      );
-    } catch (fallbackError) {
-      console.error('Fallback travel request insert also failed:', fallbackError.message);
-      throw fallbackError;
-    }
+    // Don't use fallback - throw the actual error so it can be fixed properly
+    throw error;
   }
 
   return findTravelRequestById(result.rows[0].id);
@@ -310,29 +285,8 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
     console.log('MODEL UPDATE - Query executed successfully, rows affected:', result.rowCount);
   } catch (error) {
     console.error('Travel request update error:', error.message);
-    // If new columns don't exist, retry with basic columns
-    console.warn('Retrying travel request update with basic columns');
-    try {
-      result = await query(
-        `
-          UPDATE travel_requests
-          SET
-            start_date = $2,
-            end_date = $3,
-            origin = $4,
-            destination = $5,
-            reason = $6,
-            estimated_cost = $7,
-            updated_at = NOW()
-          WHERE id = $1
-        `,
-        [id, startDate, endDate, origin, destination, reason, estimatedCost]
-      );
-      console.log('MODEL UPDATE - Fallback query executed');
-    } catch (fallbackError) {
-      console.error('Fallback travel request update also failed:', fallbackError.message);
-      throw fallbackError;
-    }
+    // Don't use fallback - throw the actual error so it can be fixed properly
+    throw error;
   }
 
   const updated = await findTravelRequestById(id);
@@ -398,33 +352,8 @@ const createTravelReceipt = async ({ travelRequestId, uploadedBy, fileName, stor
     );
   } catch (dbError) {
     console.error('Failed to insert travel receipt:', dbError.message);
-    // If table doesn't exist or has schema issues, try with minimal columns
-    if (dbError.message && (dbError.message.includes('relation "travel_receipts" does not exist') || dbError.message.includes('column'))) {
-      console.warn('travel_receipts table has schema issues, attempting minimal insert');
-      try {
-        result = await query(
-          `
-            INSERT INTO travel_receipts (
-              travel_request_id,
-              uploaded_by,
-              file_name,
-              stored_name,
-              mime_type,
-              file_size,
-              storage_path
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id
-          `,
-          [travelRequestId, uploadedBy, fileName, storedName, mimeType, fileSize, storagePath]
-        );
-      } catch (fallbackError) {
-        console.error('Fallback insert also failed:', fallbackError.message);
-        throw fallbackError;
-      }
-    } else {
-      throw dbError;
-    }
+    // Don't use fallback - throw the actual error so it can be fixed properly
+    throw dbError;
   }
 
   return findTravelReceiptById(result.rows[0].id);

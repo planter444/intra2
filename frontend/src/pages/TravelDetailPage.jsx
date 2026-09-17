@@ -107,12 +107,6 @@ export default function TravelDetailPage() {
     try {
       setLoading(true);
       const data = await fetchTravelRequest(id);
-      console.log('Loaded request data:', data);
-      console.log('Travel category:', data.travelCategory);
-      console.log('Travel type:', data.travelType);
-      console.log('Transportation cost:', data.transportationCost);
-      console.log('DSA amount:', data.dsaAmount);
-      console.log('Full day event:', data.fullDayEvent);
       setRequest(data);
       // Detect if this is local movement for edit form
       const isLocalRequest = isLocalMovement(data);
@@ -132,10 +126,8 @@ export default function TravelDetailPage() {
         }
       } else if (isLocalRequest && data.travelType === 'reimbursement') {
         // For reimbursement: use transportationCost directly
-        transportationValue = data.transportationCost || '';
+        transportationValue = data.transportationCost !== null && data.transportationCost !== undefined ? data.transportationCost.toString() : '';
       }
-
-      console.log('Calculated transportation value for edit form:', transportationValue);
 
       setEditForm({
         startDate: data.startDate,
@@ -294,15 +286,6 @@ export default function TravelDetailPage() {
         transportationCost: finalTransportationCost,
         fullDayEvent: editForm.fullDayEvent
       };
-
-      console.log('Sending update data:', updateData);
-      console.log('Is local movement:', isLocalMovementEdit);
-      console.log('Is booking:', isBooking);
-      console.log('Edit form transportationCost:', editForm.transportationCost);
-      console.log('Final transportationCost:', finalTransportationCost);
-      console.log('Final estimatedCost:', finalEstimatedCost);
-      console.log('Checkbox states:', { dsaProvided: editForm.dsaProvided, accommodationProvided: editForm.accommodationProvided });
-      console.log('Calculated DSA:', calculatedDSAAmount, 'Calculated Accommodation:', calculatedAccommodationAmount);
 
       await updateTravelRequest(id, updateData);
       setEditMode(false);
@@ -854,10 +837,7 @@ export default function TravelDetailPage() {
                     <input
                       type="checkbox"
                       checked={editForm.fullDayEvent || false}
-                      onChange={(e) => {
-                        console.log('Full day event changed:', e.target.checked);
-                        setEditForm({ ...editForm, fullDayEvent: e.target.checked });
-                      }}
+                      onChange={(e) => setEditForm({ ...editForm, fullDayEvent: e.target.checked })}
                       className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                     />
                     <div>
