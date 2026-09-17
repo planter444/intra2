@@ -118,10 +118,15 @@ export default function TravelDetailPage() {
       // For local movement reimbursement, use transportationCost directly
       let transportationValue = data.transportationCost || '';
       if (isLocalRequest && data.travelType === 'booking') {
-        // For booking: extract transportation from total (estimatedCost - DSA)
-        const dsaValue = data.dsaAmount || 0;
-        const totalValue = data.estimatedCost || 0;
-        transportationValue = (totalValue - dsaValue).toString();
+        // For booking: use transportationCost if it exists, otherwise extract from total
+        if (data.transportationCost !== null && data.transportationCost !== undefined && data.transportationCost !== '') {
+          transportationValue = data.transportationCost.toString();
+        } else {
+          // Fallback: extract from total (estimatedCost - DSA)
+          const dsaValue = data.dsaAmount || 0;
+          const totalValue = data.estimatedCost || 0;
+          transportationValue = (totalValue - dsaValue).toString();
+        }
       } else if (isLocalRequest && data.travelType === 'reimbursement') {
         // For reimbursement: use transportationCost directly
         transportationValue = data.transportationCost || '';
@@ -252,6 +257,14 @@ export default function TravelDetailPage() {
       } else {
         finalEstimatedCost = editForm.estimatedCost || null;
         finalTransportationCost = editForm.transportationCost || null;
+      }
+
+      // Ensure numeric values are properly converted
+      if (finalTransportationCost !== null) {
+        finalTransportationCost = parseFloat(finalTransportationCost) || 0;
+      }
+      if (finalEstimatedCost !== null) {
+        finalEstimatedCost = parseFloat(finalEstimatedCost) || 0;
       }
 
       const updateData = {
@@ -1096,7 +1109,7 @@ export default function TravelDetailPage() {
                 <h4 className="text-sm font-semibold text-slate-900">Cost Breakdown</h4>
                 
                 {/* DSA Section */}
-                {request.travelType === 'booking' || request.travelType === 'reimbursement' ? (
+                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && (!isLocalMovement(request) || request.fullDayEvent) ? (
                   <div className={`rounded-xl border p-4 ${request.dsaProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className={request.dsaProvided ? 'text-slate-600' : 'text-emerald-600'} />
@@ -1120,7 +1133,6 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
                         <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {((request.dsaAmount || 0) > 0 ? request.dsaAmount : (() => {
-                          if (!request.startDate || !request.endDate) return 0;
                           const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                       request.travelCategory === 'Within Kenya' ? 2000 :
                                       request.travelCategory === 'East Africa' ? 40 :
@@ -1129,6 +1141,7 @@ export default function TravelDetailPage() {
                           if (isLocalMovement(request)) {
                             return rate;
                           }
+                          if (!request.startDate || !request.endDate) return 0;
                           const start = new Date(request.startDate);
                           const end = new Date(request.endDate);
                           const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
@@ -1202,7 +1215,7 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">Amount:</span>
                         <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(isLocalMovement(request)
-                          ? ((request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0))
+                          ? (request.transportationCost || 0)
                           : (request.estimatedCost || 0)).toLocaleString()}</span>
                       </div>
                     </div>

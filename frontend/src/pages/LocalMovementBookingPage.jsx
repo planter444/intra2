@@ -239,6 +239,55 @@ export default function LocalMovementBookingPage() {
             </label>
           </div>
 
+          {/* DSA Calculation Display - Only show if full day event */}
+          {form.fullDayEvent && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+              <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-emerald-900">
+                <DollarSign size={16} />
+                DSA (Daily Subsistence Allowance)
+              </h4>
+              <div className="grid gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Rate:</span>
+                  <span className="font-medium text-slate-900">KES {(settings?.travel?.dsa?.localMovementRate || 2000).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Total DSA:</span>
+                  <span className="font-semibold text-emerald-700">KES {(settings?.travel?.dsa?.localMovementRate || 2000).toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Total Calculation Display */}
+          <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+            <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-purple-900">
+              <DollarSign size={16} />
+              Total Estimated Cost
+            </h4>
+            <div className="grid gap-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-600">Estimated Transportation Cost:</span>
+                <span className="font-medium text-slate-900">KES {(parseFloat(form.estimatedCost) || 0).toLocaleString()}</span>
+              </div>
+              {form.fullDayEvent && (
+                <div className="flex justify-between">
+                  <span className="text-slate-600">DSA:</span>
+                  <span className="font-medium text-slate-900">KES {(settings?.travel?.dsa?.localMovementRate || 2000).toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-purple-200 pt-2">
+                <span className="font-semibold text-slate-900">Total:</span>
+                <span className="font-semibold text-purple-700">
+                  KES {(
+                    (parseFloat(form.estimatedCost) || 0) +
+                    (form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0)
+                  ).toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Supporting Documents (Optional) */}
           <div>
             <label className="mb-2 block text-sm font-medium text-slate-700">Supporting Documents (Optional)</label>
