@@ -613,7 +613,7 @@ export default function TravelDetailPage() {
   const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'rejected'].includes(request.status);
   // Only admin can delete requests
   const canDelete = user.role === 'admin';
-  const canUploadReceipt = String(request.userId) === String(user.id) && request.status === 'approved';
+  const canUploadReceipt = String(request.userId) === String(user.id) && ['pending', 'approved'].includes(request.status);
   const isApprover = String(request.userId) !== String(user.id) && (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id)));
 
   return (
@@ -953,7 +953,7 @@ export default function TravelDetailPage() {
                 </div>
               )}
               
-              {request.travelType === 'booking' && (
+              {request.travelType === 'booking' || request.travelType === 'reimbursement' && (
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Supporting Document</label>
                   {request.supportingDocumentId ? (
@@ -1589,6 +1589,7 @@ export default function TravelDetailPage() {
         </SectionCard>
       )}
 
+      {/* Travel receipts - for both booking and reimbursement */}
       <SectionCard
         title="Travel receipts"
         subtitle={isApprover ? "Receipts uploaded by the employee for reimbursement." : "Upload receipts for reimbursement after your travel is approved."}
