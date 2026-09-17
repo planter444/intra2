@@ -68,7 +68,13 @@ export default function LocalMovementBookingPage() {
         accommodationCurrency: 'KES',
         accommodationAmount: 0,
         fullDayEvent: form.fullDayEvent,
-        supportingDocuments: documents.map(doc => doc.name)
+        supportingDocuments: documents.map(doc => ({
+          name: doc.name,
+          size: doc.size, // Use actual size in bytes
+          type: doc.file?.type || 'application/octet-stream',
+          storedName: doc.name,
+          storagePath: null
+        }))
       };
 
       await createTravelRequest(payload);
@@ -95,7 +101,8 @@ export default function LocalMovementBookingPage() {
       id: Date.now() + Math.random(),
       file,
       name: file.name,
-      size: (file.size / 1024).toFixed(2) + ' KB'
+      size: file.size, // Send actual size in bytes
+      sizeDisplay: (file.size / 1024).toFixed(2) + ' KB' // For display only
     }));
     setDocuments([...documents, ...newDocuments]);
   };
@@ -318,7 +325,7 @@ export default function LocalMovementBookingPage() {
                       <FileText size={16} className="text-slate-400" />
                       <div>
                         <p className="text-sm font-medium text-slate-900">{doc.name}</p>
-                        <p className="text-xs text-slate-500">{doc.size}</p>
+                        <p className="text-xs text-slate-500">{doc.sizeDisplay || (doc.size / 1024).toFixed(2) + ' KB'}</p>
                       </div>
                     </div>
                     <button

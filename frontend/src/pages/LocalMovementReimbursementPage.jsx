@@ -72,7 +72,7 @@ export default function LocalMovementReimbursementPage() {
         fullDayEvent: form.fullDayEvent,
         receipts: receipts.map(r => ({
           name: r.name,
-          size: r.size,
+          size: r.size, // Use actual size in bytes
           type: r.file?.type || 'application/octet-stream',
           storedName: r.name,
           storagePath: null
@@ -103,7 +103,8 @@ export default function LocalMovementReimbursementPage() {
       id: Date.now() + Math.random(),
       file,
       name: file.name,
-      size: (file.size / 1024).toFixed(2) + ' KB'
+      size: file.size, // Send actual size in bytes, not formatted string
+      sizeDisplay: (file.size / 1024).toFixed(2) + ' KB' // For display only
     }));
     setReceipts([...receipts, ...newReceipts]);
   };
@@ -358,7 +359,7 @@ export default function LocalMovementReimbursementPage() {
                       <FileText size={16} className="text-slate-400" />
                       <div>
                         <p className="text-sm font-medium text-slate-900">{receipt.name}</p>
-                        <p className="text-xs text-slate-500">{receipt.size}</p>
+                        <p className="text-xs text-slate-500">{receipt.sizeDisplay || (receipt.size / 1024).toFixed(2) + ' KB'}</p>
                       </div>
                     </div>
                     <button
