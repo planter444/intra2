@@ -351,25 +351,18 @@ export default function TravelPage() {
                           <Calendar size={10} className="sm:size-10" />
                           {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
                         </span>
-                        {request.referenceNumber && (
-                          <span className="flex items-center gap-1.5">
-                            <span className="text-xs font-medium text-slate-500">Ref:</span>
-                            {request.referenceNumber}
-                          </span>
-                        )}
                         {request.travelType === 'reimbursement' ? (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
-                            {request.currency || 'KES'} {request.estimatedCost?.toLocaleString() || '0'}
+                            {request.currency || 'KES'} {(
+                              ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                              ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                              (request.transportationCost || 0) +
+                              (request.estimatedCost || 0)
+                            ).toLocaleString()}
                           </span>
                         ) : (
                           <>
-                            {request.estimatedCost && parseFloat(request.estimatedCost) > 0 && (
-                              <span className="flex items-center gap-1.5">
-                                <DollarSign size={10} className="sm:size-10" />
-                                Est. Transport: {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
-                              </span>
-                            )}
                             {request.accommodationAmount && parseFloat(request.accommodationAmount) > 0 && (
                               <span className="flex items-center gap-1.5">
                                 <DollarSign size={10} className="sm:size-10" />
@@ -483,16 +476,15 @@ export default function TravelPage() {
                           <Calendar size={16} />
                           {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
                         </span>
-                        {request.referenceNumber && (
-                          <span className="flex items-center gap-1.5">
-                            <span className="text-xs font-medium text-slate-500">Ref:</span>
-                            {request.referenceNumber}
-                          </span>
-                        )}
                         {request.travelType === 'reimbursement' ? (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
-                            {request.currency || 'KES'} {request.estimatedCost?.toLocaleString() || '0'}
+                            {request.currency || 'KES'} {(
+                              ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                              ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                              (request.transportationCost || 0) +
+                              (request.estimatedCost || 0)
+                            ).toLocaleString()}
                           </span>
                         ) : (
                           <>

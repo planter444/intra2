@@ -208,13 +208,13 @@ export default function TravelReimbursementPage() {
 
   // Auto-calculate DSA and accommodation when relevant fields change
   useEffect(() => {
-    if (form.designation && form.travelCategory && form.startDate && form.endDate && settings) {
+    if (form.designation && form.travelCategory && form.startDate && form.endDate) {
       const needsTravelType = form.travelCategory === 'Within Kenya';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
 
       if (hasRequiredFields) {
         const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings);
-        
+
         if (dsaRate) {
           const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail, settings);
           setForm(prev => ({
@@ -224,37 +224,50 @@ export default function TravelReimbursementPage() {
             dsaAmount: dsaAmount
           }));
         } else {
+          // Use default Kenya rate if no match found
+          const defaultRate = form.travelCategory === 'Within Kenya' ? 2000 :
+                             form.travelCategory === 'East Africa' ? 40 :
+                             form.travelCategory === 'International' ? 50 : 0;
+          const defaultCurrency = form.travelCategory === 'Within Kenya' ? 'KES' : 'USD';
+          const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
+          const start = new Date(form.startDate);
+          const end = new Date(form.endDate);
+          const diffTime = end - start;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const amount = calculationBasis === 'nights' ? diffDays * defaultRate : (diffDays + 1) * defaultRate;
+
           setForm(prev => ({
             ...prev,
-            dsaRate: '',
-            dsaCurrency: 'KES',
-            dsaAmount: ''
+            dsaRate: defaultRate,
+            dsaCurrency: defaultCurrency,
+            dsaAmount: amount
           }));
         }
 
-        // Calculate accommodation amount
+        // Calculate accommodation amount - use default if settings not available
         const accommodationSettings = settings?.travel?.accommodation;
-        if (accommodationSettings?.enabled && accommodationSettings?.rate) {
-          // Check if this designation is applicable to the configured accommodation rate
-          const applicableTo = accommodationSettings?.applicableTo || ['all'];
-          const isApplicable = applicableTo.includes('all') || applicableTo.includes(form.designation?.toLowerCase().replace(/\s+/g, ''));
-          
-          if (isApplicable) {
-            const accommodationAmount = calculateAccommodationAmount(form.startDate, form.endDate, accommodationSettings.rate);
-            setForm(prev => ({
-              ...prev,
-              accommodationRate: accommodationSettings.rate,
-              accommodationCurrency: accommodationSettings.currency || 'KES',
-              accommodationAmount: accommodationAmount
-            }));
-          } else {
-            setForm(prev => ({
-              ...prev,
-              accommodationRate: '',
-              accommodationCurrency: 'KES',
-              accommodationAmount: ''
-            }));
-          }
+        const accommodationRate = accommodationSettings?.rate || 4000;
+        const accommodationCurrency = accommodationSettings?.currency || 'KES';
+
+        // Check if this designation is applicable to the configured accommodation rate
+        const applicableTo = accommodationSettings?.applicableTo || ['all'];
+        const isApplicable = applicableTo.includes('all') || applicableTo.includes(form.designation?.toLowerCase().replace(/\s+/g, ''));
+
+        if (isApplicable) {
+          const accommodationAmount = calculateAccommodationAmount(form.startDate, form.endDate, accommodationRate);
+          setForm(prev => ({
+            ...prev,
+            accommodationRate: accommodationRate,
+            accommodationCurrency: accommodationCurrency,
+            accommodationAmount: accommodationAmount
+          }));
+        } else {
+          setForm(prev => ({
+            ...prev,
+            accommodationRate: 0,
+            accommodationCurrency: 'KES',
+            accommodationAmount: 0
+          }));
         }
       }
     }
@@ -461,12 +474,12 @@ export default function TravelReimbursementPage() {
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
-                  <span className="font-medium text-slate-900">{form.dsaRate !== '' ? form.dsaRate.toLocaleString() : '0.00'} {form.dsaCurrency}</span>
+                  <span className="font-medium text-slate-900">{(form.dsaRate || 0).toLocaleString()} {form.dsaCurrency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total DSA:</span>
                   <span className={`font-semibold ${form.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
-                    {form.dsaAmount !== '' ? form.dsaAmount.toLocaleString() : '0.00'} {form.dsaCurrency}
+                    {(form.dsaAmount || 0).toLocaleString()} {form.dsaCurrency}
                   </span>
                 </div>
               </div>
@@ -496,7 +509,7 @@ export default function TravelReimbursementPage() {
           )}
 
           {/* Accommodation Section - Always show when calculation is applicable */}
-          {form.travelCategory && form.startDate && form.endDate && settings?.travel?.accommodation?.enabled && (
+          {form.travelCategory && form.startDate && form.endDate && (
             <div className={`rounded-xl border p-4 ${form.accommodationProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
               <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <Building2 size={16} />
@@ -515,12 +528,12 @@ export default function TravelReimbursementPage() {
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
-                  <span className="font-medium text-slate-900">{form.accommodationRate !== '' ? form.accommodationRate.toLocaleString() : '0.00'} {form.accommodationCurrency}</span>
+                  <span className="font-medium text-slate-900">{(form.accommodationRate || 0).toLocaleString()} {form.accommodationCurrency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total Accommodation:</span>
                   <span className={`font-semibold ${form.accommodationProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
-                    {form.accommodationAmount !== '' ? form.accommodationAmount.toLocaleString() : '0.00'} {form.accommodationCurrency}
+                    {(form.accommodationAmount || 0).toLocaleString()} {form.accommodationCurrency}
                   </span>
                 </div>
               </div>
