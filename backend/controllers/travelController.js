@@ -89,7 +89,7 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
-    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent, receipts } = req.body;
+    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
       return res.status(400).json({ message: 'Start date, end date, origin, destination, and reason are required.' });
@@ -104,18 +104,18 @@ const createTravelRequest = async (req, res, next) => {
 
     let supportingDocumentId = null;
     let supportingDocumentPath = null;
-    
+
     // Handle supporting document upload for both booking and reimbursement
-    if (req.file) {
+    if (req.files && req.files.supportingDocument && req.files.supportingDocument[0]) {
       try {
         const { storedName, targetPath } = await saveDocument({
           userId: String(req.user.id),
           folderType: 'travel',
-          file: req.file
+          file: req.files.supportingDocument[0]
         });
-        
+
         supportingDocumentPath = targetPath;
-        
+
         // Try to create document record for tracking, but don't fail if it doesn't work
         try {
           const documentResult = await query(
@@ -124,7 +124,7 @@ const createTravelRequest = async (req, res, next) => {
               VALUES ($1, $2, 'travel', $3, $4, $5, $6, $7)
               RETURNING id
             `,
-            [req.user.id, req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
+            [req.user.id, req.user.id, req.files.supportingDocument[0].originalname, storedName, req.files.supportingDocument[0].mimetype, req.files.supportingDocument[0].size, targetPath]
           );
           supportingDocumentId = documentResult.rows[0].id;
         } catch (docError) {
@@ -187,6 +187,43 @@ const createTravelRequest = async (req, res, next) => {
       }
     }
 
+    // Handle receipt files if provided (for reimbursement)
+    if (req.files && req.files.receipts && Array.isArray(req.files.receipts)) {
+      try {
+        for (const receiptFile of req.files.receipts) {
+          try {
+            const { storedName, targetPath } = await saveDocument({
+              userId: String(req.user.id),
+              folderType: 'travel',
+              file: receiptFile
+            });
+
+            await travelModel.createTravelReceipt({
+              travelRequestId: request.id,
+              uploadedBy: req.user.id,
+              fileName: receiptFile.originalname,
+              storedName,
+              mimeType: receiptFile.mimetype,
+              fileSize: receiptFile.size,
+              storagePath: targetPath,
+              amount: null,
+              description: null
+            });
+          } catch (receiptError) {
+            console.error('Failed to upload receipt:', receiptError.message);
+            // Continue with other receipts even if one fails
+          }
+        }
+      } catch (receiptsError) {
+        console.error('Failed to process receipts:', receiptsError.message);
+        // Don't fail the entire request if receipts fail
+      }
+    }
+
+    // Include receipts in the response
+    const requestWithReceipts = await travelModel.findTravelRequestById(request.id);
+    const receipts = await travelModel.listTravelReceipts({ travelRequestId: request.id });
+
     await logAction({
       actorUserId: req.user.id,
       actorRole: req.user.role,
@@ -197,28 +234,6 @@ const createTravelRequest = async (req, res, next) => {
       metadata: { travelType, origin, destination, startDate, endDate, referenceNumber: request.referenceNumber },
       ipAddress: req.ip
     });
-
-    // Process receipts if provided (for reimbursement requests)
-    if (receipts && Array.isArray(receipts) && receipts.length > 0) {
-      for (const receipt of receipts) {
-        try {
-          await travelModel.createTravelReceipt({
-            travelRequestId: request.id,
-            uploadedBy: req.user.id,
-            fileName: receipt.name,
-            storedName: receipt.storedName || receipt.name,
-            mimeType: receipt.type || 'application/octet-stream',
-            fileSize: receipt.size || 0,
-            storagePath: receipt.storagePath || null,
-            amount: receipt.amount || null,
-            description: receipt.description || null
-          });
-        } catch (receiptError) {
-          console.error('Failed to create travel receipt:', receiptError.message);
-          // Continue with other receipts even if one fails
-        }
-      }
-    }
 
     // Send email notification to approver (best-effort)
     try {
@@ -242,7 +257,7 @@ const createTravelRequest = async (req, res, next) => {
       console.error('Failed to send travel request notification email:', emailError.message);
     }
 
-    res.status(201).json({ request });
+    res.status(201).json({ request: { ...requestWithReceipts, receipts } });
   } catch (error) {
     next(error);
   }

@@ -34,7 +34,7 @@ router.use(authenticate);
 // Travel request routes
 router.get('/requests', listTravelRequests);
 router.get('/requests/:id', getTravelRequest);
-router.post('/requests', authorize('employee', 'supervisor', 'admin', 'finance'), upload.single('supportingDocument'), createTravelRequest);
+router.post('/requests', authorize('employee', 'supervisor', 'admin', 'finance'), upload.fields([{ name: 'supportingDocument', maxCount: 1 }, { name: 'receipts', maxCount: 10 }]), createTravelRequest);
 router.put('/requests/:id', authorize('employee', 'supervisor', 'admin', 'finance'), updateTravelRequest);
 router.patch('/requests/:id/cancel', authorize('employee', 'supervisor', 'admin', 'finance'), cancelTravelRequest);
 router.patch('/requests/:id/decision', authorize('supervisor', 'admin', 'ceo', 'finance'), decideTravelRequest);
