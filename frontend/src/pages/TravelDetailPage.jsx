@@ -110,6 +110,9 @@ export default function TravelDetailPage() {
       console.log('Loaded request data:', data);
       console.log('Travel category:', data.travelCategory);
       console.log('Travel type:', data.travelType);
+      console.log('Transportation cost:', data.transportationCost);
+      console.log('DSA amount:', data.dsaAmount);
+      console.log('Full day event:', data.fullDayEvent);
       setRequest(data);
       // Detect if this is local movement for edit form
       const isLocalRequest = isLocalMovement(data);
@@ -131,6 +134,8 @@ export default function TravelDetailPage() {
         // For reimbursement: use transportationCost directly
         transportationValue = data.transportationCost || '';
       }
+
+      console.log('Calculated transportation value for edit form:', transportationValue);
 
       setEditForm({
         startDate: data.startDate,
