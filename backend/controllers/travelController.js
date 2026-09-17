@@ -106,12 +106,12 @@ const createTravelRequest = async (req, res, next) => {
     let supportingDocumentPath = null;
 
     // Handle supporting document upload for both booking and reimbursement
-    if (req.files && req.files.supportingDocument && req.files.supportingDocument[0]) {
+    if (req.file) {
       try {
         const { storedName, targetPath } = await saveDocument({
           userId: String(req.user.id),
           folderType: 'travel',
-          file: req.files.supportingDocument[0]
+          file: req.file
         });
 
         supportingDocumentPath = targetPath;
@@ -124,7 +124,7 @@ const createTravelRequest = async (req, res, next) => {
               VALUES ($1, $2, 'travel', $3, $4, $5, $6, $7)
               RETURNING id
             `,
-            [req.user.id, req.user.id, req.files.supportingDocument[0].originalname, storedName, req.files.supportingDocument[0].mimetype, req.files.supportingDocument[0].size, targetPath]
+            [req.user.id, req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
           );
           supportingDocumentId = documentResult.rows[0].id;
         } catch (docError) {
@@ -184,39 +184,6 @@ const createTravelRequest = async (req, res, next) => {
         });
       } else {
         throw dbError;
-      }
-    }
-
-    // Handle receipt files if provided (for reimbursement)
-    if (req.files && req.files.receipts && Array.isArray(req.files.receipts)) {
-      try {
-        for (const receiptFile of req.files.receipts) {
-          try {
-            const { storedName, targetPath } = await saveDocument({
-              userId: String(req.user.id),
-              folderType: 'travel',
-              file: receiptFile
-            });
-
-            await travelModel.createTravelReceipt({
-              travelRequestId: request.id,
-              uploadedBy: req.user.id,
-              fileName: receiptFile.originalname,
-              storedName,
-              mimeType: receiptFile.mimetype,
-              fileSize: receiptFile.size,
-              storagePath: targetPath,
-              amount: null,
-              description: null
-            });
-          } catch (receiptError) {
-            console.error('Failed to upload receipt:', receiptError.message);
-            // Continue with other receipts even if one fails
-          }
-        }
-      } catch (receiptsError) {
-        console.error('Failed to process receipts:', receiptsError.message);
-        // Don't fail the entire request if receipts fail
       }
     }
 

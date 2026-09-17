@@ -282,54 +282,25 @@ export default function TravelReimbursementPage() {
     setLoading(true);
 
     try {
-      const formData = new FormData();
+      const payload = {
+        ...form,
+        userId: user.id,
+        receipts: receipts.map(r => ({
+          name: r.name,
+          size: r.size,
+          type: r.file?.type || 'application/octet-stream',
+          storedName: r.name,
+          storagePath: null
+        })),
+        dsaAmount: parseFloat(form.dsaAmount) || 0,
+        estimatedCost: parseFloat(form.estimatedCost) || 0,
+        transportationCost: parseFloat(form.transportationCost) || 0,
+        dsaProvided: form.dsaProvided || false,
+        accommodationAmount: parseFloat(form.accommodationAmount) || 0,
+        accommodationProvided: form.accommodationProvided || false
+      };
 
-      // Add form fields
-      formData.append('travelType', form.travelType);
-      formData.append('startDate', form.startDate);
-      formData.append('endDate', form.endDate);
-      formData.append('origin', form.origin);
-      formData.append('destination', form.destination);
-      formData.append('reason', form.reason);
-      formData.append('estimatedCost', form.estimatedCost || '');
-      formData.append('currency', form.currency);
-      formData.append('designation', form.designation || '');
-      formData.append('travelCategory', form.travelCategory || '');
-      formData.append('travelTypeDetail', form.travelTypeDetail || '');
-      formData.append('projectProgramme', form.projectProgramme || '');
-      formData.append('dsaRate', form.dsaRate || '');
-      formData.append('dsaCurrency', form.dsaCurrency);
-      formData.append('dsaAmount', form.dsaAmount || '');
-      formData.append('dsaProvided', form.dsaProvided);
-      formData.append('accommodationRate', form.accommodationRate || '');
-      formData.append('accommodationCurrency', form.accommodationCurrency);
-      formData.append('accommodationAmount', form.accommodationAmount || '');
-      formData.append('accommodationProvided', form.accommodationProvided);
-      formData.append('transportationCost', form.transportationCost || '');
-
-      // Add receipt files
-      receipts.forEach((receipt, index) => {
-        if (receipt.file) {
-          formData.append(`receipts`, receipt.file);
-        }
-      });
-
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Submission failed');
-      }
-
-      const { request } = await response.json();
-
+      await createTravelRequest(payload);
       setNotice({
         open: true,
         title: 'Travel reimbursement submitted',
@@ -340,7 +311,7 @@ export default function TravelReimbursementPage() {
       setNotice({
         open: true,
         title: 'Unable to submit reimbursement',
-        description: error.response?.data?.message || error.message || 'Please try again.'
+        description: error.response?.data?.message || 'Please try again.'
       });
     } finally {
       setLoading(false);

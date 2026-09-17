@@ -53,49 +53,32 @@ export default function LocalMovementBookingPage() {
       const dsaAmount = form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0;
       const totalCost = baseCost + dsaAmount;
 
-      const formData = new FormData();
+      const payload = {
+        ...form,
+        userId: user.id,
+        travelCategory: 'Local Movement',
+        startDate: form.travelDate,
+        endDate: form.travelDate,
+        estimatedCost: totalCost, // Store total cost for booking
+        transportationCost: baseCost, // Store transportation cost separately
+        dsaRate: form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0,
+        dsaCurrency: 'KES',
+        dsaAmount: dsaAmount,
+        accommodationRate: 0,
+        accommodationCurrency: 'KES',
+        accommodationAmount: 0,
+        fullDayEvent: form.fullDayEvent,
+        projectProgramme: form.projectProgramme || null, // Convert empty string to null
+        supportingDocuments: documents.map(doc => ({
+          name: doc.name,
+          size: doc.size, // Use actual size in bytes
+          type: doc.file?.type || 'application/octet-stream',
+          storedName: doc.name,
+          storagePath: null
+        }))
+      };
 
-      // Add form fields
-      formData.append('travelType', form.travelType);
-      formData.append('startDate', form.travelDate);
-      formData.append('endDate', form.travelDate);
-      formData.append('origin', form.origin);
-      formData.append('destination', form.destination);
-      formData.append('reason', form.reason);
-      formData.append('estimatedCost', totalCost);
-      formData.append('currency', form.currency);
-      formData.append('travelCategory', 'Local Movement');
-      formData.append('projectProgramme', form.projectProgramme || '');
-      formData.append('dsaRate', form.fullDayEvent ? (settings?.travel?.dsa?.localMovementRate || 2000) : 0);
-      formData.append('dsaCurrency', 'KES');
-      formData.append('dsaAmount', dsaAmount);
-      formData.append('accommodationRate', 0);
-      formData.append('accommodationCurrency', 'KES');
-      formData.append('accommodationAmount', 0);
-      formData.append('transportationCost', baseCost);
-      formData.append('fullDayEvent', form.fullDayEvent);
-
-      // Add supporting document file
-      if (documents.length > 0 && documents[0].file) {
-        formData.append('supportingDocument', documents[0].file);
-      }
-
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Submission failed');
-      }
-
-      const { request } = await response.json();
-
+      await createTravelRequest(payload);
       setNotice({
         open: true,
         title: 'Local movement booking submitted',
@@ -106,7 +89,7 @@ export default function LocalMovementBookingPage() {
       setNotice({
         open: true,
         title: 'Unable to submit booking',
-        description: error.response?.data?.message || error.message || 'Please try again.'
+        description: error.response?.data?.message || 'Please try again.'
       });
     } finally {
       setLoading(false);
