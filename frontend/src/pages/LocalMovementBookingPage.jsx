@@ -71,7 +71,7 @@ export default function LocalMovementBookingPage() {
         projectProgramme: form.projectProgramme || null // Convert empty string to null
       };
 
-      const { request } = await createTravelRequest(payload);
+      const request = await createTravelRequest(payload);
 
       // Upload supporting document after creating the request
       if (documents.length > 0 && documents[0].file) {

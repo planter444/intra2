@@ -73,7 +73,7 @@ export default function LocalMovementReimbursementPage() {
         projectProgramme: form.projectProgramme || null // Convert empty string to null
       };
 
-      const { request } = await createTravelRequest(payload);
+      const request = await createTravelRequest(payload);
 
       // Upload receipts after creating the request
       if (receipts.length > 0) {

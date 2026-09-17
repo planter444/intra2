@@ -293,7 +293,7 @@ export default function TravelReimbursementPage() {
         accommodationProvided: form.accommodationProvided || false
       };
 
-      const { request } = await createTravelRequest(payload);
+      const request = await createTravelRequest(payload);
 
       // Upload receipts after creating the request
       if (receipts.length > 0) {
