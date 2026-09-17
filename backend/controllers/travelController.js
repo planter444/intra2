@@ -89,7 +89,7 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
-    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, transportationCost } = req.body;
+    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, receipts } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
       return res.status(400).json({ message: 'Start date, end date, origin, destination, and reason are required.' });
@@ -162,6 +162,7 @@ const createTravelRequest = async (req, res, next) => {
         accommodationRate: accommodationRate || null,
         accommodationCurrency: accommodationCurrency || 'KES',
         accommodationAmount: accommodationAmount || null,
+        accommodationProvided: accommodationProvided || false,
         transportationCost: transportationCost || null
       });
     } catch (dbError) {
@@ -195,6 +196,28 @@ const createTravelRequest = async (req, res, next) => {
       metadata: { travelType, origin, destination, startDate, endDate, referenceNumber: request.referenceNumber },
       ipAddress: req.ip
     });
+
+    // Process receipts if provided (for reimbursement requests)
+    if (receipts && Array.isArray(receipts) && receipts.length > 0) {
+      for (const receipt of receipts) {
+        try {
+          await travelModel.createTravelReceipt({
+            travelRequestId: request.id,
+            uploadedBy: req.user.id,
+            fileName: receipt.name,
+            storedName: receipt.storedName || receipt.name,
+            mimeType: receipt.type || 'application/octet-stream',
+            fileSize: receipt.size || 0,
+            storagePath: receipt.storagePath || null,
+            amount: receipt.amount || null,
+            description: receipt.description || null
+          });
+        } catch (receiptError) {
+          console.error('Failed to create travel receipt:', receiptError.message);
+          // Continue with other receipts even if one fails
+        }
+      }
+    }
 
     // Send email notification to approver (best-effort)
     try {

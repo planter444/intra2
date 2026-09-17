@@ -109,9 +109,12 @@ export default function TravelDetailPage() {
         dsaRate: data.dsaRate || '',
         dsaCurrency: data.dsaCurrency || 'KES',
         dsaAmount: data.dsaAmount || '',
+        dsaProvided: data.dsaProvided || false,
         accommodationRate: data.accommodationRate || '',
         accommodationCurrency: data.accommodationCurrency || 'KES',
-        accommodationAmount: data.accommodationAmount || ''
+        accommodationAmount: data.accommodationAmount || '',
+        accommodationProvided: data.accommodationProvided || false,
+        transportationCost: data.transportationCost || ''
       });
       
       // Load approver for this employee
@@ -160,9 +163,12 @@ export default function TravelDetailPage() {
         dsaRate: dsaRate,
         dsaCurrency: request.dsaCurrency || 'KES',
         dsaAmount: calculatedDSAAmount,
+        dsaProvided: editForm.dsaProvided || false,
         accommodationRate: accommodationRate,
         accommodationCurrency: accommodationCurrency,
-        accommodationAmount: calculatedAccommodationAmount
+        accommodationAmount: calculatedAccommodationAmount,
+        accommodationProvided: editForm.accommodationProvided || false,
+        transportationCost: editForm.transportationCost || null
       };
       
       console.log('Sending update data:', updateData);
@@ -641,6 +647,65 @@ export default function TravelDetailPage() {
                       </span>
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* DSA Provided Checkbox in Edit Mode */}
+              {request.dsaRate && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={editForm.dsaProvided || false}
+                      onChange={(e) => setEditForm({ ...editForm, dsaProvided: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-slate-900">DSA was provided during travel</span>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {editForm.dsaProvided 
+                          ? 'DSA will be excluded from the total reimbursement amount.' 
+                          : 'DSA will be included in the total reimbursement amount.'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Accommodation Provided Checkbox in Edit Mode */}
+              {settings?.travel?.accommodation?.enabled && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <label className="flex cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={editForm.accommodationProvided || false}
+                      onChange={(e) => setEditForm({ ...editForm, accommodationProvided: e.target.checked })}
+                      className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-slate-900">Accommodation was provided during travel</span>
+                      <p className="mt-1 text-xs text-slate-600">
+                        {editForm.accommodationProvided 
+                          ? 'Accommodation will be excluded from the total reimbursement amount.' 
+                          : 'Accommodation will be included in the total reimbursement amount.'}
+                      </p>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Transportation Cost in Edit Mode */}
+              {request.travelType === 'reimbursement' && (
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Transportation Cost Incurred (Optional)</label>
+                  <input
+                    type="number"
+                    className="bg-white"
+                    value={editForm.transportationCost || ''}
+                    onChange={(e) => setEditForm({ ...editForm, transportationCost: e.target.value })}
+                    placeholder="0.00"
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Actual transportation expenses incurred during travel</p>
                 </div>
               )}
               

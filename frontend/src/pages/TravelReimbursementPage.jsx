@@ -277,7 +277,13 @@ export default function TravelReimbursementPage() {
       const payload = {
         ...form,
         userId: user.id,
-        receipts: receipts,
+        receipts: receipts.map(r => ({
+          name: r.name,
+          size: r.size,
+          type: r.file?.type || 'application/octet-stream',
+          storedName: r.name,
+          storagePath: null
+        })),
         dsaAmount: parseFloat(form.dsaAmount) || 0,
         estimatedCost: parseFloat(form.estimatedCost) || 0,
         transportationCost: parseFloat(form.transportationCost) || 0,
@@ -435,8 +441,8 @@ export default function TravelReimbursementPage() {
             </div>
           </div>
 
-          {/* DSA Section */}
-          {(form.dsaRate || form.dsaAmount) && (
+          {/* DSA Section - Always show when calculation is applicable */}
+          {form.travelCategory && form.startDate && form.endDate && (
             <div className={`rounded-xl border p-4 ${form.dsaProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
               <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <DollarSign size={16} />
@@ -455,20 +461,20 @@ export default function TravelReimbursementPage() {
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
-                  <span className="font-medium text-slate-900">{form.dsaRate} {form.dsaCurrency}</span>
+                  <span className="font-medium text-slate-900">{form.dsaRate || 'Calculating...'} {form.dsaCurrency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total DSA:</span>
                   <span className={`font-semibold ${form.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
-                    {form.dsaAmount} {form.dsaCurrency}
+                    {form.dsaAmount || 'Calculating...'} {form.dsaCurrency}
                   </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* DSA Provided Checkbox */}
-          {(form.dsaRate || form.dsaAmount) && (
+          {/* DSA Provided Checkbox - Always show when DSA section is visible */}
+          {form.travelCategory && form.startDate && form.endDate && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <label className="flex cursor-pointer items-start gap-3">
                 <input
@@ -489,8 +495,8 @@ export default function TravelReimbursementPage() {
             </div>
           )}
 
-          {/* Accommodation Section */}
-          {(form.accommodationRate || form.accommodationAmount) && (
+          {/* Accommodation Section - Always show when calculation is applicable */}
+          {form.travelCategory && form.startDate && form.endDate && settings?.travel?.accommodation?.enabled && (
             <div className={`rounded-xl border p-4 ${form.accommodationProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
               <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <Building2 size={16} />
@@ -509,20 +515,20 @@ export default function TravelReimbursementPage() {
               <div className="grid gap-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Rate:</span>
-                  <span className="font-medium text-slate-900">{form.accommodationRate} {form.accommodationCurrency}</span>
+                  <span className="font-medium text-slate-900">{form.accommodationRate || 'Calculating...'} {form.accommodationCurrency}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-600">Total Accommodation:</span>
                   <span className={`font-semibold ${form.accommodationProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>
-                    {form.accommodationAmount} {form.accommodationCurrency}
+                    {form.accommodationAmount || 'Calculating...'} {form.accommodationCurrency}
                   </span>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Accommodation Provided Checkbox */}
-          {(form.accommodationRate || form.accommodationAmount) && (
+          {/* Accommodation Provided Checkbox - Always show when accommodation section is visible */}
+          {form.travelCategory && form.startDate && form.endDate && settings?.travel?.accommodation?.enabled && (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <label className="flex cursor-pointer items-start gap-3">
                 <input
@@ -577,7 +583,7 @@ export default function TravelReimbursementPage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Total Cost for Reimbursement</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Total Cost for Reimbursement (Optional)</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                 {form.currency === 'KES' ? 'KES' : form.currency}
@@ -588,10 +594,9 @@ export default function TravelReimbursementPage() {
                 onChange={(event) => setForm((current) => ({ ...current, estimatedCost: event.target.value }))}
                 placeholder="0.00"
                 className="bg-slate-50 pl-16"
-                required
               />
             </div>
-            <p className="mt-1 text-xs text-slate-500">Total amount to be reimbursed (includes all expenses)</p>
+            <p className="mt-1 text-xs text-slate-500">Total amount to be reimbursed (includes all expenses). Leave blank if calculating from individual components.</p>
           </div>
 
           {/* DSA Section */}
