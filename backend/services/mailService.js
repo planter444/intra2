@@ -632,13 +632,6 @@ const sendAppraisalToCeoEmail = async ({ toEmail, toName, employeeName, supervis
     `
   });
 };
-          </div>
-          <p style="margin: 0; color: #475569;">If you have any questions, please contact your supervisor.</p>
-        </div>
-      </div>
-    `
-  });
-};
 
 module.exports = {
   sendPasswordResetEmail,
