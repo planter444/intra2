@@ -82,12 +82,25 @@ export default function TravelDetailPage() {
     const end = new Date(endDate);
     const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'nights';
     const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-    
+
     if (calculationBasis === 'nights') {
       return diffDays * dsaRate;
     } else {
       return (diffDays + 1) * dsaRate;
     }
+  };
+
+  // Helper function to determine if a request is local movement
+  const isLocalMovement = (request) => {
+    if (!request) return false;
+    // Check travel_category first
+    if (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') {
+      return true;
+    }
+    // Fallback: if accommodation is zero/null, it's likely local movement
+    const hasNoAccommodation = (!request.accommodationRate || request.accommodationRate === 0) &&
+                            (!request.accommodationAmount || request.accommodationAmount === 0);
+    return hasNoAccommodation;
   };
 
   const loadRequest = async () => {
@@ -152,9 +165,9 @@ export default function TravelDetailPage() {
 
       // Calculate DSA - use travel category even if designation is empty
       if (editForm.travelCategory && editForm.startDate && editForm.endDate) {
-        const isLocalMovement = editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local';
+        const isLocalMovementEdit = editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local';
 
-        if (isLocalMovement) {
+        if (isLocalMovementEdit) {
           // Only apply DSA if it's a full day event
           if (editForm.fullDayEvent) {
             dsaRate = 2000;
@@ -177,7 +190,7 @@ export default function TravelDetailPage() {
         }
 
         // Calculate days (not for Local Movement)
-        if (!isLocalMovement) {
+        if (!isLocalMovementEdit) {
           const start = new Date(editForm.startDate);
           const end = new Date(editForm.endDate);
           const diffTime = end - start;
@@ -187,8 +200,8 @@ export default function TravelDetailPage() {
       }
 
       // Calculate accommodation - NOT for Local Movement (always zero for Local Movement)
-      const isLocalMovement = editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local';
-      if (isLocalMovement) {
+      const isLocalMovementEdit = editForm.travelCategory === 'Local Movement' || editForm.travelCategory === 'local movement' || editForm.travelCategory === 'Local';
+      if (isLocalMovementEdit) {
         accommodationRate = 0;
         accommodationCurrency = 'KES';
         calculatedAccommodationAmount = 0;
@@ -1024,7 +1037,7 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate:</span>
                         <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {((request.dsaRate || 0) > 0 ? request.dsaRate : (
-                          (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? (request.fullDayEvent ? 2000 : 0) :
+                          isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                           request.travelCategory === 'Within Kenya' ? 2000 :
                           request.travelCategory === 'East Africa' ? 40 :
                           request.travelCategory === 'International' ? 50 : 0
@@ -1034,7 +1047,7 @@ export default function TravelDetailPage() {
                         <span className="text-slate-600">Total DSA:</span>
                         <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {((request.dsaAmount || 0) > 0 ? request.dsaAmount : (() => {
                           if (!request.startDate || !request.endDate) return 0;
-                          const rate = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? (request.fullDayEvent ? 2000 : 0) :
+                          const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                       request.travelCategory === 'Within Kenya' ? 2000 :
                                       request.travelCategory === 'East Africa' ? 40 :
                                       request.travelCategory === 'International' ? 50 : 0;
@@ -1059,7 +1072,7 @@ export default function TravelDetailPage() {
                 ) : null}
 
                 {/* Accommodation Section - NOT for Local Movement */}
-                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && request.travelCategory !== 'Local Movement' && request.travelCategory !== 'local movement' && request.travelCategory !== 'Local' ? (
+                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && !isLocalMovement(request) ? (
                   <div className={`rounded-xl border p-4 ${request.accommodationProvided ? 'border-slate-200 bg-slate-100' : 'border-blue-200 bg-blue-50'}`}>
                     <div className="flex items-center gap-2 mb-3">
                       <Building2 size={16} className={request.accommodationProvided ? 'text-slate-600' : 'text-blue-600'} />
@@ -1136,7 +1149,7 @@ export default function TravelDetailPage() {
                             if (dsaAmount > 0) return dsaAmount.toLocaleString();
                             // Fallback calculation
                             if (!request.startDate || !request.endDate) return '0';
-                            const rate = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? (request.fullDayEvent ? 2000 : 0) :
+                            const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                         request.travelCategory === 'Within Kenya' ? 2000 :
                                         request.travelCategory === 'East Africa' ? 40 :
                                         request.travelCategory === 'International' ? 50 : 0;
@@ -1152,7 +1165,7 @@ export default function TravelDetailPage() {
                         </span>
                       </div>
                       {/* Accommodation - NOT for Local Movement */}
-                      {request.travelCategory !== 'Local Movement' && request.travelCategory !== 'local movement' && request.travelCategory !== 'Local' && (
+                      {!isLocalMovement(request) && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Accommodation:</span>
                           <span className={`font-medium ${request.accommodationProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
@@ -1185,7 +1198,7 @@ export default function TravelDetailPage() {
                               const dsaAmount = (request.dsaAmount || 0);
                               if (dsaAmount > 0) return dsaAmount;
                               if (!request.startDate || !request.endDate) return 0;
-                              const rate = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? (request.fullDayEvent ? 2000 : 0) :
+                              const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                           request.travelCategory === 'Within Kenya' ? 2000 :
                                           request.travelCategory === 'East Africa' ? 40 :
                                           request.travelCategory === 'International' ? 50 : 0;
@@ -1200,7 +1213,7 @@ export default function TravelDetailPage() {
                             })();
 
                             // Calculate effective accommodation (0 if provided) - NOT for Local Movement
-                            const effectiveAccommodation = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? 0 : (request.accommodationProvided ? 0 : (() => {
+                            const effectiveAccommodation = isLocalMovement(request) ? 0 : (request.accommodationProvided ? 0 : (() => {
                               const accommodationAmount = (request.accommodationAmount || 0);
                               if (accommodationAmount > 0) return accommodationAmount;
                               if (!request.startDate || !request.endDate) return 0;
@@ -1271,7 +1284,7 @@ export default function TravelDetailPage() {
                             if (dsaAmount > 0) return dsaAmount.toLocaleString();
                             // Fallback calculation
                             if (!request.startDate || !request.endDate) return '0';
-                            const rate = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? (request.fullDayEvent ? 2000 : 0) :
+                            const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                         request.travelCategory === 'Within Kenya' ? 2000 :
                                         request.travelCategory === 'East Africa' ? 40 :
                                         request.travelCategory === 'International' ? 50 : 0;
@@ -1287,7 +1300,7 @@ export default function TravelDetailPage() {
                         </span>
                       </div>
                       {/* Accommodation - NOT for Local Movement */}
-                      {request.travelCategory !== 'Local Movement' && request.travelCategory !== 'local movement' && request.travelCategory !== 'Local' && (
+                      {!isLocalMovement(request) && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Accommodation:</span>
                           <span className={`font-medium ${request.accommodationProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
@@ -1322,7 +1335,7 @@ export default function TravelDetailPage() {
                               const dsaAmount = (request.dsaAmount || 0);
                               if (dsaAmount > 0) return dsaAmount;
                               if (!request.startDate || !request.endDate) return 0;
-                              const rate = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? (request.fullDayEvent ? 2000 : 0) :
+                              const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                           request.travelCategory === 'Within Kenya' ? 2000 :
                                           request.travelCategory === 'East Africa' ? 40 :
                                           request.travelCategory === 'International' ? 50 : 0;
@@ -1337,7 +1350,7 @@ export default function TravelDetailPage() {
                             })();
 
                             // Calculate effective accommodation (0 if provided) - NOT for Local Movement
-                            const effectiveAccommodation = (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') ? 0 : (request.accommodationProvided ? 0 : (() => {
+                            const effectiveAccommodation = isLocalMovement(request) ? 0 : (request.accommodationProvided ? 0 : (() => {
                               const accommodationAmount = (request.accommodationAmount || 0);
                               if (accommodationAmount > 0) return accommodationAmount;
                               if (!request.startDate || !request.endDate) return 0;

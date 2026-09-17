@@ -18,6 +18,18 @@ const statusConfig = {
   completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' }
 };
 
+// Helper function to determine if a request is local movement
+const isLocalMovement = (request) => {
+  // Check travel_category first
+  if (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') {
+    return true;
+  }
+  // Fallback: if accommodation is zero/null, it's likely local movement
+  const hasNoAccommodation = (!request.accommodationRate || request.accommodationRate === 0) &&
+                            (!request.accommodationAmount || request.accommodationAmount === 0);
+  return hasNoAccommodation;
+};
+
 const canDecideTravel = (user, request, employeeApprovers) => {
   // ONLY check employee-specific routing - this is the only approval strategy
   const designatedApproverId = employeeApprovers[request.userId];
@@ -334,13 +346,13 @@ export default function TravelPage() {
                         </span>
                         <span className="text-xs text-slate-400 truncate">{request.employeeName}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
-                          request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local'
+                          isLocalMovement(request)
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                             : request.travelType === 'booking'
                               ? 'bg-blue-50 text-blue-600 border-blue-200'
                               : 'bg-purple-50 text-purple-600 border-purple-200'
                         } border`}>
-                          {request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local'
+                          {isLocalMovement(request)
                             ? (request.travelType === 'booking' ? 'Local Booking' : 'Local Reimbursement')
                             : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
                         </span>
@@ -455,13 +467,13 @@ export default function TravelPage() {
                         </span>
                         <span className="text-sm text-slate-400">{request.employeeName}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
-                          request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local'
+                          isLocalMovement(request)
                             ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
                             : request.travelType === 'booking'
                               ? 'bg-blue-50 text-blue-600 border-blue-200'
                               : 'bg-purple-50 text-purple-600 border-purple-200'
                         } border`}>
-                          {request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local'
+                          {isLocalMovement(request)
                             ? (request.travelType === 'booking' ? 'Local Booking' : 'Local Reimbursement')
                             : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
                         </span>
