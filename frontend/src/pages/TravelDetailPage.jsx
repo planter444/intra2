@@ -637,6 +637,29 @@ export default function TravelDetailPage() {
                   </div>
                 </div>
               )}
+              {request.accommodationAmount && request.accommodationRate && (
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <h4 className="mb-2 font-semibold text-blue-900">Accommodation Calculation</h4>
+                  <div className="grid gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Rate per Night:</span>
+                      <span className="font-medium text-slate-900">{request.accommodationCurrency} {request.accommodationRate.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Number of Nights:</span>
+                      <span className="font-medium text-slate-900">
+                        {request.startDate && request.endDate ? (
+                          Math.ceil((new Date(request.endDate) - new Date(request.startDate)) / (1000 * 60 * 60 * 24))
+                        ) : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Accommodation:</span>
+                      <span className="font-semibold text-blue-700">{request.accommodationCurrency} {request.accommodationAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-sm text-slate-500">Reason</p>
                 <p className="font-medium text-slate-900">{request.reason}</p>
