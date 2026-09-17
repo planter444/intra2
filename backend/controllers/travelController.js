@@ -257,12 +257,12 @@ const updateTravelRequest = async (req, res, next) => {
       travelCategory: travelCategory ?? request.travelCategory,
       travelTypeDetail: travelTypeDetail ?? request.travelTypeDetail,
       projectProgramme: projectProgramme ?? request.projectProgramme,
-      dsaRate: dsaRate !== undefined && dsaRate !== '' ? Number(dsaRate) : request.dsaRate,
+      dsaRate: dsaRate !== null ? Number(dsaRate) : request.dsaRate,
       dsaCurrency: dsaCurrency ?? request.dsaCurrency,
-      dsaAmount: dsaAmount !== undefined && dsaAmount !== '' ? Number(dsaAmount) : request.dsaAmount,
-      accommodationRate: accommodationRate !== undefined && accommodationRate !== '' ? Number(accommodationRate) : request.accommodationRate,
+      dsaAmount: dsaAmount !== null ? Number(dsaAmount) : request.dsaAmount,
+      accommodationRate: accommodationRate !== null ? Number(accommodationRate) : request.accommodationRate,
       accommodationCurrency: accommodationCurrency ?? request.accommodationCurrency,
-      accommodationAmount: accommodationAmount !== undefined && accommodationAmount !== '' ? Number(accommodationAmount) : request.accommodationAmount
+      accommodationAmount: accommodationAmount !== null ? Number(accommodationAmount) : request.accommodationAmount
     });
 
     await logAction({

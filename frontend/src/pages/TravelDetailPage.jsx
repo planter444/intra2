@@ -140,21 +140,33 @@ export default function TravelDetailPage() {
   const handleUpdate = async () => {
     try {
       // Calculate DSA and accommodation amounts based on current dates
-      const calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate);
-      const accommodationRate = settings?.travel?.accommodation?.rate || 4000;
-      const accommodationCurrency = settings?.travel?.accommodation?.currency || 'KES';
+      const dsaRate = request.dsaRate || settings?.travel?.dsa?.rate || 0;
+      const calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, dsaRate);
+      const accommodationRate = request.accommodationRate || settings?.travel?.accommodation?.rate || 4000;
+      const accommodationCurrency = request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES';
       const calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
       
       const updateData = {
-        ...editForm,
+        startDate: editForm.startDate,
+        endDate: editForm.endDate,
+        origin: editForm.origin,
+        destination: editForm.destination,
+        reason: editForm.reason,
         estimatedCost: editForm.estimatedCost || null,
-        dsaRate: request.dsaRate || null,
+        designation: editForm.designation,
+        travelCategory: editForm.travelCategory,
+        travelTypeDetail: editForm.travelTypeDetail,
+        projectProgramme: editForm.projectProgramme,
+        dsaRate: dsaRate,
         dsaCurrency: request.dsaCurrency || 'KES',
         dsaAmount: calculatedDSAAmount,
         accommodationRate: accommodationRate,
         accommodationCurrency: accommodationCurrency,
         accommodationAmount: calculatedAccommodationAmount
       };
+      
+      console.log('Sending update data:', updateData);
+      console.log('Calculated DSA:', calculatedDSAAmount, 'Calculated Accommodation:', calculatedAccommodationAmount);
       
       await updateTravelRequest(id, updateData);
       setEditMode(false);
@@ -165,6 +177,7 @@ export default function TravelDetailPage() {
       });
       loadRequest();
     } catch (error) {
+      console.error('Update error:', error);
       setNotice({
         open: true,
         title: 'Unable to update request',
