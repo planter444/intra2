@@ -1314,11 +1314,12 @@ export default function TravelDetailPage() {
                                 transportationValue = request.transportationCost || request.estimatedCost || 0;
                               }
                             } else {
-                              transportationValue = request.estimatedCost || 0;
+                              // For official travel: use transportationCost for reimbursement, estimatedCost for booking
+                              transportationValue = request.travelType === 'reimbursement' ? (request.transportationCost || 0) : (request.estimatedCost || 0);
                             }
 
                             // For local movement, estimatedCost is the total (transportation + DSA)
-                            const otherCosts = isLocalMovement(request) ? 0 : 0;
+                            const otherCosts = isLocalMovement(request) ? 0 : (request.travelType === 'reimbursement' ? (request.estimatedCost || 0) : 0);
 
                             return (
                               effectiveDSA +
@@ -1470,11 +1471,12 @@ export default function TravelDetailPage() {
                                 transportationValue = request.transportationCost || request.estimatedCost || 0;
                               }
                             } else {
-                              transportationValue = request.estimatedCost || 0;
+                              // For official travel: use transportationCost for reimbursement, estimatedCost for booking
+                              transportationValue = request.travelType === 'reimbursement' ? (request.transportationCost || 0) : (request.estimatedCost || 0);
                             }
 
                             // For local movement, estimatedCost is the total (transportation + DSA)
-                            const otherCosts = isLocalMovement(request) ? 0 : 0;
+                            const otherCosts = isLocalMovement(request) ? 0 : (request.travelType === 'reimbursement' ? (request.estimatedCost || 0) : 0);
 
                             return (
                               effectiveDSA +
