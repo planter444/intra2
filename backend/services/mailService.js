@@ -632,31 +632,6 @@ const sendAppraisalToCeoEmail = async ({ toEmail, toName, employeeName, supervis
     `
   });
 };
-      }
-    ],
-    subject: `Your timesheet for ${period} has been rejected`,
-    htmlContent: `
-      <div style="margin: 0; background: #fef2f2; padding: 28px; font-family: Arial, sans-serif; color: #0f172a; line-height: 1.55;">
-        <div style="margin: 0 auto; max-width: 640px;">
-          <p style="margin: 0 0 12px; color: #dc2626; font-weight: 700;">Action Required</p>
-          <h1 style="margin: 0; font-size: 28px; color: #7f1d1d;">Your Timesheet Has Been Rejected</h1>
-          <p style="margin: 12px 0 0; color: #475569;">Hello ${toName || 'there'}, your timesheet for ${period} has been rejected by ${rejectedBy}.</p>
-          <div style="margin: 24px 0; overflow: hidden; border-radius: 20px; border: 1px solid #fecaca; background: #ffffff; box-shadow: 0 18px 45px rgba(220,38,38,0.12);">
-            <div style="background: linear-gradient(135deg, #7f1d1d, #dc2626); padding: 18px 22px; color: #ffffff;">
-              <p style="margin: 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.82;">KEREA HRMS Timesheet</p>
-              <h2 style="margin: 6px 0 0; font-size: 22px; line-height: 1.25;">Rejection Details</h2>
-            </div>
-            <div style="padding: 20px 22px; color: #0f172a;">
-              <p style="margin: 0 0 10px;"><strong>Period:</strong> ${period}</p>
-              <p style="margin: 0 0 10px;"><strong>Rejected by:</strong> ${rejectedBy}</p>
-              ${comment ? `<p style="margin: 0 0 10px;"><strong>Comment:</strong> ${comment}</p>` : ''}
-              <p style="margin: 0;">Please review the feedback and update your timesheet accordingly.</p>
-            </div>
-          </div>
-          <div style="margin: 24px 0;">
-            <a href="${String(env.frontendUrl || '').replace(/\/+$/, '')}/timesheets" style="display: inline-block; padding: 13px 22px; background: #dc2626; color: #ffffff; text-decoration: none; border-radius: 14px; font-weight: 700;">
-              Update Timesheet in HRMS
-            </a>
           </div>
           <p style="margin: 0; color: #475569;">If you have any questions, please contact your supervisor.</p>
         </div>

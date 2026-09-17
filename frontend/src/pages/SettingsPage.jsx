@@ -2065,8 +2065,6 @@ export default function SettingsPage() {
               <p className="text-xs text-slate-500 ml-7">When enabled, employees can see the CEO's final grades in their appraisal view.</p>
             </div>
           </SectionCard>
-            </div>
-          </SectionCard>
 
           {user?.role === 'ceo' && (
             <SectionCard title="KPI Assessment Locking" subtitle="Lock or unlock KPI assessments to prevent further modifications. Only the CEO can lock assessments.">
