@@ -60,7 +60,10 @@ module.exports = {
     navigationLeaves: 'Leave Management',
     navigationDocuments: 'Documents',
     navigationSettings: 'Settings',
-    navigationAudit: 'Audit Logs'
+    navigationAudit: 'Audit Logs',
+    navigationKpiMatrix: 'KPI Management',
+    navigationKpiSelf: 'My Appraisal',
+    navigationPerformance: 'Performance'
   },
   interface: {
     dashboardHeroTitle: 'Workforce Management System',
@@ -238,6 +241,13 @@ module.exports = {
       strong: { label: 'Strong', minScore: 70 },
       developing: { label: 'Developing', minScore: 50 },
       needsSupport: { label: 'Needs support', minScore: 0 }
+    },
+    appraisal: {
+      gradeVisibility: {
+        showSupervisorGradeToEmployee: true,
+        showCeoGradeToEmployee: false
+      },
+      assessmentFrequency: 'quarterly'
     }
   },
   leaveTypes: [

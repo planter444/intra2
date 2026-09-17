@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BriefcaseBusiness, ChartColumnIncreasing, Lock, Unlock, Save, Plus, Trash2, Sparkles, Settings } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, ChartColumnIncreasing, Lock, Unlock, Save, Plus, Trash2, Sparkles, Settings, ShieldCheck } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import StatCard from '../components/StatCard';
@@ -224,6 +224,12 @@ export default function KPIMatrixPage() {
                 <p className="text-sm text-slate-500">{selectedEmployee.positionTitle || selectedEmployee.roleTitle || 'No designation'}</p>
               </div>
               <div className="flex gap-2">
+                <Link
+                  to={`/kpi-review/${selectedEmployeeId}`}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <ShieldCheck size={16} /> Review Appraisal
+                </Link>
                 {canManageKpi && !employeeKpiData.locked && (
                   <>
                     {editMode ? (

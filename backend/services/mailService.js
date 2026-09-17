@@ -529,6 +529,111 @@ const sendTimesheetRejectedEmail = async ({ toEmail, toName, period, rejectedBy,
         name: toName || toEmail
       }
     ],
+    subject: `Timesheet Rejected - ${periodLabelOf(period)}`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #166534 0%, #22c55e 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Timesheet Rejected</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <p style="margin: 0 0 16px; color: #374151;">Hello ${toName || 'there'},</p>
+          <p style="margin: 0 0 16px; color: #374151;">Your timesheet for <strong>${periodLabelOf(period)}</strong> has been rejected by <strong>${rejectedBy}</strong>.</p>
+          ${comment ? `<p style="margin: 0 0 16px; color: #374151;"><strong>Reason:</strong> ${comment}</p>` : ''}
+          <p style="margin: 0 0 16px; color: #374151;">Please review the feedback and submit a revised timesheet if needed.</p>
+        </div>
+      </div>
+    `
+  });
+};
+
+const sendAppraisalSubmittedEmail = async ({ toEmail, toName, employeeName, period, appraisalUrl }) => {
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: `Performance Appraisal Submitted - ${employeeName}`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #166534 0%, #22c55e 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Performance Appraisal Submitted</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <p style="margin: 0 0 16px; color: #374151;">Hello ${toName || 'there'},</p>
+          <p style="margin: 0 0 16px; color: #374151;"><strong>${employeeName}</strong> has submitted their self-appraisal for <strong>${period}</strong>.</p>
+          <p style="margin: 0 0 16px; color: #374151;">Please review their self-evaluation and provide your supervisor assessment.</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${appraisalUrl}" style="display: inline-block; background: #166534; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Appraisal</a>
+          </div>
+          <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">If the button does not work, copy and paste this link into your browser:</p>
+          <p style="margin: 0 0 18px; word-break: break-all; font-size: 13px;"><a href="${appraisalUrl}" style="color: #166534;">${appraisalUrl}</a></p>
+        </div>
+      </div>
+    `
+  });
+};
+
+const sendAppraisalReviewedEmail = async ({ toEmail, toName, supervisorName, period, appraisalUrl }) => {
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: `Performance Appraisal Reviewed - ${period}`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #166534 0%, #22c55e 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Performance Appraisal Reviewed</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <p style="margin: 0 0 16px; color: #374151;">Hello ${toName || 'there'},</p>
+          <p style="margin: 0 0 16px; color: #374151;">Your performance appraisal for <strong>${period}</strong> has been reviewed by <strong>${supervisorName}</strong>.</p>
+          <p style="margin: 0 0 16px; color: #374151;">You can now view the supervisor's evaluation and comments on your appraisal.</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${appraisalUrl}" style="display: inline-block; background: #166534; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">View Appraisal</a>
+          </div>
+          <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">If the button does not work, copy and paste this link into your browser:</p>
+          <p style="margin: 0 0 18px; word-break: break-all; font-size: 13px;"><a href="${appraisalUrl}" style="color: #166534;">${appraisalUrl}</a></p>
+        </div>
+      </div>
+    `
+  });
+};
+
+const sendAppraisalToCeoEmail = async ({ toEmail, toName, employeeName, supervisorName, period, appraisalUrl }) => {
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: `Performance Appraisal Awaiting CEO Review - ${employeeName}`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #166534 0%, #22c55e 100%); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">Performance Appraisal Awaiting CEO Review</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; border: 1px solid #e5e7eb;">
+          <p style="margin: 0 0 16px; color: #374151;">Hello ${toName || 'there'},</p>
+          <p style="margin: 0 0 16px; color: #374151;"><strong>${employeeName}</strong>'s performance appraisal for <strong>${period}</strong> has been reviewed by <strong>${supervisorName}</strong> and is awaiting your final review.</p>
+          <p style="margin: 0 0 16px; color: #374151;">Please review the supervisor's assessment and add your executive comments if desired.</p>
+          <div style="text-align: center; margin: 24px 0;">
+            <a href="${appraisalUrl}" style="display: inline-block; background: #166534; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Review Appraisal</a>
+          </div>
+          <p style="margin: 0 0 16px; color: #64748b; font-size: 13px;">If the button does not work, copy and paste this link into your browser:</p>
+          <p style="margin: 0 0 18px; word-break: break-all; font-size: 13px;"><a href="${appraisalUrl}" style="color: #166534;">${appraisalUrl}</a></p>
+        </div>
+      </div>
+    `
+  });
+};
+      }
+    ],
     subject: `Your timesheet for ${period} has been rejected`,
     htmlContent: `
       <div style="margin: 0; background: #fef2f2; padding: 28px; font-family: Arial, sans-serif; color: #0f172a; line-height: 1.55;">
@@ -566,6 +671,9 @@ module.exports = {
   sendLeaveDecisionEmail,
   sendSupervisorDecisionToCeoEmail,
   sendTravelReceiptNotificationEmail,
+  sendAppraisalSubmittedEmail,
+  sendAppraisalReviewedEmail,
+  sendAppraisalToCeoEmail,
   sendTravelRequestSubmittedEmail,
   sendTravelDecisionEmail,
   sendPayslipGeneratedEmail,

@@ -18,6 +18,8 @@ import KPIMatrixPage from './pages/KPIMatrixPage';
 import KPIMatrixEmployeePage from './pages/KPIMatrixEmployeePage';
 import PerformanceDashboard from './pages/PerformanceDashboard';
 import PerformanceEmployeePage from './pages/PerformanceEmployeePage';
+import EmployeeSelfAppraisalPage from './pages/EmployeeSelfAppraisalPage';
+import SupervisorAppraisalReviewPage from './pages/SupervisorAppraisalReviewPage';
 import LeaveStatusBoardPage from './pages/LeaveStatusBoardPage';
 import PayslipsPage from './pages/PayslipsPage';
 import PayslipTemplatesPage from './pages/PayslipTemplatesPage';
@@ -86,6 +88,8 @@ export default function App() {
       <Route path="/documents" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><DocumentsPage /></ProtectedRoute>} />
       <Route path="/kpi-matrix" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><KPIMatrixPage /></ProtectedRoute>} />
       <Route path="/kpi-matrix/:employeeId" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><KPIMatrixEmployeePage /></ProtectedRoute>} />
+      <Route path="/kpi-self" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><EmployeeSelfAppraisalPage /></ProtectedRoute>} />
+      <Route path="/kpi-review/:employeeId" element={<ProtectedRoute allowedRoles={['supervisor', 'admin', 'ceo']}><SupervisorAppraisalReviewPage /></ProtectedRoute>} />
       <Route path="/performance-dashboard" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><PerformanceDashboard /></ProtectedRoute>} />
       <Route path="/performance-dashboard/:employeeId" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><PerformanceEmployeePage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><SettingsPage /></ProtectedRoute>} />

@@ -57,6 +57,13 @@ const ensureKpiDefaults = (payload = {}) => {
   nextPayload.kpi = {
     records: {},
     performanceBands: JSON.parse(JSON.stringify(defaultSettings.kpi?.performanceBands || {})),
+    appraisal: {
+      gradeVisibility: {
+        showSupervisorGradeToEmployee: true,
+        showCeoGradeToEmployee: false
+      },
+      assessmentFrequency: 'quarterly'
+    },
     ...currentKpi,
     records: currentKpi.records && typeof currentKpi.records === 'object'
       ? currentKpi.records
@@ -82,7 +89,17 @@ const ensureKpiDefaults = (payload = {}) => {
             ...(currentKpi.performanceBands.needsSupport || {})
           }
         }
-      : JSON.parse(JSON.stringify(defaultSettings.kpi?.performanceBands || {}))
+      : JSON.parse(JSON.stringify(defaultSettings.kpi?.performanceBands || {})),
+    appraisal: currentKpi.appraisal && typeof currentKpi.appraisal === 'object'
+      ? {
+          ...(defaultSettings.kpi?.appraisal || {}),
+          ...currentKpi.appraisal,
+          gradeVisibility: {
+            ...(defaultSettings.kpi?.appraisal?.gradeVisibility || {}),
+            ...(currentKpi.appraisal.gradeVisibility || {})
+          }
+        }
+      : JSON.parse(JSON.stringify(defaultSettings.kpi?.appraisal || {}))
   };
 
   return nextPayload;

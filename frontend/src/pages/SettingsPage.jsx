@@ -1989,22 +1989,82 @@ export default function SettingsPage() {
             <div className="max-w-md">
               <label className="mb-2 block text-sm font-medium text-slate-700">Assessment Frequency</label>
               <select
-                value={draft.kpi?.frequency || 'quarterly'}
+                value={draft.kpi?.appraisal?.assessmentFrequency || 'quarterly'}
                 onChange={(event) => setDraft((current) => ({
                   ...current,
                   kpi: {
                     ...(current.kpi || {}),
-                    frequency: event.target.value
+                    appraisal: {
+                      ...(current.kpi?.appraisal || {}),
+                      assessmentFrequency: event.target.value
+                    }
                   }
                 }))}
-                className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-900 focus:border-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm"
               >
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
-                <option value="halfYearly">Half-Yearly</option>
+                <option value="half-yearly">Half-Yearly</option>
                 <option value="yearly">Yearly</option>
               </select>
-              <p className="mt-2 text-sm text-slate-500">This frequency will be used as the default for KPI assessment periods.</p>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Grade Visibility Settings" subtitle="Control which grades are visible to employees in their appraisal view.">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="showSupervisorGrade"
+                  checked={draft.kpi?.appraisal?.gradeVisibility?.showSupervisorGradeToEmployee ?? true}
+                  onChange={(e) => setDraft((current) => ({
+                    ...current,
+                    kpi: {
+                      ...(current.kpi || {}),
+                      appraisal: {
+                        ...(current.kpi?.appraisal || {}),
+                        gradeVisibility: {
+                          ...(current.kpi?.appraisal?.gradeVisibility || {}),
+                          showSupervisorGradeToEmployee: e.target.checked
+                        }
+                      }
+                    }
+                  }))}
+                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <label htmlFor="showSupervisorGrade" className="text-sm font-medium text-slate-900">
+                  Show supervisor grades to employees
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 ml-7">When enabled, employees can see the grades assigned by their supervisor in their appraisal view.</p>
+              
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="showCeoGrade"
+                  checked={draft.kpi?.appraisal?.gradeVisibility?.showCeoGradeToEmployee ?? false}
+                  onChange={(e) => setDraft((current) => ({
+                    ...current,
+                    kpi: {
+                      ...(current.kpi || {}),
+                      appraisal: {
+                        ...(current.kpi?.appraisal || {}),
+                        gradeVisibility: {
+                          ...(current.kpi?.appraisal?.gradeVisibility || {}),
+                          showCeoGradeToEmployee: e.target.checked
+                        }
+                      }
+                    }
+                  }))}
+                  className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <label htmlFor="showCeoGrade" className="text-sm font-medium text-slate-900">
+                  Show CEO grades to employees
+                </label>
+              </div>
+              <p className="text-xs text-slate-500 ml-7">When enabled, employees can see the CEO's final grades in their appraisal view.</p>
+            </div>
+          </SectionCard>
             </div>
           </SectionCard>
 
