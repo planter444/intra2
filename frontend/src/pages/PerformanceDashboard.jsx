@@ -10,17 +10,33 @@ import { usePagePresentation } from '../hooks/usePagePresentation';
 import { getAverageKpiScore, getNormalizedKpiEntry, getPerformanceBand } from '../utils/kpi';
 
 export default function PerformanceDashboard() {
-  const { settings } = useAuth();
+  const { settings, user } = useAuth();
   const [users, setUsers] = useState([]);
   const { cardStyle, animationStyle } = usePagePresentation();
+  const isEmployee = user?.role === 'employee';
+  const isSupervisor = user?.role === 'supervisor';
 
   useEffect(() => {
     fetchUsers().then((list) => setUsers(list)).catch(() => setUsers([]));
   }, []);
 
   const rows = useMemo(
-    () => users.filter((entry) => entry.isActive && !entry.isDeleted && entry.role !== 'ceo').sort((left, right) => left.fullName.localeCompare(right.fullName)),
-    [users]
+    () => {
+      if (isEmployee) {
+        // Employees only see themselves
+        return users.filter((entry) => String(entry.id) === String(user.id) && entry.isActive && !entry.isDeleted);
+      }
+      if (isSupervisor) {
+        // Supervisors see themselves and their team members
+        return users.filter((entry) => 
+          (String(entry.id) === String(user.id) || String(entry.supervisorId) === String(user.id)) && 
+          entry.isActive && !entry.isDeleted && entry.role !== 'ceo'
+        ).sort((left, right) => left.fullName.localeCompare(right.fullName));
+      }
+      // Admin, CEO, Finance see all employees
+      return users.filter((entry) => entry.isActive && !entry.isDeleted && entry.role !== 'ceo').sort((left, right) => left.fullName.localeCompare(right.fullName));
+    },
+    [users, user.id, user.role, user.supervisorId]
   );
 
   const averages = useMemo(
@@ -125,65 +141,73 @@ export default function PerformanceDashboard() {
   return (
     <div className="space-y-6">
       <PageHeader 
-        title="Performance Dashboard" 
-        subtitle="Analytics and performance overview for all employees. View individual performance profiles by clicking on an employee card."
-        actions={[
+        title={isEmployee ? "My Performance" : "Performance Dashboard"} 
+        subtitle={isEmployee ? "View your performance metrics and KPI scores." : "Analytics and performance overview for all employees. View individual performance profiles by clicking on an employee card."}
+        actions={!isEmployee ? [
           <button key="export" type="button" onClick={handleExportReport} className="inline-flex items-center gap-2 rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg">
             <Download size={16} />Export Report
           </button>
+        ] : [
+          <Link key="kpi" to="/kpi-matrix" className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <BarChart3 size={16} /> My KPI
+          </Link>
         ]}
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <StatCard title="Total Employees" value={rows.length} helper="Active employees available" accent="from-violet-700 to-fuchsia-500" />
-        <StatCard title="Assessed" value={employeesReady} helper="Employees with KPI scores" accent="from-sky-700 to-cyan-500" />
-        <StatCard title="Overall Average" value={overallAverage ?? '--'} helper="Company-wide average score" accent="from-emerald-700 to-green-500" />
-        <StatCard title="Assessment Frequency" value={settings?.kpi?.frequency || 'quarterly'} helper="Default KPI period" accent="from-amber-700 to-orange-500" />
+        <StatCard title={isEmployee ? "Your Status" : "Total Employees"} value={isEmployee ? (averages[String(user.id)] !== null ? "Ready" : "Pending") : rows.length} helper={isEmployee ? "Your performance assessment status" : "Active employees available"} accent="from-violet-700 to-fuchsia-500" />
+        <StatCard title={isEmployee ? "Your Score" : "Assessed"} value={isEmployee ? (averages[String(user.id)] ?? '--') : employeesReady} helper={isEmployee ? "Your current KPI score" : "Employees with KPI scores"} accent="from-sky-700 to-cyan-500" />
+        <StatCard title={isEmployee ? "Performance Band" : "Overall Average"} value={isEmployee ? getPerformanceBand(averages[String(user.id)], settings?.kpi?.performanceBands || {}) : (overallAverage ?? '--')} helper={isEmployee ? "Your performance category" : "Company-wide average score"} accent="from-emerald-700 to-green-500" />
+        <StatCard title="Assessment Frequency" value={settings?.kpi?.appraisal?.assessmentFrequency || 'quarterly'} helper="Default KPI period" accent="from-amber-700 to-orange-500" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <SectionCard title="Performance Band Distribution" subtitle="Number of employees in each performance category." style={{ ...cardStyle, ...animationStyle }}>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Outstanding</span>
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">{performanceBands.outstanding}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Strong</span>
-              <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">{performanceBands.strong}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Developing</span>
-              <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700">{performanceBands.developing}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Needs Support</span>
-              <span className="rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">{performanceBands.needsSupport}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-slate-700">Pending</span>
+        {!isEmployee && (
+          <SectionCard title="Performance Band Distribution" subtitle="Number of employees in each performance category." style={{ ...cardStyle, ...animationStyle }}>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Outstanding</span>
+                <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">{performanceBands.outstanding}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Strong</span>
+                <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-700">{performanceBands.strong}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Developing</span>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700">{performanceBands.developing}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Needs Support</span>
+                <span className="rounded-full bg-rose-100 px-3 py-1 text-sm font-semibold text-rose-700">{performanceBands.needsSupport}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">Pending</span>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-600">{performanceBands.pending}</span>
             </div>
           </div>
         </SectionCard>
+        )}
 
-        <SectionCard title="Department Averages" subtitle="Average KPI scores by department." style={{ ...cardStyle, ...animationStyle }}>
-          <div className="space-y-3">
-            {Object.keys(departmentAverages).length === 0 ? (
-              <p className="text-sm text-slate-500">No department data available yet.</p>
-            ) : (
-              Object.entries(departmentAverages).map(([dept, avg]) => (
-                <div key={dept} className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-slate-700">{dept}</span>
-                  <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">{avg}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </SectionCard>
+        {!isEmployee && (
+          <SectionCard title="Department Averages" subtitle="Average KPI scores by department." style={{ ...cardStyle, ...animationStyle }}>
+            <div className="space-y-3">
+              {Object.keys(departmentAverages).length === 0 ? (
+                <p className="text-sm text-slate-500">No department data available yet.</p>
+              ) : (
+                Object.entries(departmentAverages).map(([dept, avg]) => (
+                  <div key={dept} className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-slate-700">{dept}</span>
+                    <span className="rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-700">{avg}</span>
+                  </div>
+                ))
+              )}
+            </div>
+          </SectionCard>
+        )}
       </div>
 
-      <SectionCard title="Employee performance directory" subtitle="Each employee opens in a separate performance detail page." style={{ ...cardStyle, ...animationStyle }}>
+      <SectionCard title={isEmployee ? "Your Performance Details" : "Employee performance directory"} subtitle={isEmployee ? "Your detailed performance information and KPI breakdown." : "Each employee opens in a separate performance detail page."} style={{ ...cardStyle, ...animationStyle }}>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {rows.map((employee) => {
             const entry = getNormalizedKpiEntry(settings?.kpi?.records?.[String(employee.id)] || settings?.kpi?.matrix?.[String(employee.id)] || {});

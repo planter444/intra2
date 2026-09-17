@@ -29,15 +29,38 @@ export default function KPIMatrixPage() {
   const [editForm, setEditForm] = useState({});
   const { cardStyle, animationStyle } = usePagePresentation();
   const canManageKpi = ['admin', 'ceo', 'finance'].includes(user?.role) || settings?.kpi?.editors?.includes(String(user?.id));
+  const isEmployee = user?.role === 'employee';
+  const isSupervisor = user?.role === 'supervisor';
 
   useEffect(() => {
     fetchUsers().then((list) => setUsers(list)).catch(() => setUsers([]));
   }, []);
 
   const rows = useMemo(
-    () => users.filter((entry) => entry.isActive && !entry.isDeleted && entry.role !== 'ceo').sort((left, right) => left.fullName.localeCompare(right.fullName)),
-    [users]
+    () => {
+      if (isEmployee) {
+        // Employees only see themselves
+        return users.filter((entry) => String(entry.id) === String(user.id) && entry.isActive && !entry.isDeleted);
+      }
+      if (isSupervisor) {
+        // Supervisors see themselves and their team members
+        return users.filter((entry) => 
+          (String(entry.id) === String(user.id) || String(entry.supervisorId) === String(user.id)) && 
+          entry.isActive && !entry.isDeleted && entry.role !== 'ceo'
+        ).sort((left, right) => left.fullName.localeCompare(right.fullName));
+      }
+      // Admin, CEO, Finance see all employees
+      return users.filter((entry) => entry.isActive && !entry.isDeleted && entry.role !== 'ceo').sort((left, right) => left.fullName.localeCompare(right.fullName));
+    },
+    [users, user.id, user.role, user.supervisorId]
   );
+
+  // Auto-select current user for employees
+  useEffect(() => {
+    if (isEmployee && rows.length > 0 && !selectedEmployeeId) {
+      setSelectedEmployeeId(String(user.id));
+    }
+  }, [isEmployee, rows, selectedEmployeeId, user.id]);
 
   const employeesWithScores = useMemo(
     () => rows.filter((employee) => getAverageKpiScore(getNormalizedKpiEntry(settings?.kpi?.records?.[String(employee.id)] || settings?.kpi?.matrix?.[String(employee.id)] || {})) !== null).length,
@@ -179,8 +202,8 @@ export default function KPIMatrixPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="KPI Management"
-        subtitle="Select an employee to view and manage their KPI configuration and scores."
+        title={isEmployee ? "My KPI Profile" : "KPI Management"}
+        subtitle={isEmployee ? "View your KPI configuration and performance scores." : "Select an employee to view and manage their KPI configuration and scores."}
         actions={canManageKpi ? [
           <Link
             key="settings"
@@ -189,6 +212,14 @@ export default function KPIMatrixPage() {
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             <Settings size={16} /> KPI Settings
+          </Link>
+        ] : isEmployee ? [
+          <Link
+            key="self-appraisal"
+            to="/kpi-self"
+            className="inline-flex items-center gap-2 rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <BriefcaseBusiness size={16} /> Self-Appraisal
           </Link>
         ] : undefined}
       />
@@ -199,22 +230,24 @@ export default function KPIMatrixPage() {
         <StatCard title="KPI editing" value="Inline" helper="Edit KPIs directly from this page" accent="from-violet-700 to-fuchsia-500" />
       </div>
 
-      <SectionCard title="Select Employee" subtitle="Choose an employee to view and manage their KPI details." style={{ ...cardStyle, ...animationStyle }}>
-        <div className="mb-6">
-          <label className="mb-2 block text-sm font-medium text-slate-700">Select Employee</label>
-          <select
-            value={selectedEmployeeId}
-            onChange={(e) => handleSelectEmployee(e.target.value)}
-            className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
-          >
-            <option value="">-- Select an employee --</option>
-            {rows.map((employee) => (
-              <option key={employee.id} value={employee.id}>
-                {employee.fullName} - {employee.positionTitle || employee.roleTitle || 'No designation'}
-              </option>
-            ))}
-          </select>
-        </div>
+      <SectionCard title={isEmployee ? "Your Profile" : "Select Employee"} subtitle={isEmployee ? "Your KPI details and performance information." : "Choose an employee to view and manage their KPI details."} style={{ ...cardStyle, ...animationStyle }}>
+        {!isEmployee && (
+          <div className="mb-6">
+            <label className="mb-2 block text-sm font-medium text-slate-700">Select Employee</label>
+            <select
+              value={selectedEmployeeId}
+              onChange={(e) => handleSelectEmployee(e.target.value)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm"
+            >
+              <option value="">-- Select an employee --</option>
+              {rows.map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.fullName} - {employee.positionTitle || employee.roleTitle || 'No designation'}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {selectedEmployee && (
           <div className="space-y-6">
@@ -224,12 +257,14 @@ export default function KPIMatrixPage() {
                 <p className="text-sm text-slate-500">{selectedEmployee.positionTitle || selectedEmployee.roleTitle || 'No designation'}</p>
               </div>
               <div className="flex gap-2">
-                <Link
-                  to={`/kpi-review/${selectedEmployeeId}`}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                >
-                  <ShieldCheck size={16} /> Review Appraisal
-                </Link>
+                {!isEmployee && (
+                  <Link
+                    to={`/kpi-review/${selectedEmployeeId}`}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <ShieldCheck size={16} /> Review Appraisal
+                  </Link>
+                )}
                 {canManageKpi && !employeeKpiData.locked && (
                   <>
                     {editMode ? (

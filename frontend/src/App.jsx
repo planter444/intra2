@@ -86,12 +86,12 @@ export default function App() {
       <Route path="/leaves/new" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'finance']}><LeaveApplyPage /></ProtectedRoute>} />
       <Route path="/leaves/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><LeaveRequestDetailPage /></ProtectedRoute>} />
       <Route path="/documents" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><DocumentsPage /></ProtectedRoute>} />
-      <Route path="/kpi-matrix" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><KPIMatrixPage /></ProtectedRoute>} />
-      <Route path="/kpi-matrix/:employeeId" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><KPIMatrixEmployeePage /></ProtectedRoute>} />
+      <Route path="/kpi-matrix" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><KPIMatrixPage /></ProtectedRoute>} />
+      <Route path="/kpi-matrix/:employeeId" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><KPIMatrixEmployeePage /></ProtectedRoute>} />
       <Route path="/kpi-self" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><EmployeeSelfAppraisalPage /></ProtectedRoute>} />
       <Route path="/kpi-review/:employeeId" element={<ProtectedRoute allowedRoles={['supervisor', 'admin', 'ceo']}><SupervisorAppraisalReviewPage /></ProtectedRoute>} />
-      <Route path="/performance-dashboard" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><PerformanceDashboard /></ProtectedRoute>} />
-      <Route path="/performance-dashboard/:employeeId" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><PerformanceEmployeePage /></ProtectedRoute>} />
+      <Route path="/performance-dashboard" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><PerformanceDashboard /></ProtectedRoute>} />
+      <Route path="/performance-dashboard/:employeeId" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><PerformanceEmployeePage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute allowedRoles={['admin', 'ceo', 'finance']}><SettingsPage /></ProtectedRoute>} />
       <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin']}><AuditLogsPage /></ProtectedRoute>} />
       <Route path="/payslips" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><PayslipsPage /></ProtectedRoute>} />
