@@ -264,22 +264,22 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
       `
         UPDATE travel_requests
         SET
-          start_date = COALESCE($2, start_date),
-          end_date = COALESCE($3, end_date),
-          origin = COALESCE($4, origin),
-          destination = COALESCE($5, destination),
-          reason = COALESCE($6, reason),
-          estimated_cost = COALESCE($7, estimated_cost),
-          designation = COALESCE($8, designation),
-          travel_category = COALESCE($9, travel_category),
-          travel_type_detail = COALESCE($10, travel_type_detail),
-          project_programme = COALESCE($11, project_programme),
-          dsa_rate = COALESCE($12, dsa_rate),
-          dsa_currency = COALESCE($13, dsa_currency),
-          dsa_amount = COALESCE($14, dsa_amount),
-          accommodation_rate = COALESCE($15, accommodation_rate),
-          accommodation_currency = COALESCE($16, accommodation_currency),
-          accommodation_amount = COALESCE($17, accommodation_amount),
+          start_date = $2,
+          end_date = $3,
+          origin = $4,
+          destination = $5,
+          reason = $6,
+          estimated_cost = $7,
+          designation = $8,
+          travel_category = $9,
+          travel_type_detail = $10,
+          project_programme = $11,
+          dsa_rate = $12,
+          dsa_currency = $13,
+          dsa_amount = $14,
+          accommodation_rate = $15,
+          accommodation_currency = $16,
+          accommodation_amount = $17,
           updated_at = NOW()
         WHERE id = $1
       `,
@@ -294,12 +294,12 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
         `
           UPDATE travel_requests
           SET
-            start_date = COALESCE($2, start_date),
-            end_date = COALESCE($3, end_date),
-            origin = COALESCE($4, origin),
-            destination = COALESCE($5, destination),
-            reason = COALESCE($6, reason),
-            estimated_cost = COALESCE($7, estimated_cost),
+            start_date = $2,
+            end_date = $3,
+            origin = $4,
+            destination = $5,
+            reason = $6,
+            estimated_cost = $7,
             updated_at = NOW()
           WHERE id = $1
         `,
