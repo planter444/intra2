@@ -261,6 +261,8 @@ module.exports = {
       eastAfricaCurrency: 'USD',
       internationalRate: 50,
       internationalCurrency: 'USD',
+      localMovementRate: 2000,
+      localMovementCurrency: 'KES',
       applicableTo: ['all'],
       description: 'Covers accommodation, meals, and incidental costs'
     },
