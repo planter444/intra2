@@ -357,17 +357,26 @@ export default function TravelPage() {
                             {request.referenceNumber}
                           </span>
                         )}
-                        {request.estimatedCost && (
+                        {request.travelType === 'reimbursement' ? (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
-                            {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                            {request.currency || 'KES'} {request.estimatedCost?.toLocaleString() || '0'}
                           </span>
-                        )}
-                        {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
-                          <span className="flex items-center gap-1.5">
-                            <DollarSign size={10} className="sm:size-10" />
-                            DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
-                          </span>
+                        ) : (
+                          <>
+                            {request.estimatedCost && (
+                              <span className="flex items-center gap-1.5">
+                                <DollarSign size={10} className="sm:size-10" />
+                                {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                              </span>
+                            )}
+                            {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
+                              <span className="flex items-center gap-1.5">
+                                <DollarSign size={10} className="sm:size-10" />
+                                DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                       {request.reason && (
@@ -474,17 +483,26 @@ export default function TravelPage() {
                             {request.referenceNumber}
                           </span>
                         )}
-                        {request.estimatedCost && (
+                        {request.travelType === 'reimbursement' ? (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={16} />
-                            {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                            {request.currency || 'KES'} {request.estimatedCost?.toLocaleString() || '0'}
                           </span>
-                        )}
-                        {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
-                          <span className="flex items-center gap-1.5">
-                            <DollarSign size={16} />
-                            DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
-                          </span>
+                        ) : (
+                          <>
+                            {request.estimatedCost && (
+                              <span className="flex items-center gap-1.5">
+                                <DollarSign size={16} />
+                                {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                              </span>
+                            )}
+                            {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
+                              <span className="flex items-center gap-1.5">
+                                <DollarSign size={16} />
+                                DSA: {request.dsaCurrency || 'KES'} {request.dsaAmount.toLocaleString()}
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                       {request.reason && (

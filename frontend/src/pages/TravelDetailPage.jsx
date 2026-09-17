@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, Download, X, Plus, Trash2, Edit2, Eye, DollarSign, Building2 } from 'lucide-react';
+import { Upload, Download, X, Plus, Trash2, Edit2, Eye, DollarSign, Building2, Calendar } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -142,12 +142,25 @@ export default function TravelDetailPage() {
 
   const handleUpdate = async () => {
     try {
-      // Calculate DSA and accommodation amounts based on current dates
-      const dsaRate = request.dsaRate || settings?.travel?.dsa?.rate || 0;
-      const calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, dsaRate);
-      const accommodationRate = request.accommodationRate || settings?.travel?.accommodation?.rate || 4000;
-      const accommodationCurrency = request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES';
-      const calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
+      // For reimbursement requests, use the stored values and recalculate based on new dates
+      // For booking requests, calculate from settings
+      let dsaRate, calculatedDSAAmount, accommodationRate, accommodationCurrency, calculatedAccommodationAmount;
+      
+      if (request.travelType === 'reimbursement') {
+        // Use existing rates from the request
+        dsaRate = request.dsaRate || 0;
+        calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, dsaRate);
+        accommodationRate = request.accommodationRate || 0;
+        accommodationCurrency = request.accommodationCurrency || 'KES';
+        calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
+      } else {
+        // Calculate from settings for booking requests
+        dsaRate = request.dsaRate || settings?.travel?.dsa?.rate || 0;
+        calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, dsaRate);
+        accommodationRate = request.accommodationRate || settings?.travel?.accommodation?.rate || 4000;
+        accommodationCurrency = request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES';
+        calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
+      }
       
       const updateData = {
         startDate: editForm.startDate,
@@ -767,8 +780,8 @@ export default function TravelDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-4">
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
                   {config.label}
                 </span>
@@ -776,148 +789,194 @@ export default function TravelDetailPage() {
                   {request.travelType === 'booking' ? 'Booking' : 'Reimbursement'}
                 </span>
               </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm text-slate-500">Employee</p>
-                  <p className="font-medium text-slate-900">{request.employeeName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Department</p>
-                  <p className="font-medium text-slate-900">{request.employeeDepartmentName || 'N/A'}</p>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm text-slate-500">Start date</p>
-                  <p className="font-medium text-slate-900">{request.startDate}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">End date</p>
-                  <p className="font-medium text-slate-900">{request.endDate}</p>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-sm text-slate-500">Origin</p>
-                  <p className="font-medium text-slate-900">{request.origin}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-slate-500">Destination</p>
-                  <p className="font-medium text-slate-900">{request.destination}</p>
-                </div>
-              </div>
-              {request.estimatedCost && (
-                <div>
-                  <p className="text-sm text-slate-500">Estimated cost</p>
-                  <p className="font-medium text-slate-900">{request.currency} {request.estimatedCost.toLocaleString()}</p>
-                </div>
-              )}
-              {request.designation && (
-                <div>
-                  <p className="text-sm text-slate-500">Designation</p>
-                  <p className="font-medium text-slate-900">{request.designation}</p>
-                </div>
-              )}
-              {request.travelCategory && (
-                <div>
-                  <p className="text-sm text-slate-500">Travel Category</p>
-                  <p className="font-medium text-slate-900">{request.travelCategory}</p>
-                </div>
-              )}
-              {request.travelTypeDetail && (
-                <div>
-                  <p className="text-sm text-slate-500">Travel Type</p>
-                  <p className="font-medium text-slate-900">{request.travelTypeDetail}</p>
-                </div>
-              )}
-              {request.projectProgramme && (
-                <div>
-                  <p className="text-sm text-slate-500">Project / Programme / Activity</p>
-                  <p className="font-medium text-slate-900">{request.projectProgramme}</p>
-                </div>
-              )}
-              {request.referenceNumber && (
-                <div>
-                  <p className="text-sm text-slate-500">Reference Number</p>
-                  <p className="font-medium text-slate-900">{request.referenceNumber}</p>
-                </div>
-              )}
-              {(request.dsaAmount && request.dsaRate) || request.travelType === 'reimbursement' && (
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                  <h4 className="mb-2 font-semibold text-emerald-900">DSA Calculation</h4>
-                  <div className="grid gap-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Rate:</span>
-                      <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {request.dsaRate?.toLocaleString() || '0'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Total DSA:</span>
-                      <span className="font-semibold text-emerald-700">{request.dsaCurrency || 'KES'} {request.dsaAmount?.toLocaleString() || '0'}</span>
-                    </div>
-                    {request.dsaProvided && (
-                      <div className="flex justify-between border-t border-emerald-200 pt-2">
-                        <span className="text-slate-600">DSA Provided:</span>
-                        <span className="font-medium text-slate-700">Yes (excluded from reimbursement)</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              {(request.accommodationAmount && request.accommodationRate) || request.travelType === 'reimbursement' && (
-                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                  <h4 className="mb-2 font-semibold text-blue-900">Accommodation Calculation</h4>
-                  <div className="grid gap-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Rate per Night:</span>
-                      <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {request.accommodationRate?.toLocaleString() || '0'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Number of Nights:</span>
-                      <span className="font-medium text-slate-900">
-                        {request.startDate && request.endDate ? (
-                          Math.ceil((new Date(request.endDate) - new Date(request.startDate)) / (1000 * 60 * 60 * 24))
-                        ) : 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Total Accommodation:</span>
-                      <span className="font-semibold text-blue-700">{request.accommodationCurrency || 'KES'} {request.accommodationAmount?.toLocaleString() || '0'}</span>
-                    </div>
-                    {request.accommodationProvided && (
-                      <div className="flex justify-between border-t border-blue-200 pt-2">
-                        <span className="text-slate-600">Accommodation Provided:</span>
-                        <span className="font-medium text-slate-700">Yes (excluded from reimbursement)</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
 
-              {request.transportationCost && request.travelType === 'reimbursement' && (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                  <h4 className="mb-2 font-semibold text-amber-900">Transportation Cost</h4>
-                  <div className="grid gap-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Transportation Cost Incurred:</span>
-                      <span className="font-semibold text-amber-700">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
-                    </div>
+              {/* Travel Information Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-slate-900">Travel Information</h4>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <p className="text-xs text-slate-500">Employee</p>
+                    <p className="text-sm font-medium text-slate-900">{request.employeeName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Department</p>
+                    <p className="text-sm font-medium text-slate-900">{request.employeeDepartmentName || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Start Date</p>
+                    <p className="text-sm font-medium text-slate-900">{request.startDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">End Date</p>
+                    <p className="text-sm font-medium text-slate-900">{request.endDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Origin</p>
+                    <p className="text-sm font-medium text-slate-900">{request.origin}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-500">Destination</p>
+                    <p className="text-sm font-medium text-slate-900">{request.destination}</p>
                   </div>
                 </div>
-              )}
-              <div>
-                <p className="text-sm text-slate-500">Reason</p>
-                <p className="font-medium text-slate-900">{request.reason}</p>
               </div>
-              {request.approverName && (
-                <div>
-                  <p className="text-sm text-slate-500">Approved by</p>
-                  <p className="font-medium text-slate-900">{request.approverName}</p>
+
+              {/* Travel Details Section */}
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-slate-900">Travel Details</h4>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {request.travelCategory && (
+                    <div>
+                      <p className="text-xs text-slate-500">Travel Category</p>
+                      <p className="text-sm font-medium text-slate-900">{request.travelCategory}</p>
+                    </div>
+                  )}
+                  {request.travelTypeDetail && (
+                    <div>
+                      <p className="text-xs text-slate-500">Travel Type</p>
+                      <p className="text-sm font-medium text-slate-900">{request.travelTypeDetail}</p>
+                    </div>
+                  )}
+                  {request.projectProgramme && (
+                    <div>
+                      <p className="text-xs text-slate-500">Project / Programme</p>
+                      <p className="text-sm font-medium text-slate-900">{request.projectProgramme}</p>
+                    </div>
+                  )}
+                  {request.designation && (
+                    <div>
+                      <p className="text-xs text-slate-500">Designation</p>
+                      <p className="text-sm font-medium text-slate-900">{request.designation}</p>
+                    </div>
+                  )}
+                  {request.referenceNumber && (
+                    <div>
+                      <p className="text-xs text-slate-500">Reference Number</p>
+                      <p className="text-sm font-medium text-slate-900">{request.referenceNumber}</p>
+                    </div>
+                  )}
                 </div>
-              )}
-              {request.rejectionReason && (
-                <div>
-                  <p className="text-sm text-slate-500">Rejection reason</p>
-                  <p className="font-medium text-rose-600">{request.rejectionReason}</p>
+              </div>
+
+              {/* DSA and Accommodation Section */}
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-slate-900">Cost Breakdown</h4>
+                
+                {/* DSA Section */}
+                {(request.dsaAmount && request.dsaRate) || request.travelType === 'reimbursement' ? (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-emerald-600" />
+                      <h5 className="text-sm font-semibold text-emerald-900">DSA Calculation</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Rate:</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {request.dsaRate?.toLocaleString() || '0'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Total DSA:</span>
+                        <span className="font-semibold text-emerald-700">{request.dsaCurrency || 'KES'} {request.dsaAmount?.toLocaleString() || '0'}</span>
+                      </div>
+                      {request.dsaProvided && (
+                        <div className="flex justify-between border-t border-emerald-200 pt-2">
+                          <span className="text-slate-600">Status:</span>
+                          <span className="font-medium text-slate-700">Provided (excluded)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Accommodation Section */}
+                {(request.accommodationAmount && request.accommodationRate) || request.travelType === 'reimbursement' ? (
+                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Building2 size={16} className="text-blue-600" />
+                      <h5 className="text-sm font-semibold text-blue-900">Accommodation</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Rate per Night:</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {request.accommodationRate?.toLocaleString() || '0'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Nights:</span>
+                        <span className="font-medium text-slate-900">
+                          {request.startDate && request.endDate ? (
+                            Math.ceil((new Date(request.endDate) - new Date(request.startDate)) / (1000 * 60 * 60 * 24))
+                          ) : 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Total Accommodation:</span>
+                        <span className="font-semibold text-blue-700">{request.accommodationCurrency || 'KES'} {request.accommodationAmount?.toLocaleString() || '0'}</span>
+                      </div>
+                      {request.accommodationProvided && (
+                        <div className="flex justify-between border-t border-blue-200 pt-2">
+                          <span className="text-slate-600">Status:</span>
+                          <span className="font-medium text-slate-700">Provided (excluded)</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Transportation Cost Section */}
+                {request.transportationCost && request.travelType === 'reimbursement' ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-amber-600" />
+                      <h5 className="text-sm font-semibold text-amber-900">Transportation Cost</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Transportation Cost:</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Total Cost Section */}
+                {request.estimatedCost && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-slate-600" />
+                      <h5 className="text-sm font-semibold text-slate-900">Total Cost</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Amount:</span>
+                        <span className="font-semibold text-slate-900">{request.currency || 'KES'} {request.estimatedCost.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Reason Section */}
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-slate-900">Reason for Travel</h4>
+                <p className="text-sm text-slate-700">{request.reason}</p>
+              </div>
+
+              {/* Approval Information */}
+              {(request.approverName || request.rejectionReason) && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold text-slate-900">Approval Information</h4>
+                  {request.approverName && (
+                    <div>
+                      <p className="text-xs text-slate-500">Approved by</p>
+                      <p className="text-sm font-medium text-slate-900">{request.approverName}</p>
+                    </div>
+                  )}
+                  {request.rejectionReason && (
+                    <div>
+                      <p className="text-xs text-slate-500">Rejection reason</p>
+                      <p className="text-sm font-medium text-rose-600">{request.rejectionReason}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
