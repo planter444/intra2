@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Upload, Download, X, Plus, Trash2, Edit2, Eye } from 'lucide-react';
+import { Upload, Download, X, Plus, Trash2, Edit2, Eye, DollarSign, Building2 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
@@ -52,7 +52,7 @@ const canUpdateReceiptStatus = (user, receipt) => {
 export default function TravelDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, token } = useAuth();
+  const { user, token, settings } = useAuth();
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState({ open: false, title: '', description: '' });
@@ -64,6 +64,31 @@ export default function TravelDetailPage() {
   const [cancelModal, setCancelModal] = useState({ open: false });
   const [approverForEmployee, setApproverForEmployee] = useState(null);
   const [supportingDocModal, setSupportingDocModal] = useState({ open: false, file: null });
+
+  // Calculate accommodation amount
+  const calculateAccommodationAmount = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    const accommodationRate = settings?.travel?.accommodation?.rate || 4000;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    return nights * accommodationRate;
+  };
+
+  // Calculate DSA amount
+  const calculateDSAAmount = (startDate, endDate, dsaRate) => {
+    if (!startDate || !endDate || !dsaRate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'nights';
+    const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    
+    if (calculationBasis === 'nights') {
+      return diffDays * dsaRate;
+    } else {
+      return (diffDays + 1) * dsaRate;
+    }
+  };
 
   const loadRequest = async () => {
     try {
@@ -488,6 +513,70 @@ export default function TravelDetailPage() {
                 <label className="mb-2 block text-sm font-medium text-slate-700">Reason</label>
                 <textarea rows="3" className="bg-white" value={editForm.reason} onChange={(e) => setEditForm({ ...editForm, reason: e.target.value })} />
               </div>
+
+              {/* DSA Calculation in Edit Mode */}
+              {request.dsaRate && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-emerald-900">
+                    <DollarSign size={18} />
+                    DSA Calculation
+                  </h4>
+                  <div className="grid gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Rate:</span>
+                      <span className="font-medium text-slate-900">{request.dsaCurrency} {request.dsaRate.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Number of {settings?.travel?.dsa?.calculationBasis === 'nights' ? 'Nights' : 'Days'}:</span>
+                      <span className="font-medium text-slate-900">
+                        {editForm.startDate && editForm.endDate ? (
+                          settings?.travel?.dsa?.calculationBasis === 'nights'
+                            ? Math.ceil((new Date(editForm.endDate) - new Date(editForm.startDate)) / (1000 * 60 * 60 * 24))
+                            : Math.ceil((new Date(editForm.endDate) - new Date(editForm.startDate)) / (1000 * 60 * 60 * 24)) + 1
+                        ) : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t border-emerald-200 pt-2">
+                      <span className="font-semibold text-slate-900">Total DSA:</span>
+                      <span className="font-semibold text-emerald-700">
+                        {request.dsaCurrency} {calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Accommodation Calculation in Edit Mode */}
+              {settings?.travel?.accommodation?.enabled && (
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <h4 className="mb-2 flex items-center gap-2 font-semibold text-blue-900">
+                    <Building2 size={18} />
+                    Accommodation Calculation
+                  </h4>
+                  <div className="grid gap-1 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Rate per Night:</span>
+                      <span className="font-medium text-slate-900">
+                        {settings?.travel?.accommodation?.currency || 'KES'} {settings?.travel?.accommodation?.rate?.toLocaleString() || 4000}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Number of Nights:</span>
+                      <span className="font-medium text-slate-900">
+                        {editForm.startDate && editForm.endDate ? (
+                          Math.ceil((new Date(editForm.endDate) - new Date(editForm.startDate)) / (1000 * 60 * 60 * 24))
+                        ) : 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between border-t border-blue-200 pt-2">
+                      <span className="font-semibold text-slate-900">Total Accommodation:</span>
+                      <span className="font-semibold text-blue-700">
+                        {settings?.travel?.accommodation?.currency || 'KES'} {calculateAccommodationAmount(editForm.startDate, editForm.endDate).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {request.travelType === 'booking' && (
                 <div>
