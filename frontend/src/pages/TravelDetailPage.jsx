@@ -141,12 +141,18 @@ export default function TravelDetailPage() {
     try {
       // Calculate DSA and accommodation amounts based on current dates
       const calculatedDSAAmount = calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate);
+      const accommodationRate = settings?.travel?.accommodation?.rate || 4000;
+      const accommodationCurrency = settings?.travel?.accommodation?.currency || 'KES';
       const calculatedAccommodationAmount = calculateAccommodationAmount(editForm.startDate, editForm.endDate);
       
       const updateData = {
         ...editForm,
         estimatedCost: editForm.estimatedCost || null,
+        dsaRate: request.dsaRate || null,
+        dsaCurrency: request.dsaCurrency || 'KES',
         dsaAmount: calculatedDSAAmount,
+        accommodationRate: accommodationRate,
+        accommodationCurrency: accommodationCurrency,
         accommodationAmount: calculatedAccommodationAmount
       };
       
@@ -544,9 +550,10 @@ export default function TravelDetailPage() {
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Travel Category</label>
                   <select className="bg-white" value={editForm.travelCategory} onChange={(e) => setEditForm({ ...editForm, travelCategory: e.target.value })}>
-                    <option value="">Select category</option>
+                    <option value="">Select travel category</option>
                     <option value="Within Kenya">Within Kenya</option>
-                    <option value="Outside Kenya">Outside Kenya</option>
+                    <option value="East Africa">East Africa</option>
+                    <option value="International">International</option>
                   </select>
                 </div>
               </div>
@@ -560,19 +567,14 @@ export default function TravelDetailPage() {
                   </select>
                 </div>
               )}
-              {editForm.travelCategory === 'Outside Kenya' && (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Travel Type</label>
-                  <select className="bg-white" value={editForm.travelTypeDetail} onChange={(e) => setEditForm({ ...editForm, travelTypeDetail: e.target.value })}>
-                    <option value="">Select type</option>
-                    <option value="Regional">Regional</option>
-                    <option value="International">International</option>
-                  </select>
-                </div>
-              )}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Project / Programme / Activity</label>
-                <input type="text" className="bg-white" value={editForm.projectProgramme} onChange={(e) => setEditForm({ ...editForm, projectProgramme: e.target.value })} />
+                <select className="bg-white" value={editForm.projectProgramme} onChange={(e) => setEditForm({ ...editForm, projectProgramme: e.target.value })}>
+                  <option value="">Select project/programme</option>
+                  {(settings?.travel?.projects || ['CWF', 'KEREA', 'WRI', 'CLASP', 'GIZ', 'GOGLA']).map((project) => (
+                    <option key={project} value={project}>{project}</option>
+                  ))}
+                </select>
               </div>
 
               {/* DSA Calculation in Edit Mode */}
