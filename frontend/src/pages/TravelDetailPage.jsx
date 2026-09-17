@@ -117,11 +117,14 @@ export default function TravelDetailPage() {
       // For local movement booking, extract transportation cost from estimatedCost (which is total)
       // For local movement reimbursement, use transportationCost directly
       let transportationValue = data.transportationCost || '';
-      if (isLocalRequest && data.travelType === 'booking' && !data.transportationCost) {
-        // If no transportationCost stored, estimate it from estimatedCost minus DSA
+      if (isLocalRequest && data.travelType === 'booking') {
+        // For booking: extract transportation from total (estimatedCost - DSA)
         const dsaValue = data.dsaAmount || 0;
         const totalValue = data.estimatedCost || 0;
         transportationValue = (totalValue - dsaValue).toString();
+      } else if (isLocalRequest && data.travelType === 'reimbursement') {
+        // For reimbursement: use transportationCost directly
+        transportationValue = data.transportationCost || '';
       }
 
       setEditForm({
@@ -130,7 +133,7 @@ export default function TravelDetailPage() {
         origin: data.origin,
         destination: data.destination,
         reason: data.reason,
-        estimatedCost: data.estimatedCost || '',
+        estimatedCost: isLocalRequest ? '' : (data.estimatedCost || ''),
         designation: data.designation || '',
         travelCategory: isLocalRequest ? 'Local Movement' : (data.travelCategory || ''),
         travelTypeDetail: data.travelTypeDetail || '',
@@ -244,7 +247,7 @@ export default function TravelDetailPage() {
         } else {
           // For reimbursement: estimatedCost = 0, transportationCost = actual value
           finalEstimatedCost = 0;
-          finalTransportationCost = editForm.transportationCost || null;
+          finalTransportationCost = parseFloat(editForm.transportationCost || 0) || null;
         }
       } else {
         finalEstimatedCost = editForm.estimatedCost || null;
@@ -276,6 +279,10 @@ export default function TravelDetailPage() {
 
       console.log('Sending update data:', updateData);
       console.log('Is local movement:', isLocalMovementEdit);
+      console.log('Is booking:', isBooking);
+      console.log('Edit form transportationCost:', editForm.transportationCost);
+      console.log('Final transportationCost:', finalTransportationCost);
+      console.log('Final estimatedCost:', finalEstimatedCost);
       console.log('Checkbox states:', { dsaProvided: editForm.dsaProvided, accommodationProvided: editForm.accommodationProvided });
       console.log('Calculated DSA:', calculatedDSAAmount, 'Calculated Accommodation:', calculatedAccommodationAmount);
 
@@ -659,14 +666,22 @@ export default function TravelDetailPage() {
               {request.travelType === 'booking' ? (
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Transportation Cost</label>
-                  <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} />
+                  <input type="number" className="bg-white" value={isLocalMovement(editForm) ? (editForm.transportationCost || '') : (editForm.estimatedCost || '')} onChange={(e) => {
+                    if (isLocalMovement(editForm)) {
+                      setEditForm({ ...editForm, transportationCost: e.target.value });
+                    } else {
+                      setEditForm({ ...editForm, estimatedCost: e.target.value });
+                    }
+                  }} />
                 </div>
               ) : (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Other Costs (Optional)</label>
-                  <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} placeholder="0.00" />
-                  <p className="mt-1 text-xs text-slate-500">Any additional costs not covered by DSA, accommodation, or transportation</p>
-                </div>
+                !isLocalMovement(editForm) && (
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Other Costs (Optional)</label>
+                    <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} placeholder="0.00" />
+                    <p className="mt-1 text-xs text-slate-500">Any additional costs not covered by DSA, accommodation, or transportation</p>
+                  </div>
+                )
               )}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Reason</label>
@@ -932,7 +947,7 @@ export default function TravelDetailPage() {
                   <input
                     type="number"
                     className="bg-white"
-                    value={isLocalMovement(editForm) ? (editForm.transportationCost || editForm.estimatedCost || '') : (editForm.transportationCost || '')}
+                    value={editForm.transportationCost || ''}
                     onChange={(e) => setEditForm({ ...editForm, transportationCost: e.target.value })}
                     placeholder="0.00"
                   />
@@ -1297,8 +1312,8 @@ export default function TravelDetailPage() {
                                 // For booking: estimatedCost is total, extract transportation
                                 transportationValue = (request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0);
                               } else {
-                                // For reimbursement: use transportationCost directly
-                                transportationValue = request.transportationCost || 0;
+                                // For reimbursement: use transportationCost directly, fallback to estimatedCost if missing
+                                transportationValue = request.transportationCost || request.estimatedCost || 0;
                               }
                             } else {
                               transportationValue = request.estimatedCost || 0;
@@ -1330,7 +1345,7 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Amount:</span>
-                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(isLocalMovement(request) ? (request.transportationCost || 0) : (request.transportationCost || 0)).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1404,9 +1419,9 @@ export default function TravelDetailPage() {
                       )}
                       <div className="flex justify-between">
                         <span className="text-slate-600">Transportation Cost Incurred:</span>
-                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(isLocalMovement(request) ? (request.transportationCost || 0) : (request.transportationCost || 0)).toLocaleString()}</span>
                       </div>
-                      {!isLocalMovement(request) && (
+                      {!isLocalMovement(request) && request.estimatedCost && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Other Costs:</span>
                           <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
@@ -1453,8 +1468,8 @@ export default function TravelDetailPage() {
                                 // For booking: estimatedCost is total, extract transportation
                                 transportationValue = (request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0);
                               } else {
-                                // For reimbursement: use transportationCost directly
-                                transportationValue = request.transportationCost || 0;
+                                // For reimbursement: use transportationCost directly, fallback to estimatedCost if missing
+                                transportationValue = request.transportationCost || request.estimatedCost || 0;
                               }
                             } else {
                               transportationValue = request.estimatedCost || 0;
