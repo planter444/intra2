@@ -5,7 +5,7 @@ import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { createTravelRequest } from '../services/travelService';
+import { createTravelRequest, uploadTravelReceipt } from '../services/travelService';
 import { fetchSettings } from '../services/settingsService';
 
 export default function LocalMovementReimbursementPage() {
@@ -77,20 +77,12 @@ export default function LocalMovementReimbursementPage() {
 
       // Upload receipts after creating the request
       if (receipts.length > 0) {
-        const token = localStorage.getItem('token');
         for (const receipt of receipts) {
           if (receipt.file) {
-            const formData = new FormData();
-            formData.append('receipt', receipt.file);
-            formData.append('travelRequestId', request.id);
-
             try {
-              await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/receipts`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                },
-                body: formData
+              await uploadTravelReceipt({
+                receipt: receipt.file,
+                travelRequestId: request.id
               });
             } catch (receiptError) {
               console.error('Failed to upload receipt:', receiptError);

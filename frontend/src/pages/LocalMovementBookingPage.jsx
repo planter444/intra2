@@ -6,6 +6,7 @@ import SectionCard from '../components/SectionCard';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { createTravelRequest } from '../services/travelService';
+import { uploadDocument } from '../services/documentService';
 import { fetchSettings } from '../services/settingsService';
 
 export default function LocalMovementBookingPage() {
@@ -75,32 +76,21 @@ export default function LocalMovementBookingPage() {
 
       // Upload supporting document after creating the request
       if (documents.length > 0 && documents[0].file) {
-        const token = localStorage.getItem('token');
-        const formData = new FormData();
-        formData.append('file', documents[0].file);
-        formData.append('folderType', 'travel');
-
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/documents/upload`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`
-            },
-            body: formData
+          const document = await uploadDocument({
+            file: documents[0].file,
+            folderType: 'travel'
           });
-
-          if (response.ok) {
-            const { document } = await response.json();
-            // Update the travel request with the supporting document ID
-            await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests/${request.id}`, {
-              method: 'PUT',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ supportingDocumentId: document.id })
-            });
-          }
+          // Update the travel request with the supporting document ID
+          const token = localStorage.getItem('token');
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/requests/${request.id}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ supportingDocumentId: document.id })
+          });
         } catch (docError) {
           console.error('Failed to upload supporting document:', docError);
         }
