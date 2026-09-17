@@ -192,15 +192,16 @@ export default function TravelDetailPage() {
         dsaRate: dsaRate,
         dsaCurrency: dsaCurrency,
         dsaAmount: calculatedDSAAmount,
-        dsaProvided: editForm.dsaProvided || false,
+        dsaProvided: editForm.dsaProvided,
         accommodationRate: accommodationRate,
         accommodationCurrency: accommodationCurrency,
         accommodationAmount: calculatedAccommodationAmount,
-        accommodationProvided: editForm.accommodationProvided || false,
+        accommodationProvided: editForm.accommodationProvided,
         transportationCost: editForm.transportationCost || null
       };
 
       console.log('Sending update data:', updateData);
+      console.log('Checkbox states:', { dsaProvided: editForm.dsaProvided, accommodationProvided: editForm.accommodationProvided });
       console.log('Calculated DSA:', calculatedDSAAmount, 'Calculated Accommodation:', calculatedAccommodationAmount);
 
       await updateTravelRequest(id, updateData);
