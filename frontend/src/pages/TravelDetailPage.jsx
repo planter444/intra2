@@ -943,11 +943,24 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate:</span>
-                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(request.dsaRate || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {((request.dsaRate || 0) > 0 ? request.dsaRate : (
+                          request.travelCategory === 'Within Kenya' ? 2000 :
+                          request.travelCategory === 'East Africa' ? 40 :
+                          request.travelCategory === 'International' ? 50 : 0
+                        )).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
-                        <span className="font-semibold text-emerald-700">{request.dsaCurrency || 'KES'} {(request.dsaAmount || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-emerald-700">{request.dsaCurrency || 'KES'} {((request.dsaAmount || 0) > 0 ? request.dsaAmount : (() => {
+                          if (!request.startDate || !request.endDate) return 0;
+                          const rate = request.travelCategory === 'Within Kenya' ? 2000 :
+                                      request.travelCategory === 'East Africa' ? 40 :
+                                      request.travelCategory === 'International' ? 50 : 0;
+                          const start = new Date(request.startDate);
+                          const end = new Date(request.endDate);
+                          const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                          return (diffDays + 1) * rate;
+                        })()).toLocaleString()}</span>
                       </div>
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-emerald-200 pt-2">
@@ -969,7 +982,7 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate per Night:</span>
-                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {(request.accommodationRate || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {((request.accommodationRate || 0) > 0 ? request.accommodationRate : 4000).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Nights:</span>
@@ -981,7 +994,14 @@ export default function TravelDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total Accommodation:</span>
-                        <span className="font-semibold text-blue-700">{request.accommodationCurrency || 'KES'} {(request.accommodationAmount || 0).toLocaleString()}</span>
+                        <span className="font-semibold text-blue-700">{request.accommodationCurrency || 'KES'} {((request.accommodationAmount || 0) > 0 ? request.accommodationAmount : (() => {
+                          if (!request.startDate || !request.endDate) return 0;
+                          const rate = 4000;
+                          const start = new Date(request.startDate);
+                          const end = new Date(request.endDate);
+                          const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                          return nights * rate;
+                        })()).toLocaleString()}</span>
                       </div>
                       {request.accommodationProvided && (
                         <div className="flex justify-between border-t border-blue-200 pt-2">
@@ -1009,24 +1029,8 @@ export default function TravelDetailPage() {
                   </div>
                 ) : null}
 
-                {/* Transportation Cost Section - For Reimbursement */}
-                {request.transportationCost && request.travelType === 'reimbursement' ? (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <DollarSign size={16} className="text-amber-600" />
-                      <h5 className="text-sm font-semibold text-amber-900">Transportation Cost Incurred</h5>
-                    </div>
-                    <div className="grid gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Amount:</span>
-                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Computed Total Amount Section for Approvers - Booking */}
-                {isApprover && request.travelType === 'booking' && (
+                {/* Total Amount Section - Visible to All for Booking */}
+                {request.travelType === 'booking' && (
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-purple-600" />
@@ -1061,8 +1065,40 @@ export default function TravelDetailPage() {
                   </div>
                 )}
 
-                {/* Computed Total Reimbursement Amount Section for Approvers - Reimbursement */}
-                {isApprover && request.travelType === 'reimbursement' && (
+                {/* Transportation Cost Section - For Reimbursement */}
+                {request.travelType === 'reimbursement' && (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-amber-600" />
+                      <h5 className="text-sm font-semibold text-amber-900">Transportation Cost Incurred</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Amount:</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Other Costs Section - For Reimbursement */}
+                {request.travelType === 'reimbursement' && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-slate-600" />
+                      <h5 className="text-sm font-semibold text-slate-900">Other Costs</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Amount:</span>
+                        <span className="font-semibold text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Total Reimbursement Amount - Visible to All for Reimbursement */}
+                {request.travelType === 'reimbursement' && (
                   <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-purple-600" />
@@ -1099,6 +1135,8 @@ export default function TravelDetailPage() {
                     </div>
                   </div>
                 )}
+
+
               </div>
 
               {/* Reason Section */}
