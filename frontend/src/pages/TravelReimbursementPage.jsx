@@ -185,13 +185,13 @@ export default function TravelReimbursementPage() {
     currency: 'KES',
     transportationCost: '',
     transportationProvided: false,
-    dsaRate: '',
+    dsaRate: 0,
     dsaCurrency: 'KES',
-    dsaAmount: '',
+    dsaAmount: 0,
     dsaProvided: false,
-    accommodationRate: '',
+    accommodationRate: 0,
     accommodationCurrency: 'KES',
-    accommodationAmount: '',
+    accommodationAmount: 0,
     accommodationProvided: false,
     reason: '',
     supportingDocuments: [],
@@ -208,67 +208,62 @@ export default function TravelReimbursementPage() {
 
   // Auto-calculate DSA and accommodation when relevant fields change
   useEffect(() => {
+    console.log('Calculation triggered:', { designation: form.designation, category: form.travelCategory, startDate: form.startDate, endDate: form.endDate, settings });
+
     if (form.designation && form.travelCategory && form.startDate && form.endDate) {
       const needsTravelType = form.travelCategory === 'Within Kenya';
       const hasRequiredFields = needsTravelType ? form.travelTypeDetail : true;
 
+      console.log('Has required fields:', hasRequiredFields);
+
       if (hasRequiredFields) {
-        const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings);
+        // Calculate DSA
+        let dsaRateValue = 0;
+        let dsaCurrencyValue = 'KES';
+        let dsaAmountValue = 0;
 
-        if (dsaRate) {
-          const dsaAmount = calculateDSAAmount(form.startDate, form.endDate, dsaRate, form.travelTypeDetail, settings);
-          setForm(prev => ({
-            ...prev,
-            dsaRate: dsaRate.rate,
-            dsaCurrency: dsaRate.currency,
-            dsaAmount: dsaAmount
-          }));
-        } else {
-          // Use default Kenya rate if no match found
-          const defaultRate = form.travelCategory === 'Within Kenya' ? 2000 :
-                             form.travelCategory === 'East Africa' ? 40 :
-                             form.travelCategory === 'International' ? 50 : 0;
-          const defaultCurrency = form.travelCategory === 'Within Kenya' ? 'KES' : 'USD';
-          const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
-          const start = new Date(form.startDate);
-          const end = new Date(form.endDate);
-          const diffTime = end - start;
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          const amount = calculationBasis === 'nights' ? diffDays * defaultRate : (diffDays + 1) * defaultRate;
-
-          setForm(prev => ({
-            ...prev,
-            dsaRate: defaultRate,
-            dsaCurrency: defaultCurrency,
-            dsaAmount: amount
-          }));
+        if (form.travelCategory === 'Within Kenya') {
+          dsaRateValue = 2000;
+          dsaCurrencyValue = 'KES';
+        } else if (form.travelCategory === 'East Africa') {
+          dsaRateValue = 40;
+          dsaCurrencyValue = 'USD';
+        } else if (form.travelCategory === 'International') {
+          dsaRateValue = 50;
+          dsaCurrencyValue = 'USD';
         }
 
-        // Calculate accommodation amount - use default if settings not available
-        const accommodationSettings = settings?.travel?.accommodation;
-        const accommodationRate = accommodationSettings?.rate || 4000;
-        const accommodationCurrency = accommodationSettings?.currency || 'KES';
+        // Calculate days/nights
+        const start = new Date(form.startDate);
+        const end = new Date(form.endDate);
+        const diffTime = end - start;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
 
-        // Check if this designation is applicable to the configured accommodation rate
-        const applicableTo = accommodationSettings?.applicableTo || ['all'];
-        const isApplicable = applicableTo.includes('all') || applicableTo.includes(form.designation?.toLowerCase().replace(/\s+/g, ''));
+        dsaAmountValue = calculationBasis === 'nights' ? diffDays * dsaRateValue : (diffDays + 1) * dsaRateValue;
 
-        if (isApplicable) {
-          const accommodationAmount = calculateAccommodationAmount(form.startDate, form.endDate, accommodationRate);
-          setForm(prev => ({
-            ...prev,
-            accommodationRate: accommodationRate,
-            accommodationCurrency: accommodationCurrency,
-            accommodationAmount: accommodationAmount
-          }));
-        } else {
-          setForm(prev => ({
-            ...prev,
-            accommodationRate: 0,
-            accommodationCurrency: 'KES',
-            accommodationAmount: 0
-          }));
-        }
+        console.log('DSA calculated:', { rate: dsaRateValue, currency: dsaCurrencyValue, amount: dsaAmountValue, days: diffDays });
+
+        setForm(prev => ({
+          ...prev,
+          dsaRate: dsaRateValue,
+          dsaCurrency: dsaCurrencyValue,
+          dsaAmount: dsaAmountValue
+        }));
+
+        // Calculate accommodation
+        const accommodationRateValue = 4000;
+        const accommodationCurrencyValue = 'KES';
+        const accommodationAmountValue = diffDays * accommodationRateValue;
+
+        console.log('Accommodation calculated:', { rate: accommodationRateValue, currency: accommodationCurrencyValue, amount: accommodationAmountValue, nights: diffDays });
+
+        setForm(prev => ({
+          ...prev,
+          accommodationRate: accommodationRateValue,
+          accommodationCurrency: accommodationCurrencyValue,
+          accommodationAmount: accommodationAmountValue
+        }));
       }
     }
   }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
