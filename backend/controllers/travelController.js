@@ -250,12 +250,15 @@ const createTravelRequest = async (req, res, next) => {
 const updateTravelRequest = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount } = req.body;
+    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost } = req.body;
     const request = await travelModel.findTravelRequestById(id);
 
     console.log('UPDATE REQUEST - Received:', {
       dsaAmount,
       accommodationAmount,
+      dsaProvided,
+      accommodationProvided,
+      transportationCost,
       projectProgramme,
       travelCategory
     });
@@ -291,9 +294,12 @@ const updateTravelRequest = async (req, res, next) => {
       dsaRate: dsaRate !== undefined ? Number(dsaRate) : request.dsaRate,
       dsaCurrency: dsaCurrency ?? request.dsaCurrency,
       dsaAmount: dsaAmount !== undefined ? Number(dsaAmount) : request.dsaAmount,
+      dsaProvided: dsaProvided !== undefined ? (dsaProvided === true || dsaProvided === 'true') : request.dsaProvided,
       accommodationRate: accommodationRate !== undefined ? Number(accommodationRate) : request.accommodationRate,
       accommodationCurrency: accommodationCurrency ?? request.accommodationCurrency,
-      accommodationAmount: accommodationAmount !== undefined ? Number(accommodationAmount) : request.accommodationAmount
+      accommodationAmount: accommodationAmount !== undefined ? Number(accommodationAmount) : request.accommodationAmount,
+      accommodationProvided: accommodationProvided !== undefined ? (accommodationProvided === true || accommodationProvided === 'true') : request.accommodationProvided,
+      transportationCost: transportationCost !== undefined && transportationCost !== '' ? Number(transportationCost) : request.transportationCost
     };
 
     console.log('UPDATE REQUEST - Sending to model:', updateParams);

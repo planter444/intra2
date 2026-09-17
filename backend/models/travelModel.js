@@ -267,10 +267,13 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
     id,
     dsaAmount,
     accommodationAmount,
+    dsaProvided,
+    accommodationProvided,
+    transportationCost,
     projectProgramme,
     travelCategory
   });
-  
+
   try {
     result = await query(
       `
@@ -331,11 +334,14 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
   const updated = await findTravelRequestById(id);
   console.log('MODEL UPDATE - Updated request:', {
     dsaAmount: updated.dsaAmount,
+    dsaProvided: updated.dsa_provided,
     accommodationAmount: updated.accommodationAmount,
+    accommodationProvided: updated.accommodation_provided,
+    transportationCost: updated.transportation_cost,
     projectProgramme: updated.projectProgramme,
     travelCategory: updated.travelCategory
   });
-  
+
   return updated;
 };
 
