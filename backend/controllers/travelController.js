@@ -260,7 +260,7 @@ const updateTravelRequest = async (req, res, next) => {
       destination: destination || request.destination,
       reason: reason ?? request.reason,
       estimatedCost: estimatedCost !== undefined && estimatedCost !== '' ? Number(estimatedCost) : request.estimatedCost,
-      designation: designation ?? request.designation,
+      designation: designation && designation.trim() !== '' ? designation : null,
       travelCategory: travelCategory ?? request.travelCategory,
       travelTypeDetail: travelTypeDetail ?? request.travelTypeDetail,
       projectProgramme: projectProgramme ?? request.projectProgramme,
