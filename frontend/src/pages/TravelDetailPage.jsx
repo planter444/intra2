@@ -570,16 +570,6 @@ export default function TravelDetailPage() {
                   </select>
                 </div>
               </div>
-              {editForm.travelCategory === 'Within Kenya' && (
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-700">Travel Type</label>
-                  <select className="bg-white" value={editForm.travelTypeDetail} onChange={(e) => setEditForm({ ...editForm, travelTypeDetail: e.target.value })}>
-                    <option value="">Select type</option>
-                    <option value="Domestic">Domestic</option>
-                    <option value="International">International</option>
-                  </select>
-                </div>
-              )}
               <div>
                 <label className="mb-2 block text-sm font-medium text-slate-700">Project / Programme / Activity</label>
                 <select className="bg-white" value={editForm.projectProgramme} onChange={(e) => setEditForm({ ...editForm, projectProgramme: e.target.value })}>
