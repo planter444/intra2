@@ -94,6 +94,9 @@ export default function TravelDetailPage() {
     try {
       setLoading(true);
       const data = await fetchTravelRequest(id);
+      console.log('Loaded request data:', data);
+      console.log('Travel category:', data.travelCategory);
+      console.log('Travel type:', data.travelType);
       setRequest(data);
       setEditForm({
         startDate: data.startDate,
