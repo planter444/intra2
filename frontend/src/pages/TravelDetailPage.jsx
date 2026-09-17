@@ -609,7 +609,7 @@ export default function TravelDetailPage() {
                   <div className="grid gap-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-slate-600">Rate:</span>
-                      <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {request.dsaRate?.toLocaleString() || 'Calculating...'}</span>
+                      <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {request.dsaRate?.toLocaleString() || (request.travelType === 'reimbursement' ? '2000' : 'Calculating...')}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Number of {settings?.travel?.dsa?.calculationBasis === 'nights' ? 'Nights' : 'Days'}:</span>
@@ -624,7 +624,7 @@ export default function TravelDetailPage() {
                     <div className="flex justify-between border-t border-emerald-200 pt-2">
                       <span className="font-semibold text-slate-900">Total DSA:</span>
                       <span className="font-semibold text-emerald-700">
-                        {request.dsaCurrency || 'KES'} {calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate || 0).toLocaleString()}
+                        {request.dsaCurrency || 'KES'} {calculateDSAAmount(editForm.startDate, editForm.endDate, request.dsaRate || (request.travelType === 'reimbursement' ? 2000 : 0)).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -642,7 +642,7 @@ export default function TravelDetailPage() {
                     <div className="flex justify-between">
                       <span className="text-slate-600">Rate per Night:</span>
                       <span className="font-medium text-slate-900">
-                        {request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES'} {request.accommodationRate?.toLocaleString() || settings?.travel?.accommodation?.rate?.toLocaleString() || 4000}
+                        {request.accommodationCurrency || settings?.travel?.accommodation?.currency || 'KES'} {request.accommodationRate?.toLocaleString() || settings?.travel?.accommodation?.rate?.toLocaleString() || (request.travelType === 'reimbursement' ? '4000' : 0)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -867,7 +867,7 @@ export default function TravelDetailPage() {
                   <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-emerald-600" />
-                      <h5 className="text-sm font-semibold text-emerald-900">DSA Calculation</h5>
+                      <h5 className="text-sm font-semibold text-emerald-900">DSA (Daily Subsistence Allowance)</h5>
                     </div>
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
@@ -881,7 +881,7 @@ export default function TravelDetailPage() {
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-emerald-200 pt-2">
                           <span className="text-slate-600">Status:</span>
-                          <span className="font-medium text-slate-700">Provided (excluded)</span>
+                          <span className="font-medium text-slate-700">Provided (excluded from total)</span>
                         </div>
                       )}
                     </div>
@@ -893,7 +893,7 @@ export default function TravelDetailPage() {
                   <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Building2 size={16} className="text-blue-600" />
-                      <h5 className="text-sm font-semibold text-blue-900">Accommodation</h5>
+                      <h5 className="text-sm font-semibold text-blue-900">Accommodation Allowance</h5>
                     </div>
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
@@ -915,7 +915,7 @@ export default function TravelDetailPage() {
                       {request.accommodationProvided && (
                         <div className="flex justify-between border-t border-blue-200 pt-2">
                           <span className="text-slate-600">Status:</span>
-                          <span className="font-medium text-slate-700">Provided (excluded)</span>
+                          <span className="font-medium text-slate-700">Provided (excluded from total)</span>
                         </div>
                       )}
                     </div>
@@ -927,23 +927,59 @@ export default function TravelDetailPage() {
                   <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-amber-600" />
-                      <h5 className="text-sm font-semibold text-amber-900">Transportation Cost</h5>
+                      <h5 className="text-sm font-semibold text-amber-900">Estimated Transportation Cost</h5>
                     </div>
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Transportation Cost:</span>
+                        <span className="text-slate-600">Transportation Cost Incurred:</span>
                         <span className="font-semibold text-amber-700">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
                 ) : null}
 
-                {/* Total Cost Section */}
+                {/* Computed Total Cost Section for Approvers */}
+                {isApprover && (
+                  <div className="rounded-xl border border-purple-200 bg-purple-50 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <DollarSign size={16} className="text-purple-600" />
+                      <h5 className="text-sm font-semibold text-purple-900">Total Reimbursement Amount</h5>
+                    </div>
+                    <div className="grid gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">DSA:</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {((request.dsaProvided ? 0 : request.dsaAmount) || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Accommodation:</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {((request.accommodationProvided ? 0 : request.accommodationAmount) || 0).toLocaleString()}</span>
+                      </div>
+                      {request.transportationCost && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Transportation:</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {request.transportationCost.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t border-purple-200 pt-2">
+                        <span className="font-semibold text-slate-900">Total:</span>
+                        <span className="font-bold text-purple-700 text-lg">
+                          {request.currency || 'KES'} {(
+                            ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
+                            ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
+                            (request.transportationCost || 0)
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Total Cost Section (User Entered) */}
                 {request.estimatedCost && (
                   <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className="text-slate-600" />
-                      <h5 className="text-sm font-semibold text-slate-900">Total Cost</h5>
+                      <h5 className="text-sm font-semibold text-slate-900">User-Entered Total Cost</h5>
                     </div>
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
@@ -1006,6 +1042,51 @@ export default function TravelDetailPage() {
           </div>
         </div>
       </SectionCard>
+
+      {request.travelType === 'booking' && request.supportingDocumentId && (
+        <SectionCard title="Supporting document" subtitle="Supporting document uploaded with this travel booking request.">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex flex-col gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
+                    Attached
+                  </span>
+                  <span className="text-sm text-slate-400 truncate">Supporting document</span>
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="rounded-lg border border-rose-200 p-2 text-rose-600 hover:bg-rose-50"
+                      onClick={handleSupportingDocRemove}
+                      title="Remove"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                  onClick={handlePreviewSupportingDocument}
+                  title="Preview"
+                >
+                  <Eye size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
+                  onClick={handleDownloadSupportingDocument}
+                  title="Download"
+                >
+                  <Download size={14} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+      )}
 
       <SectionCard
         title="Travel receipts"
@@ -1077,52 +1158,6 @@ export default function TravelDetailPage() {
           </div>
         )}
       </SectionCard>
-
-      {request.travelType === 'booking' && request.supportingDocumentId && (
-        <SectionCard title="Supporting document" subtitle="Supporting document uploaded with this travel booking request.">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex flex-col gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-600">
-                    Attached
-                  </span>
-                  <span className="text-sm text-slate-400 truncate">Supporting document</span>
-                  {canEdit && (
-                    <button
-                      type="button"
-                      className="rounded-lg border border-rose-200 p-2 text-rose-600 hover:bg-rose-50"
-                      onClick={handleSupportingDocRemove}
-                      title="Remove"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  )}
-                </div>
-                <p className="mt-1 text-sm text-slate-500">Uploaded with travel request</p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
-                  onClick={handlePreviewSupportingDocument}
-                  title="Preview"
-                >
-                  <Eye size={16} />
-                </button>
-                <button
-                  type="button"
-                  className="rounded-xl border border-slate-200 p-2 text-slate-600 hover:bg-slate-50"
-                  onClick={handleDownloadSupportingDocument}
-                  title="Download"
-                >
-                  <Download size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </SectionCard>
-      )}
 
       <Modal
         open={notice.open}

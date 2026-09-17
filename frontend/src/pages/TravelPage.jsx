@@ -364,10 +364,10 @@ export default function TravelPage() {
                           </span>
                         ) : (
                           <>
-                            {request.estimatedCost && (
+                            {request.accommodationAmount && parseFloat(request.accommodationAmount) > 0 && (
                               <span className="flex items-center gap-1.5">
                                 <DollarSign size={10} className="sm:size-10" />
-                                {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                                Accommodation: {request.accommodationCurrency || 'KES'} {request.accommodationAmount.toLocaleString()}
                               </span>
                             )}
                             {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
@@ -490,10 +490,10 @@ export default function TravelPage() {
                           </span>
                         ) : (
                           <>
-                            {request.estimatedCost && (
+                            {request.accommodationAmount && parseFloat(request.accommodationAmount) > 0 && (
                               <span className="flex items-center gap-1.5">
                                 <DollarSign size={16} />
-                                {request.currency || 'KES'} {request.estimatedCost.toLocaleString()}
+                                Accommodation: {request.accommodationCurrency || 'KES'} {request.accommodationAmount.toLocaleString()}
                               </span>
                             )}
                             {request.dsaAmount && request.travelCategory !== 'Local Movement' && parseFloat(request.dsaAmount) > 0 && (
