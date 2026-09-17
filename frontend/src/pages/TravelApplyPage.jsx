@@ -26,6 +26,9 @@ const initialForm = {
   dsaRate: '',
   dsaCurrency: 'KES',
   dsaAmount: '',
+  accommodationRate: '',
+  accommodationCurrency: 'KES',
+  accommodationAmount: '',
   selectedHotel: ''
 };
 
@@ -165,6 +168,19 @@ const calculateDSAAmount = (startDate, endDate, dsaRate, travelTypeDetail, setti
   }
 };
 
+// Calculate accommodation amount based on nights
+const calculateAccommodationAmount = (startDate, endDate, accommodationRate, settings) => {
+  if (!startDate || !endDate || !accommodationRate) return 0;
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const diffTime = end - start;
+  const nights = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  console.log('Calculated accommodation nights:', nights);
+  return nights * accommodationRate;
+};
+
 export default function TravelApplyPage() {
   const navigate = useNavigate();
   const { user, token, settings } = useAuth();
@@ -232,6 +248,32 @@ export default function TravelApplyPage() {
       }
     }
   }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
+
+  // Auto-calculate accommodation when enabled and dates change
+  useEffect(() => {
+    const accommodationEnabled = settings?.travel?.accommodation?.enabled;
+    if (accommodationEnabled && form.startDate && form.endDate) {
+      const accommodationRate = settings?.travel?.accommodation?.rate || 4000;
+      const accommodationCurrency = settings?.travel?.accommodation?.currency || 'KES';
+      
+      const accommodationAmount = calculateAccommodationAmount(form.startDate, form.endDate, accommodationRate, settings);
+      
+      setForm(prev => ({
+        ...prev,
+        accommodationRate,
+        accommodationCurrency,
+        accommodationAmount
+      }));
+    } else if (!accommodationEnabled) {
+      // Clear accommodation fields if disabled
+      setForm(prev => ({
+        ...prev,
+        accommodationRate: '',
+        accommodationCurrency: 'KES',
+        accommodationAmount: ''
+      }));
+    }
+  }, [form.startDate, form.endDate, settings]);
 
   // Check for preferred hotels based on destination
   const getPreferredHotels = () => {
@@ -339,6 +381,9 @@ export default function TravelApplyPage() {
         dsaRate: form.dsaRate ? Number(form.dsaRate) : null,
         dsaCurrency: form.dsaCurrency,
         dsaAmount: form.dsaAmount ? Number(form.dsaAmount) : null,
+        accommodationRate: form.accommodationRate ? Number(form.accommodationRate) : null,
+        accommodationCurrency: form.accommodationCurrency,
+        accommodationAmount: form.accommodationAmount ? Number(form.accommodationAmount) : null,
         selectedHotel: form.selectedHotel || null
       };
 
@@ -644,6 +689,39 @@ export default function TravelApplyPage() {
                   <span className="font-semibold text-slate-900">Total DSA:</span>
                   <span className="font-semibold text-emerald-700">
                     {form.dsaCurrency} {form.dsaAmount?.toLocaleString() || 0}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Accommodation Section - separate from DSA */}
+          {form.accommodationRate && settings?.travel?.accommodation?.enabled && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+              <h4 className="mb-3 flex items-center gap-2 font-semibold text-blue-900">
+                <Building2 size={18} />
+                Accommodation Allowance
+              </h4>
+              <p className="mb-3 text-xs text-blue-700">{settings?.travel?.accommodation?.description || 'Accommodation allowance per night'}</p>
+              <div className="grid gap-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Rate per Night:</span>
+                  <span className="font-medium text-slate-900">
+                    {form.accommodationCurrency} {form.accommodationRate?.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Number of Nights:</span>
+                  <span className="font-medium text-slate-900">
+                    {form.startDate && form.endDate ? (
+                      Math.ceil((new Date(form.endDate) - new Date(form.startDate)) / (1000 * 60 * 60 * 24))
+                    ) : 0}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-blue-200 pt-2">
+                  <span className="font-semibold text-slate-900">Total Accommodation:</span>
+                  <span className="font-semibold text-blue-700">
+                    {form.accommodationCurrency} {form.accommodationAmount?.toLocaleString() || 0}
                   </span>
                 </div>
               </div>

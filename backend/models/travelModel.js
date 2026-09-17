@@ -43,7 +43,10 @@ const mapTravelRequest = (row) => ({
   dsaCurrency: row.dsa_currency || 'KES',
   dsaAmount: row.dsa_amount ? Number(row.dsa_amount) : null,
   dsaProvided: row.dsa_provided || false,
-  referenceNumber: row.reference_number || null
+  referenceNumber: row.reference_number || null,
+  accommodationRate: row.accommodation_rate ? Number(row.accommodation_rate) : null,
+  accommodationCurrency: row.accommodation_currency || 'KES',
+  accommodationAmount: row.accommodation_amount ? Number(row.accommodation_amount) : null
 });
 
 const generateReferenceNumber = async () => {
@@ -62,7 +65,7 @@ const generateReferenceNumber = async () => {
   return `KEREA-TRV-${year}-${sequence}`;
 };
 
-const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided }) => {
+const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount }) => {
   const referenceNumber = await generateReferenceNumber();
   
   let result;
@@ -88,13 +91,16 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
           dsa_currency,
           dsa_amount,
           dsa_provided,
+          accommodation_rate,
+          accommodation_currency,
+          accommodation_amount,
           reference_number,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 'pending')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, 'pending')
         RETURNING id
       `,
-      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null, designation || null, travelCategory || null, travelTypeDetail || null, projectProgramme || null, dsaRate || null, dsaCurrency || 'KES', dsaAmount || null, dsaProvided || false, referenceNumber]
+      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null, designation || null, travelCategory || null, travelTypeDetail || null, projectProgramme || null, dsaRate || null, dsaCurrency || 'KES', dsaAmount || null, dsaProvided || false, accommodationRate || null, accommodationCurrency || 'KES', accommodationAmount || null, referenceNumber]
     );
   } catch (error) {
     console.error('Travel request insert error:', error.message);

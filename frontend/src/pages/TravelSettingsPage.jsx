@@ -34,6 +34,12 @@ export default function TravelSettingsPage() {
     internationalCurrency: 'USD',
     description: 'Covers accommodation, meals, and incidental costs'
   });
+  const [accommodationSettings, setAccommodationSettings] = useState({
+    enabled: true,
+    rate: 4000,
+    currency: 'KES',
+    description: 'Accommodation allowance per night'
+  });
   const [hotelsModal, setHotelsModal] = useState({ open: false, hotel: null });
   const [hotelForm, setHotelForm] = useState({
     name: '',
@@ -61,6 +67,14 @@ export default function TravelSettingsPage() {
         eastAfricaCurrency: settings.travel.dsa.eastAfricaCurrency || 'USD',
         internationalRate: settings.travel.dsa.internationalRate || 50,
         internationalCurrency: settings.travel.dsa.internationalCurrency || 'USD'
+      });
+    }
+    if (settings?.travel?.accommodation) {
+      setAccommodationSettings({
+        enabled: settings.travel.accommodation.enabled !== undefined ? settings.travel.accommodation.enabled : true,
+        rate: settings.travel.accommodation.rate || 4000,
+        currency: settings.travel.accommodation.currency || 'KES',
+        description: settings.travel.accommodation.description || 'Accommodation allowance per night'
       });
     }
   }, [settings]);
@@ -99,14 +113,16 @@ export default function TravelSettingsPage() {
         ...settings,
         travel: {
           ...settings.travel,
-          dsa: dsaSettings
+          dsa: dsaSettings,
+          accommodation: accommodationSettings
         }
       });
       replaceSettings({
         ...settings,
         travel: {
           ...settings.travel,
-          dsa: dsaSettings
+          dsa: dsaSettings,
+          accommodation: accommodationSettings
         }
       });
       
@@ -553,6 +569,14 @@ export default function TravelSettingsPage() {
           <Building2 size={16} className="inline mr-2" />
           Preferred Hotels
         </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('accommodation')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 ${activeTab === 'accommodation' ? 'border-emerald-500 text-emerald-600' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+        >
+          <Building2 size={16} className="inline mr-2" />
+          Accommodation
+        </button>
       </div>
 
       {activeTab === 'notifications' && (
@@ -918,6 +942,109 @@ export default function TravelSettingsPage() {
                 ))}
               </div>
             )}
+          </div>
+        </SectionCard>
+      )}
+
+      {activeTab === 'accommodation' && (
+        <SectionCard title="Accommodation Settings" subtitle="Configure accommodation allowance for official travel. Accommodation is calculated separately from DSA.">
+          <div className="space-y-6">
+            {/* Enable/Disable Accommodation */}
+            <div>
+              <label className="mb-3 block text-sm font-medium text-slate-700">Enable Accommodation Allowance</label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="accommodationEnabled"
+                    value="true"
+                    checked={accommodationSettings.enabled === true}
+                    onChange={() => setAccommodationSettings({ ...accommodationSettings, enabled: true })}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Enabled</p>
+                    <p className="text-sm text-slate-500">Accommodation allowance will be calculated and displayed separately from DSA</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="accommodationEnabled"
+                    value="false"
+                    checked={accommodationSettings.enabled === false}
+                    onChange={() => setAccommodationSettings({ ...accommodationSettings, enabled: false })}
+                    className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Disabled</p>
+                    <p className="text-sm text-slate-500">Accommodation allowance will not be calculated or displayed</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Accommodation Rate (only shown when enabled) */}
+            {accommodationSettings.enabled && (
+              <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <h3 className="flex items-center gap-2 font-medium text-emerald-800">
+                  <DollarSign size={18} />
+                  Accommodation Rate
+                </h3>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">Rate per Night</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={accommodationSettings.currency}
+                        onChange={(e) => setAccommodationSettings({ ...accommodationSettings, currency: e.target.value })}
+                        className="w-28 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      >
+                        <option value="KES">KES</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                      </select>
+                      <input
+                        type="number"
+                        value={accommodationSettings.rate || ''}
+                        onChange={(e) => setAccommodationSettings({ ...accommodationSettings, rate: e.target.value ? Number(e.target.value) : 0 })}
+                        className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900"
+                        min="0"
+                        placeholder="Enter amount"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">Description</label>
+                  <input
+                    type="text"
+                    value={accommodationSettings.description}
+                    onChange={(e) => setAccommodationSettings({ ...accommodationSettings, description: e.target.value })}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                    placeholder="e.g., Accommodation allowance per night"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+              <h4 className="mb-2 flex items-center gap-2 font-medium text-blue-800">
+                <Calculator size={16} />
+                Accommodation Calculation
+              </h4>
+              <p className="text-sm text-blue-700">
+                Accommodation is calculated based on the number of nights between start date and end date. 
+                For example: Departure on 21st, return on 25th = 4 nights (21st, 22nd, 23rd, 24th). 
+                The traveler does not sleep on the return date (25th).
+              </p>
+            </div>
+
+            <p className="text-sm text-slate-500">
+              Changes to accommodation settings will apply to new travel requests. Historical requests retain their original rates.
+            </p>
           </div>
         </SectionCard>
       )}
