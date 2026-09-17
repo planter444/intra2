@@ -29,15 +29,16 @@ const initialForm = {
   accommodationRate: '',
   accommodationCurrency: 'KES',
   accommodationAmount: '',
-  selectedHotel: ''
+  selectedHotel: '',
+  fullDayEvent: false
 };
 
 const getToday = () => new Date().toISOString().split('T')[0];
 
 // DSA Rate Configuration
-const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => {
-  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail, settings });
-  
+const getDSARate = (designation, travelCategory, travelTypeDetail, settings, fullDayEvent = false) => {
+  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail, settings, fullDayEvent });
+
   if (!travelCategory) {
     console.log('Missing travelCategory');
     return null;
@@ -52,36 +53,49 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
     // Check if this designation is applicable to the configured rate
     const applicableTo = dsaSettings?.applicableTo || ['all'];
     const isApplicable = applicableTo.includes('all') || applicableTo.includes(designation?.toLowerCase().replace(/\s+/g, ''));
-    
+
     if (!isApplicable) {
       console.log('Designation not applicable to standard DSA rate');
       return null;
     }
-    
+
+    // Local Movement - only apply DSA if it's a full day event
+    if (travelCategory === 'Local Movement') {
+      if (fullDayEvent) {
+        return {
+          rate: dsaSettings?.localMovementRate || 2000,
+          currency: dsaSettings?.localMovementCurrency || 'KES',
+          unit: 'per day'
+        };
+      }
+      console.log('Local Movement but not full day event - no DSA');
+      return null;
+    }
+
     if (travelCategory === 'Within Kenya') {
-      return { 
-        rate: dsaSettings?.kenyaRate || 2000, 
-        currency: dsaSettings?.kenyaCurrency || 'KES', 
-        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      return {
+        rate: dsaSettings?.kenyaRate || 2000,
+        currency: dsaSettings?.kenyaCurrency || 'KES',
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day'
       };
     }
-    
+
     if (travelCategory === 'East Africa') {
-      return { 
-        rate: dsaSettings?.eastAfricaRate || 40, 
-        currency: dsaSettings?.eastAfricaCurrency || 'USD', 
-        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      return {
+        rate: dsaSettings?.eastAfricaRate || 40,
+        currency: dsaSettings?.eastAfricaCurrency || 'USD',
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day'
       };
     }
-    
+
     if (travelCategory === 'International') {
-      return { 
-        rate: dsaSettings?.internationalRate || 50, 
-        currency: dsaSettings?.internationalCurrency || 'USD', 
-        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      return {
+        rate: dsaSettings?.internationalRate || 50,
+        currency: dsaSettings?.internationalCurrency || 'USD',
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day'
       };
     }
-    
+
     return null;
   }
 
@@ -231,7 +245,7 @@ export default function TravelApplyPage() {
       console.log('DSA Calculation logic:', { dsaMode, needsTravelType, hasRequiredFields, needsDesignation, hasDesignation });
 
       if (hasRequiredFields && hasDesignation) {
-        const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings);
+        const dsaRate = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings, form.fullDayEvent);
         console.log('DSA Rate Result:', dsaRate);
         
         if (dsaRate) {
@@ -255,11 +269,22 @@ export default function TravelApplyPage() {
         }
       }
     }
-  }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
+  }, [form.designation, form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, form.fullDayEvent, settings]);
 
   // Auto-calculate accommodation when enabled and dates change
   useEffect(() => {
     const accommodationEnabled = settings?.travel?.accommodation?.enabled;
+    // No accommodation for Local Movement
+    if (form.travelCategory === 'Local Movement') {
+      setForm(prev => ({
+        ...prev,
+        accommodationRate: '',
+        accommodationCurrency: 'KES',
+        accommodationAmount: ''
+      }));
+      return;
+    }
+
     if (accommodationEnabled && form.startDate && form.endDate) {
       // Check if this designation is applicable to the configured accommodation rate
       const applicableTo = settings?.travel?.accommodation?.applicableTo || ['all'];
@@ -295,7 +320,7 @@ export default function TravelApplyPage() {
         accommodationAmount: ''
       }));
     }
-  }, [form.startDate, form.endDate, form.designation, settings]);
+  }, [form.startDate, form.endDate, form.designation, form.travelCategory, settings]);
 
   // Check for preferred hotels based on destination
   const getPreferredHotels = () => {
@@ -406,7 +431,8 @@ export default function TravelApplyPage() {
         accommodationRate: form.accommodationRate ? Number(form.accommodationRate) : null,
         accommodationCurrency: form.accommodationCurrency,
         accommodationAmount: form.accommodationAmount ? Number(form.accommodationAmount) : null,
-        selectedHotel: form.selectedHotel || null
+        selectedHotel: form.selectedHotel || null,
+        fullDayEvent: form.fullDayEvent || false
       };
 
       let request;
@@ -496,6 +522,7 @@ export default function TravelApplyPage() {
                 required
               >
                 <option value="">Select travel category</option>
+                <option value="Local Movement">Local Movement</option>
                 <option value="Within Kenya">Within Kenya</option>
                 <option value="East Africa">East Africa</option>
                 <option value="International">International</option>
@@ -531,6 +558,28 @@ export default function TravelApplyPage() {
                 <option value="Official Overnight Travel">Official Overnight Travel</option>
                 <option value="Official Day Travel">Official Day Travel</option>
               </select>
+            </div>
+          )}
+
+          {/* Full Day Event (only for Local Movement) */}
+          {form.travelCategory === 'Local Movement' && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.fullDayEvent}
+                  onChange={(e) => setForm((current) => ({ ...current, fullDayEvent: e.target.checked }))}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-900">Full day event</span>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {form.fullDayEvent
+                      ? 'DSA will be included (2,000 KES) for this full day event.'
+                      : 'No DSA will be included (not a full day event). Only transportation cost.'}
+                  </p>
+                </div>
+              </label>
             </div>
           )}
 
@@ -717,8 +766,8 @@ export default function TravelApplyPage() {
             </div>
           )}
 
-          {/* Accommodation Section - separate from DSA */}
-          {form.accommodationRate && settings?.travel?.accommodation?.enabled && (
+          {/* Accommodation Section - separate from DSA - not for Local Movement */}
+          {form.accommodationRate && settings?.travel?.accommodation?.enabled && form.travelCategory !== 'Local Movement' && (
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
               <h4 className="mb-3 flex items-center gap-2 font-semibold text-blue-900">
                 <Building2 size={18} />

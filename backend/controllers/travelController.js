@@ -89,7 +89,7 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
-    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, receipts } = req.body;
+    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent, receipts } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
       return res.status(400).json({ message: 'Start date, end date, origin, destination, and reason are required.' });
@@ -163,7 +163,8 @@ const createTravelRequest = async (req, res, next) => {
         accommodationCurrency: accommodationCurrency || 'KES',
         accommodationAmount: accommodationAmount || null,
         accommodationProvided: accommodationProvided || false,
-        transportationCost: transportationCost || null
+        transportationCost: transportationCost || null,
+        fullDayEvent: fullDayEvent || false
       });
     } catch (dbError) {
       // If the error is about new columns not existing, retry without them
@@ -250,7 +251,7 @@ const createTravelRequest = async (req, res, next) => {
 const updateTravelRequest = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost } = req.body;
+    const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent } = req.body;
     const request = await travelModel.findTravelRequestById(id);
 
     console.log('UPDATE REQUEST - Received:', {
@@ -299,7 +300,8 @@ const updateTravelRequest = async (req, res, next) => {
       accommodationCurrency: accommodationCurrency ?? request.accommodationCurrency,
       accommodationAmount: accommodationAmount !== undefined ? Number(accommodationAmount) : request.accommodationAmount,
       accommodationProvided: accommodationProvided !== undefined ? (accommodationProvided === true || accommodationProvided === 'true') : request.accommodationProvided,
-      transportationCost: transportationCost !== undefined && transportationCost !== '' ? Number(transportationCost) : request.transportationCost
+      transportationCost: transportationCost !== undefined && transportationCost !== '' ? Number(transportationCost) : request.transportationCost,
+      fullDayEvent: fullDayEvent !== undefined ? (fullDayEvent === true || fullDayEvent === 'true') : request.full_day_event
     };
 
     console.log('UPDATE REQUEST - Sending to model:', updateParams);

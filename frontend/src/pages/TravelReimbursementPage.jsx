@@ -9,9 +9,9 @@ import { createTravelRequest } from '../services/travelService';
 import { fetchSettings } from '../services/settingsService';
 
 // DSA Rate Configuration
-const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => {
-  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail, settings });
-  
+const getDSARate = (designation, travelCategory, travelTypeDetail, settings, fullDayEvent = false) => {
+  console.log('getDSARate called:', { designation, travelCategory, travelTypeDetail, settings, fullDayEvent });
+
   if (!travelCategory) {
     console.log('Missing travelCategory');
     return null;
@@ -26,25 +26,38 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
     // Check if this designation is applicable to the configured rate
     const applicableTo = dsaSettings?.applicableTo || ['all'];
     const isApplicable = applicableTo.includes('all') || applicableTo.includes(designation?.toLowerCase().replace(/\s+/g, ''));
-    
+
     if (!isApplicable) {
       console.log('Designation not applicable to standard DSA rate');
       return null;
     }
-    
+
+    // Local Movement - only apply DSA if it's a full day event
+    if (travelCategory === 'Local Movement') {
+      if (fullDayEvent) {
+        return {
+          rate: dsaSettings?.localMovementRate || 2000,
+          currency: dsaSettings?.localMovementCurrency || 'KES',
+          unit: 'per day'
+        };
+      }
+      console.log('Local Movement but not full day event - no DSA');
+      return null;
+    }
+
     if (travelCategory === 'Within Kenya') {
-      return { 
-        rate: dsaSettings?.kenyaRate || 2000, 
-        currency: dsaSettings?.kenyaCurrency || 'KES', 
-        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      return {
+        rate: dsaSettings?.kenyaRate || 2000,
+        currency: dsaSettings?.kenyaCurrency || 'KES',
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day'
       };
     }
-    
+
     if (travelCategory === 'East Africa') {
-      return { 
-        rate: dsaSettings?.eastAfricaRate || 40, 
-        currency: dsaSettings?.eastAfricaCurrency || 'USD', 
-        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day' 
+      return {
+        rate: dsaSettings?.eastAfricaRate || 40,
+        currency: dsaSettings?.eastAfricaCurrency || 'USD',
+        unit: dsaSettings?.calculationBasis === 'nights' ? 'per night' : 'per day'
       };
     }
     
@@ -193,6 +206,7 @@ export default function TravelReimbursementPage() {
     accommodationCurrency: 'KES',
     accommodationAmount: 0,
     accommodationProvided: false,
+    fullDayEvent: false,
     reason: '',
     supportingDocuments: [],
     referenceNumber: ''
@@ -208,7 +222,7 @@ export default function TravelReimbursementPage() {
 
   // Auto-calculate DSA and accommodation when relevant fields change
   useEffect(() => {
-    console.log('Calculation triggered:', { designation: form.designation, category: form.travelCategory, startDate: form.startDate, endDate: form.endDate, settings });
+    console.log('Calculation triggered:', { designation: form.designation, category: form.travelCategory, startDate: form.startDate, endDate: form.endDate, fullDayEvent: form.fullDayEvent, settings });
 
     if (form.travelCategory && form.startDate && form.endDate) {
       const needsTravelType = form.travelCategory === 'Within Kenya';
@@ -222,27 +236,37 @@ export default function TravelReimbursementPage() {
         let dsaCurrencyValue = 'KES';
         let dsaAmountValue = 0;
 
-        if (form.travelCategory === 'Within Kenya') {
-          dsaRateValue = 2000;
-          dsaCurrencyValue = 'KES';
+        if (form.travelCategory === 'Local Movement') {
+          // Only apply DSA if it's a full day event
+          if (form.fullDayEvent) {
+            dsaRateValue = settings?.travel?.dsa?.localMovementRate || 2000;
+            dsaCurrencyValue = settings?.travel?.dsa?.localMovementCurrency || 'KES';
+            // For local movement, it's per day (1 day = 1 event)
+            dsaAmountValue = dsaRateValue;
+          }
+        } else if (form.travelCategory === 'Within Kenya') {
+          dsaRateValue = settings?.travel?.dsa?.kenyaRate || 2000;
+          dsaCurrencyValue = settings?.travel?.dsa?.kenyaCurrency || 'KES';
         } else if (form.travelCategory === 'East Africa') {
-          dsaRateValue = 40;
-          dsaCurrencyValue = 'USD';
+          dsaRateValue = settings?.travel?.dsa?.eastAfricaRate || 40;
+          dsaCurrencyValue = settings?.travel?.dsa?.eastAfricaCurrency || 'USD';
         } else if (form.travelCategory === 'International') {
-          dsaRateValue = 50;
-          dsaCurrencyValue = 'USD';
+          dsaRateValue = settings?.travel?.dsa?.internationalRate || 50;
+          dsaCurrencyValue = settings?.travel?.dsa?.internationalCurrency || 'USD';
         }
 
-        // Calculate days/nights
-        const start = new Date(form.startDate);
-        const end = new Date(form.endDate);
-        const diffTime = end - start;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
+        // Calculate days/nights (not for Local Movement)
+        if (form.travelCategory !== 'Local Movement') {
+          const start = new Date(form.startDate);
+          const end = new Date(form.endDate);
+          const diffTime = end - start;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const calculationBasis = settings?.travel?.dsa?.calculationBasis || 'days';
 
-        dsaAmountValue = calculationBasis === 'nights' ? diffDays * dsaRateValue : (diffDays + 1) * dsaRateValue;
+          dsaAmountValue = calculationBasis === 'nights' ? diffDays * dsaRateValue : (diffDays + 1) * dsaRateValue;
+        }
 
-        console.log('DSA calculated:', { rate: dsaRateValue, currency: dsaCurrencyValue, amount: dsaAmountValue, days: diffDays });
+        console.log('DSA calculated:', { rate: dsaRateValue, currency: dsaCurrencyValue, amount: dsaAmountValue });
 
         setForm(prev => ({
           ...prev,
@@ -251,22 +275,37 @@ export default function TravelReimbursementPage() {
           dsaAmount: dsaAmountValue
         }));
 
-        // Calculate accommodation
-        const accommodationRateValue = 4000;
-        const accommodationCurrencyValue = 'KES';
-        const accommodationAmountValue = diffDays * accommodationRateValue;
+        // Calculate accommodation - NOT for Local Movement
+        if (form.travelCategory !== 'Local Movement') {
+          const start = new Date(form.startDate);
+          const end = new Date(form.endDate);
+          const diffTime = end - start;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        console.log('Accommodation calculated:', { rate: accommodationRateValue, currency: accommodationCurrencyValue, amount: accommodationAmountValue, nights: diffDays });
+          const accommodationRateValue = settings?.travel?.accommodation?.rate || 4000;
+          const accommodationCurrencyValue = settings?.travel?.accommodation?.currency || 'KES';
+          const accommodationAmountValue = diffDays * accommodationRateValue;
 
-        setForm(prev => ({
-          ...prev,
-          accommodationRate: accommodationRateValue,
-          accommodationCurrency: accommodationCurrencyValue,
-          accommodationAmount: accommodationAmountValue
-        }));
+          console.log('Accommodation calculated:', { rate: accommodationRateValue, currency: accommodationCurrencyValue, amount: accommodationAmountValue, nights: diffDays });
+
+          setForm(prev => ({
+            ...prev,
+            accommodationRate: accommodationRateValue,
+            accommodationCurrency: accommodationCurrencyValue,
+            accommodationAmount: accommodationAmountValue
+          }));
+        } else {
+          // Clear accommodation for Local Movement
+          setForm(prev => ({
+            ...prev,
+            accommodationRate: 0,
+            accommodationCurrency: 'KES',
+            accommodationAmount: 0
+          }));
+        }
       }
     }
-  }, [form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, settings]);
+  }, [form.travelCategory, form.travelTypeDetail, form.startDate, form.endDate, form.fullDayEvent, settings]);
 
   const loadSettings = async () => {
     try {
@@ -297,7 +336,8 @@ export default function TravelReimbursementPage() {
         transportationCost: parseFloat(form.transportationCost) || 0,
         dsaProvided: form.dsaProvided || false,
         accommodationAmount: parseFloat(form.accommodationAmount) || 0,
-        accommodationProvided: form.accommodationProvided || false
+        accommodationProvided: form.accommodationProvided || false,
+        fullDayEvent: form.fullDayEvent || false
       };
 
       await createTravelRequest(payload);
@@ -364,6 +404,7 @@ export default function TravelReimbursementPage() {
                 required
               >
                 <option value="">Select travel category</option>
+                <option value="Local Movement">Local Movement</option>
                 <option value="Within Kenya">Within Kenya</option>
                 <option value="East Africa">East Africa</option>
                 <option value="International">International</option>
@@ -398,6 +439,28 @@ export default function TravelReimbursementPage() {
                 <option value="Official Overnight Travel">Official Overnight Travel</option>
                 <option value="Official Day Travel">Official Day Travel</option>
               </select>
+            </div>
+          )}
+
+          {/* Full Day Event (only for Local Movement) */}
+          {form.travelCategory === 'Local Movement' && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <label className="flex cursor-pointer items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={form.fullDayEvent}
+                  onChange={(e) => setForm((current) => ({ ...current, fullDayEvent: e.target.checked }))}
+                  className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                />
+                <div>
+                  <span className="text-sm font-medium text-slate-900">Full day event</span>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {form.fullDayEvent
+                      ? 'DSA will be included (2,000 KES) for this full day event.'
+                      : 'No DSA will be included (not a full day event). Only transportation cost.'}
+                  </p>
+                </div>
+              </label>
             </div>
           )}
 
@@ -503,8 +566,8 @@ export default function TravelReimbursementPage() {
             </div>
           )}
 
-          {/* Accommodation Section - Always show when calculation is applicable */}
-          {form.travelCategory && form.startDate && form.endDate && (
+          {/* Accommodation Section - Always show when calculation is applicable - NOT for Local Movement */}
+          {form.travelCategory && form.travelCategory !== 'Local Movement' && form.startDate && form.endDate && (
             <div className={`rounded-xl border p-4 ${form.accommodationProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
               <h4 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900">
                 <Building2 size={16} />
