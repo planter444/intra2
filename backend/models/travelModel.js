@@ -46,7 +46,8 @@ const mapTravelRequest = (row) => ({
   referenceNumber: row.reference_number || null,
   accommodationRate: row.accommodation_rate ? Number(row.accommodation_rate) : null,
   accommodationCurrency: row.accommodation_currency || 'KES',
-  accommodationAmount: row.accommodation_amount ? Number(row.accommodation_amount) : null
+  accommodationAmount: row.accommodation_amount ? Number(row.accommodation_amount) : null,
+  transportationCost: row.transportation_cost ? Number(row.transportation_cost) : null
 });
 
 const generateReferenceNumber = async () => {
@@ -65,7 +66,7 @@ const generateReferenceNumber = async () => {
   return `KEREA-TRV-${year}-${sequence}`;
 };
 
-const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount }) => {
+const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, transportationCost }) => {
   const referenceNumber = await generateReferenceNumber();
   
   let result;
@@ -94,13 +95,14 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
           accommodation_rate,
           accommodation_currency,
           accommodation_amount,
+          transportation_cost,
           reference_number,
           status
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, 'pending')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, 'pending')
         RETURNING id
       `,
-      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null, designation || null, travelCategory || null, travelTypeDetail || null, projectProgramme || null, dsaRate || null, dsaCurrency || 'KES', dsaAmount || null, dsaProvided || false, accommodationRate || null, accommodationCurrency || 'KES', accommodationAmount || null, referenceNumber]
+      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null, designation || null, travelCategory || null, travelTypeDetail || null, projectProgramme || null, dsaRate || null, dsaCurrency || 'KES', dsaAmount || null, dsaProvided || false, accommodationRate || null, accommodationCurrency || 'KES', accommodationAmount || null, transportationCost || null, referenceNumber]
     );
   } catch (error) {
     console.error('Travel request insert error:', error.message);
@@ -257,7 +259,7 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
   return findTravelRequestById(id);
 };
 
-const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount }) => {
+const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount, transportationCost }) => {
   let result;
   console.log('MODEL UPDATE - Received params:', {
     id,
@@ -288,10 +290,11 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
           accommodation_rate = $15,
           accommodation_currency = $16,
           accommodation_amount = $17,
+          transportation_cost = $18,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount]
+      [id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount, transportationCost]
     );
     console.log('MODEL UPDATE - Query executed successfully, rows affected:', result.rowCount);
   } catch (error) {

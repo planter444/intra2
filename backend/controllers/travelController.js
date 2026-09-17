@@ -89,7 +89,7 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
-    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount } = req.body;
+    const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, transportationCost } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
       return res.status(400).json({ message: 'Start date, end date, origin, destination, and reason are required.' });
@@ -161,7 +161,8 @@ const createTravelRequest = async (req, res, next) => {
         dsaProvided: dsaProvided || false,
         accommodationRate: accommodationRate || null,
         accommodationCurrency: accommodationCurrency || 'KES',
-        accommodationAmount: accommodationAmount || null
+        accommodationAmount: accommodationAmount || null,
+        transportationCost: transportationCost || null
       });
     } catch (dbError) {
       // If the error is about new columns not existing, retry without them
