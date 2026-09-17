@@ -68,6 +68,7 @@ export default function LocalMovementBookingPage() {
         accommodationCurrency: 'KES',
         accommodationAmount: 0,
         fullDayEvent: form.fullDayEvent,
+        projectProgramme: form.projectProgramme || null, // Convert empty string to null
         supportingDocuments: documents.map(doc => ({
           name: doc.name,
           size: doc.size, // Use actual size in bytes

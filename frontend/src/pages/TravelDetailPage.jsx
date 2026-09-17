@@ -277,7 +277,7 @@ export default function TravelDetailPage() {
         designation: editForm.designation,
         travelCategory: editForm.travelCategory,
         travelTypeDetail: editForm.travelTypeDetail,
-        projectProgramme: editForm.projectProgramme,
+        projectProgramme: editForm.projectProgramme || null, // Convert empty string to null
         dsaRate: dsaRate,
         dsaCurrency: dsaCurrency,
         dsaAmount: calculatedDSAAmount,

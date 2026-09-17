@@ -70,6 +70,7 @@ export default function LocalMovementReimbursementPage() {
         accommodationAmount: 0,
         dsaProvided: form.dsaProvided,
         fullDayEvent: form.fullDayEvent,
+        projectProgramme: form.projectProgramme || null, // Convert empty string to null
         receipts: receipts.map(r => ({
           name: r.name,
           size: r.size, // Use actual size in bytes
