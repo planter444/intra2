@@ -288,16 +288,27 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     if (isNaN(date.getTime())) return 'Invalid date';
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
-  
+
   // Handle both camelCase and snake_case field names
   const travelType = travelRequest.travelType || travelRequest.travel_type || 'Not specified';
   const origin = travelRequest.origin || 'Not specified';
   const destination = travelRequest.destination || 'Not specified';
   const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
   const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
-  const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost;
   const currency = travelRequest.currency || 'KES';
   const reason = travelRequest.reason || 'Not specified';
+
+  // Calculate total cost
+  const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+  const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
+  const transportationCost = travelRequest.transportationCost || 0;
+  const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
+
+  // Total depends on travel type
+  const isReimbursement = travelType.toLowerCase().includes('reimbursement');
+  const totalCost = isReimbursement
+    ? dsaAmount + accommodationAmount + transportationCost + estimatedCost
+    : dsaAmount + accommodationAmount + estimatedCost;
 
   await sendBrevoEmail({
     to,
@@ -312,7 +323,7 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
           <strong>Destination:</strong> ${destination}<br>
           <strong>Start Date:</strong> ${startDate}<br>
           <strong>End Date:</strong> ${endDate}<br>
-          <strong>Estimated Cost:</strong> ${estimatedCost ? `${currency} ${Number(estimatedCost).toLocaleString()}` : 'Not specified'}<br>
+          <strong>Total Cost:</strong> ${currency} ${Number(totalCost).toLocaleString()}<br>
           <strong>Reason:</strong> ${reason}
         </p>
         <p style="margin: 0 0 18px;">

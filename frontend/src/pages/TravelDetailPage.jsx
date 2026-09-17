@@ -146,8 +146,8 @@ export default function TravelDetailPage() {
       let dsaRate = 0, dsaCurrency = 'KES', calculatedDSAAmount = 0;
       let accommodationRate = 0, accommodationCurrency = 'KES', calculatedAccommodationAmount = 0;
 
-      // Calculate DSA
-      if (editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate) {
+      // Calculate DSA - use travel category even if designation is empty
+      if (editForm.travelCategory && editForm.startDate && editForm.endDate) {
         if (editForm.travelCategory === 'Within Kenya') {
           dsaRate = 2000;
           dsaCurrency = 'KES';
@@ -166,8 +166,8 @@ export default function TravelDetailPage() {
         calculatedDSAAmount = (diffDays + 1) * dsaRate;
       }
 
-      // Calculate accommodation
-      if (editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate) {
+      // Calculate accommodation - use travel category even if designation is empty
+      if (editForm.travelCategory && editForm.startDate && editForm.endDate) {
         accommodationRate = 4000;
         accommodationCurrency = 'KES';
 
@@ -624,7 +624,7 @@ export default function TravelDetailPage() {
               </div>
 
               {/* DSA Calculation in Edit Mode */}
-              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && (
+              {editForm.travelCategory && editForm.startDate && editForm.endDate && (
                 <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-emerald-900">
                     <DollarSign size={18} />
@@ -690,7 +690,7 @@ export default function TravelDetailPage() {
               )}
 
               {/* Accommodation Calculation in Edit Mode */}
-              {editForm.designation && editForm.travelCategory && editForm.startDate && editForm.endDate && (
+              {editForm.travelCategory && editForm.startDate && editForm.endDate && (
                 <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                   <h4 className="mb-2 flex items-center gap-2 font-semibold text-blue-900">
                     <Building2 size={18} />
