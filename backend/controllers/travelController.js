@@ -229,6 +229,13 @@ const updateTravelRequest = async (req, res, next) => {
     const { startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount } = req.body;
     const request = await travelModel.findTravelRequestById(id);
 
+    console.log('UPDATE REQUEST - Received:', {
+      dsaAmount,
+      accommodationAmount,
+      projectProgramme,
+      travelCategory
+    });
+
     if (!request) {
       return res.status(404).json({ message: 'Travel request not found.' });
     }
@@ -245,7 +252,7 @@ const updateTravelRequest = async (req, res, next) => {
       }
     }
 
-    const updatedRequest = await travelModel.updateTravelRequestDetails({
+    const updateParams = {
       id,
       startDate: startDate || request.startDate,
       endDate: endDate || request.endDate,
@@ -257,13 +264,17 @@ const updateTravelRequest = async (req, res, next) => {
       travelCategory: travelCategory ?? request.travelCategory,
       travelTypeDetail: travelTypeDetail ?? request.travelTypeDetail,
       projectProgramme: projectProgramme ?? request.projectProgramme,
-      dsaRate: dsaRate !== null ? Number(dsaRate) : request.dsaRate,
+      dsaRate: dsaRate !== undefined ? Number(dsaRate) : request.dsaRate,
       dsaCurrency: dsaCurrency ?? request.dsaCurrency,
-      dsaAmount: dsaAmount !== null ? Number(dsaAmount) : request.dsaAmount,
-      accommodationRate: accommodationRate !== null ? Number(accommodationRate) : request.accommodationRate,
+      dsaAmount: dsaAmount !== undefined ? Number(dsaAmount) : request.dsaAmount,
+      accommodationRate: accommodationRate !== undefined ? Number(accommodationRate) : request.accommodationRate,
       accommodationCurrency: accommodationCurrency ?? request.accommodationCurrency,
-      accommodationAmount: accommodationAmount !== null ? Number(accommodationAmount) : request.accommodationAmount
-    });
+      accommodationAmount: accommodationAmount !== undefined ? Number(accommodationAmount) : request.accommodationAmount
+    };
+
+    console.log('UPDATE REQUEST - Sending to model:', updateParams);
+
+    const updatedRequest = await travelModel.updateTravelRequestDetails(updateParams);
 
     await logAction({
       actorUserId: req.user.id,

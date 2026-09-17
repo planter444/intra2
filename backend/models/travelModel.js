@@ -259,6 +259,14 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
 
 const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount }) => {
   let result;
+  console.log('MODEL UPDATE - Received params:', {
+    id,
+    dsaAmount,
+    accommodationAmount,
+    projectProgramme,
+    travelCategory
+  });
+  
   try {
     result = await query(
       `
@@ -285,6 +293,7 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
       `,
       [id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, accommodationRate, accommodationCurrency, accommodationAmount]
     );
+    console.log('MODEL UPDATE - Query executed successfully, rows affected:', result.rowCount);
   } catch (error) {
     console.error('Travel request update error:', error.message);
     // If new columns don't exist, retry with basic columns
@@ -305,13 +314,22 @@ const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, dest
         `,
         [id, startDate, endDate, origin, destination, reason, estimatedCost]
       );
+      console.log('MODEL UPDATE - Fallback query executed');
     } catch (fallbackError) {
       console.error('Fallback travel request update also failed:', fallbackError.message);
       throw fallbackError;
     }
   }
 
-  return findTravelRequestById(id);
+  const updated = await findTravelRequestById(id);
+  console.log('MODEL UPDATE - Updated request:', {
+    dsaAmount: updated.dsaAmount,
+    accommodationAmount: updated.accommodationAmount,
+    projectProgramme: updated.projectProgramme,
+    travelCategory: updated.travelCategory
+  });
+  
+  return updated;
 };
 
 const cancelTravelRequest = async (id) => updateTravelRequestStatus({ id, status: 'cancelled' });
