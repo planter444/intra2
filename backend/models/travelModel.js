@@ -173,9 +173,12 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
+  // Admin and membership officer always have view-all access
+  const hasAutomaticViewAll = role === 'admin' || role === 'membership_officer';
+
   if (role === 'employee') {
     // Employees see their own requests, unless they have view-all access
-    if (!canViewAll) {
+    if (!canViewAll && !hasAutomaticViewAll) {
       params.push(viewerId);
       clauses.push(`tr.user_id = $${params.length}`);
     }
@@ -190,14 +193,14 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
           AND is_deleted = FALSE
       )
     )`);
-  } else if (!oversightRoles.includes(role) && !canViewAll) {
+  } else if (!oversightRoles.includes(role) && !canViewAll && !hasAutomaticViewAll) {
     // For any other role not in oversight and without view-all access, only show own requests
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
-  // For oversight roles (admin, ceo, finance, it_officer) and users with view-all access, no user filter - they see all
+  // For oversight roles (admin, ceo, finance, it_officer), membership officer, and users with view-all access, no user filter - they see all
 
-  if (userId && (oversightRoles.includes(role) || canViewAll)) {
+  if (userId && (oversightRoles.includes(role) || canViewAll || hasAutomaticViewAll)) {
     params.push(userId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
@@ -980,8 +983,11 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(userId);
 
-  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || canViewAll) {
-    // Admin, CEO, finance, and users with view-all access can see all pending requests
+  // Admin and membership officer always have view-all access
+  const hasAutomaticViewAll = userRole === 'admin' || userRole === 'membership_officer';
+
+  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || canViewAll || hasAutomaticViewAll) {
+    // Admin, CEO, finance, membership officer, and users with view-all access can see all pending requests
     // Exclude those they've already viewed
     result = await query(
       `
