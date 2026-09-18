@@ -21,7 +21,8 @@ const {
   getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting,
-  getPendingTravelRequestCount
+  getPendingTravelRequestCount,
+  markTravelRequestAsViewed
 } = require('../controllers/travelController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -64,5 +65,8 @@ router.delete('/employee-routing/:id', authorize('admin'), removeEmployeeRouting
 
 // Pending count route
 router.get('/pending-count', getPendingTravelRequestCount);
+
+// Mark travel request as viewed
+router.post('/requests/:id/viewed', markTravelRequestAsViewed);
 
 module.exports = router;

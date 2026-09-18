@@ -956,6 +956,78 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
   return parseInt(result.rows[0].count, 10);
 };
 
+const markTravelRequestAsViewed = async (travelRequestId, userId) => {
+  await query(
+    `
+      INSERT INTO travel_request_views (travel_request_id, user_id)
+      VALUES ($1, $2)
+      ON CONFLICT (travel_request_id, user_id) DO UPDATE SET viewed_at = NOW()
+    `,
+    [travelRequestId, userId]
+  );
+  return true;
+};
+
+const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRole) => {
+  let result;
+
+  // Check if user is a notification recipient
+  const notificationSettings = await getTravelNotificationSettings();
+  const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(userId);
+
+  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || isNotificationRecipient) {
+    // Admin, CEO, finance, and notification recipients can see all pending requests
+    // Exclude those they've already viewed
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        WHERE tr.status = 'pending'
+        AND tr.id NOT IN (
+          SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+        )
+      `,
+      [userId]
+    );
+  } else if (userRole === 'supervisor') {
+    // Supervisors can see pending requests from their team members
+    try {
+      result = await query(
+        `
+          SELECT COUNT(*) as count
+          FROM travel_requests tr
+          INNER JOIN users u ON u.id = tr.user_id
+          WHERE tr.status = 'pending' AND u.employee_supervisor_id = $1
+          AND tr.id NOT IN (
+            SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+          )
+        `,
+        [userId]
+      );
+    } catch (error) {
+      console.warn('employee_supervisor_id column does not exist, using fallback query');
+      // Fallback: return 0 if column doesn't exist
+      result = { rows: [{ count: 0 }] };
+    }
+  } else {
+    // Regular employees can only see requests where they are one of the designated approvers
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
+        WHERE tr.status = 'pending' AND ter.approver_id = $1
+        AND tr.id NOT IN (
+          SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+        )
+      `,
+      [userId]
+    );
+  }
+
+  return parseInt(result.rows[0].count, 10);
+};
+
 module.exports = {
   createTravelRequest,
   findTravelRequestById,
@@ -980,6 +1052,8 @@ module.exports = {
   addEmployeeRouting,
   removeEmployeeRouting,
   getPendingTravelRequestCountForUser,
+  getPendingTravelRequestCountForUserExcludingViewed,
+  markTravelRequestAsViewed,
   getSummaryStats,
   getSummaryStatsForUser
 };

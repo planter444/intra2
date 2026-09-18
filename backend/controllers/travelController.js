@@ -888,8 +888,18 @@ const removeEmployeeRouting = async (req, res, next) => {
 
 const getPendingTravelRequestCount = async (req, res, next) => {
   try {
-    const count = await travelModel.getPendingTravelRequestCountForUser(req.user.id, req.user.role);
+    const count = await travelModel.getPendingTravelRequestCountForUserExcludingViewed(req.user.id, req.user.role);
     res.json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const markTravelRequestAsViewed = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await travelModel.markTravelRequestAsViewed(id, req.user.id);
+    res.json({ success: true });
   } catch (error) {
     next(error);
   }
@@ -912,6 +922,14 @@ module.exports = {
   getTravelNotificationSettings,
   updateTravelNotificationSettings,
   getTravelRoutingSettings,
+  updateTravelRoutingSettings,
+  getAllEmployeeRouting,
+  getApproverForEmployee,
+  addEmployeeRouting,
+  removeEmployeeRouting,
+  getPendingTravelRequestCount,
+  markTravelRequestAsViewed
+};
   updateTravelRoutingSettings,
   getAllEmployeeRouting,
   getApproverForEmployee,

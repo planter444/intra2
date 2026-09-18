@@ -16,7 +16,8 @@ import {
   updateTravelReceiptStatus,
   deleteTravelReceipt,
   downloadTravelReceipt,
-  getApproverForEmployee
+  getApproverForEmployee,
+  markTravelRequestAsViewed
 } from '../services/travelService';
 
 const statusConfig = {
@@ -174,6 +175,13 @@ export default function TravelDetailPage() {
   useEffect(() => {
     loadRequest();
   }, [id]);
+
+  // Mark travel request as viewed when user opens it
+  useEffect(() => {
+    if (request && user) {
+      markTravelRequestAsViewed(id).catch(err => console.error('Failed to mark as viewed:', err));
+    }
+  }, [request, user, id]);
 
   const handleUpdate = async () => {
     try {

@@ -120,3 +120,8 @@ export const getPendingTravelRequestCount = async () => {
   const response = await api.get('/travel/pending-count');
   return response.data.count;
 };
+
+export const markTravelRequestAsViewed = async (id) => {
+  const response = await api.post(`/travel/requests/${id}/viewed`);
+  return response.data;
+};
