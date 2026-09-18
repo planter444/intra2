@@ -415,12 +415,14 @@ const decideTravelRequest = async (req, res, next) => {
       ipAddress: req.ip
     });
 
-    // Send email notification to applicant (best-effort)
+    // Send email notification to applicant and notification recipients (best-effort)
     try {
       const applicantResult = await query(
         `SELECT id, first_name, last_name, email FROM users WHERE id = $1`,
         [request.userId]
       );
+
+      // Send to applicant
       if (applicantResult.rows.length > 0) {
         const applicant = applicantResult.rows[0];
         await sendTravelDecisionEmail({
@@ -431,6 +433,25 @@ const decideTravelRequest = async (req, res, next) => {
           reviewerName: req.user.fullName,
           comment: normalizedComment
         });
+      }
+
+      // Send to notification recipients
+      const notificationSettings = await travelModel.getTravelNotificationSettings();
+      if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
+        const notificationResults = await query(
+          `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
+          [notificationSettings.recipientIds]
+        );
+        for (const recipient of notificationResults.rows) {
+          await sendTravelDecisionEmail({
+            toEmail: recipient.email,
+            toName: `${recipient.first_name} ${recipient.last_name}`,
+            travelRequest: updatedRequest,
+            decision,
+            reviewerName: req.user.fullName,
+            comment: normalizedComment
+          });
+        }
       }
     } catch (emailError) {
       // Best-effort email - don't fail the request if email fails
