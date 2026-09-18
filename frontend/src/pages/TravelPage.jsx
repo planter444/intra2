@@ -445,7 +445,7 @@ export default function TravelPage() {
                     </div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
                       {/* Settled toggle for oversight roles */}
-                      {['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'].includes(user.role) && (
+                      {['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'].includes(user.role) ? (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -464,6 +464,14 @@ export default function TravelPage() {
                           <CheckCircle size={12} />
                           {request.settled ? 'Settled' : 'Settle'}
                         </button>
+                      ) : (
+                        /* View-only settled indicator for normal staff */
+                        request.settled && (
+                          <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 border-emerald-200 border">
+                            <CheckCircle size={12} />
+                            Settled
+                          </span>
+                        )
                       )}
                       {String(request.userId) === String(user.id) && request.status === 'pending' && (
                         <button
