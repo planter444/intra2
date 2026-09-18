@@ -6,7 +6,7 @@ import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee } from '../services/travelService';
+import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee, updateTravelRequestSettled } from '../services/travelService';
 import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
@@ -186,6 +186,21 @@ export default function TravelPage() {
     }
     return true;
   }).filter((request) => {
+    // Status/Settled filter
+    if (sortBy === 'pending') {
+      return request.status === 'pending';
+    }
+    if (sortBy === 'approved') {
+      return request.status === 'approved';
+    }
+    if (sortBy === 'settled') {
+      return request.settled === true;
+    }
+    if (sortBy === 'not_settled') {
+      return request.settled === false;
+    }
+    return true;
+  }).filter((request) => {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -301,6 +316,10 @@ export default function TravelPage() {
               <option value="destination">Sort by Destination</option>
               <option value="status">Sort by Status</option>
               <option value="type">Sort by Type</option>
+              <option value="pending">Filter: Pending</option>
+              <option value="approved">Filter: Approved</option>
+              <option value="settled">Filter: Settled</option>
+              <option value="not_settled">Filter: Not Settled</option>
             </select>
             <button
               type="button"
@@ -425,6 +444,27 @@ export default function TravelPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
+                      {/* Settled toggle for oversight roles */}
+                      {['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'].includes(user.role) && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTravelRequestSettled(request.id, !request.settled).then(() => {
+                              setRequests(requests.map(r => r.id === request.id ? { ...r, settled: !r.settled } : r));
+                            });
+                          }}
+                          className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
+                            request.settled
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200 border'
+                              : 'bg-slate-50 text-slate-500 border-slate-200 border hover:bg-slate-100'
+                          }`}
+                          title={request.settled ? 'Mark as not settled' : 'Mark as settled'}
+                        >
+                          <CheckCircle size={12} />
+                          {request.settled ? 'Settled' : 'Settle'}
+                        </button>
+                      )}
                       {String(request.userId) === String(user.id) && request.status === 'pending' && (
                         <button
                           type="button"

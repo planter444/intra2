@@ -22,7 +22,8 @@ const {
   addEmployeeRouting,
   removeEmployeeRouting,
   getPendingTravelRequestCount,
-  markTravelRequestAsViewed
+  markTravelRequestAsViewed,
+  updateTravelRequestSettled
 } = require('../controllers/travelController');
 const { authenticate } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -71,5 +72,8 @@ router.get('/pending-count', getPendingTravelRequestCount);
 
 // Mark travel request as viewed
 router.post('/requests/:id/viewed', markTravelRequestAsViewed);
+
+// Update travel request settled status
+router.patch('/requests/:id/settled', authorize('admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'), updateTravelRequestSettled);
 
 module.exports = router;

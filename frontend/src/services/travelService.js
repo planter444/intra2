@@ -128,3 +128,8 @@ export const markTravelRequestAsViewed = async (id) => {
   const response = await api.post(`/travel/requests/${id}/viewed`);
   return response.data;
 };
+
+export const updateTravelRequestSettled = async (id, settled) => {
+  const response = await api.patch(`/travel/requests/${id}/settled`, { settled });
+  return response.data;
+};

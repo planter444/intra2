@@ -899,6 +899,43 @@ const removeEmployeeRouting = async (req, res, next) => {
   }
 };
 
+const updateTravelRequestSettled = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { settled } = req.body;
+
+    if (typeof settled !== 'boolean') {
+      return res.status(400).json({ message: 'Settled status must be a boolean.' });
+    }
+
+    const request = await travelModel.findTravelRequestById(id);
+    if (!request) {
+      return res.status(404).json({ message: 'Travel request not found.' });
+    }
+
+    if (!(await canAccessTravelRequest(req.user, request))) {
+      return res.status(403).json({ message: 'You do not have permission to modify this travel request.' });
+    }
+
+    await travelModel.updateTravelRequestSettled(id, settled);
+
+    await logAction({
+      actorUserId: req.user.id,
+      actorRole: req.user.role,
+      action: settled ? 'TRAVEL_REQUEST_SETTLED' : 'TRAVEL_REQUEST_UNSETTLED',
+      entityType: 'travel_request',
+      entityId: String(id),
+      description: `${req.user.fullName} marked travel request ${id} as ${settled ? 'settled' : 'unsettled'}.`,
+      metadata: { id, settled },
+      ipAddress: req.ip
+    });
+
+    res.json({ success: true, settled });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getPendingTravelRequestCount = async (req, res, next) => {
   try {
     const count = await travelModel.getPendingTravelRequestCountForUserExcludingViewed(req.user.id, req.user.role);
@@ -941,5 +978,6 @@ module.exports = {
   addEmployeeRouting,
   removeEmployeeRouting,
   getPendingTravelRequestCount,
-  markTravelRequestAsViewed
+  markTravelRequestAsViewed,
+  updateTravelRequestSettled
 };
