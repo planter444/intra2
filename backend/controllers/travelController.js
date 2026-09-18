@@ -43,7 +43,7 @@ const canRequesterModify = (currentUser, request) => {
 };
 
 const canUpdateReceiptStatus = (currentUser, receipt) => {
-  if (currentUser.role === 'admin' || currentUser.role === 'ceo' || currentUser.role === 'finance') {
+  if (currentUser.role === 'admin' || currentUser.role === 'ceo' || currentUser.role === 'finance' || currentUser.role === 'administrator_and_membership_officer') {
     return true;
   }
 
