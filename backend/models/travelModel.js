@@ -173,8 +173,6 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
-  console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'canViewAll:', canViewAll);
-
   if (role === 'employee') {
     // Employees see their own requests, unless they have view-all access
     if (!canViewAll) {
@@ -210,8 +208,6 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   }
 
   const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  console.log('listTravelRequests - SQL whereClause:', whereClause);
-  console.log('listTravelRequests - SQL params:', params);
 
   const result = await query(
     `
@@ -225,13 +221,10 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
     params
   );
 
-  console.log('listTravelRequests - Found', result.rows.length, 'travel requests');
-
   const requests = [];
   for (const row of result.rows) {
     requests.push(await findTravelRequestById(row.id));
   }
-  console.log('listTravelRequests - Returning', requests.length, 'requests');
   return requests;
 };
 
