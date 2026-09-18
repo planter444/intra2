@@ -1274,7 +1274,7 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
-                          {request.currency || 'KES'} {(() => {
+                          {(() => {
                             // Calculate effective DSA (0 if provided)
                             const effectiveDSA = request.dsaProvided ? 0 : (() => {
                               const dsaAmount = (request.dsaAmount || 0);
@@ -1323,12 +1323,37 @@ export default function TravelDetailPage() {
                             // For local movement, estimatedCost is the total (transportation + DSA)
                             const otherCosts = isLocalMovement(request) ? 0 : (request.travelType === 'reimbursement' ? (request.estimatedCost || 0) : 0);
 
-                            return (
-                              effectiveDSA +
-                              effectiveAccommodation +
-                              transportationValue +
-                              otherCosts
-                            ).toLocaleString();
+                            // Group amounts by currency
+                            const amountsByCurrency = {};
+
+                            // Add DSA
+                            if (effectiveDSA > 0) {
+                              const currency = request.dsaCurrency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveDSA;
+                            }
+
+                            // Add accommodation
+                            if (effectiveAccommodation > 0) {
+                              const currency = request.accommodationCurrency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveAccommodation;
+                            }
+
+                            // Add transportation
+                            if (transportationValue > 0) {
+                              const currency = request.currency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationValue;
+                            }
+
+                            // Add other costs
+                            if (otherCosts > 0) {
+                              const currency = request.currency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + otherCosts;
+                            }
+
+                            // Display totals by currency
+                            return Object.entries(amountsByCurrency)
+                              .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
+                              .join(' + ');
                           })()}
                         </span>
                       </div>
@@ -1431,7 +1456,7 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
-                          {request.currency || 'KES'} {(() => {
+                          {(() => {
                             // Calculate effective DSA (0 if provided)
                             const effectiveDSA = request.dsaProvided ? 0 : (() => {
                               const dsaAmount = (request.dsaAmount || 0);
@@ -1480,12 +1505,37 @@ export default function TravelDetailPage() {
                             // For local movement, estimatedCost is the total (transportation + DSA)
                             const otherCosts = isLocalMovement(request) ? 0 : (request.travelType === 'reimbursement' ? (request.estimatedCost || 0) : 0);
 
-                            return (
-                              effectiveDSA +
-                              effectiveAccommodation +
-                              transportationValue +
-                              otherCosts
-                            ).toLocaleString();
+                            // Group amounts by currency
+                            const amountsByCurrency = {};
+
+                            // Add DSA
+                            if (effectiveDSA > 0) {
+                              const currency = request.dsaCurrency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveDSA;
+                            }
+
+                            // Add accommodation
+                            if (effectiveAccommodation > 0) {
+                              const currency = request.accommodationCurrency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveAccommodation;
+                            }
+
+                            // Add transportation
+                            if (transportationValue > 0) {
+                              const currency = request.currency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationValue;
+                            }
+
+                            // Add other costs
+                            if (otherCosts > 0) {
+                              const currency = request.currency || 'KES';
+                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + otherCosts;
+                            }
+
+                            // Display totals by currency
+                            return Object.entries(amountsByCurrency)
+                              .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
+                              .join(' + ');
                           })()}
                         </span>
                       </div>

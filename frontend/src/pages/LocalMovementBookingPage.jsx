@@ -77,16 +77,12 @@ export default function LocalMovementBookingPage() {
       // Upload supporting document after creating the request
       if (documents.length > 0 && documents[0].file) {
         try {
-          console.log('Uploading supporting document...');
           const document = await uploadDocument({
             file: documents[0].file,
             folderType: 'travel'
           });
-          console.log('Document uploaded:', document);
           // Update the travel request with the supporting document ID
-          console.log('Updating travel request with document ID:', document.id);
           await updateTravelRequest(request.id, { supportingDocumentId: document.id });
-          console.log('Travel request updated successfully');
         } catch (docError) {
           console.error('Failed to upload supporting document:', docError);
         }
