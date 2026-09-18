@@ -6,7 +6,7 @@ const { logAction } = require('../services/auditService');
 const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
-const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer', 'administrator'];
+const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
 
 const canViewOversightTravelData = (role) => oversightRoles.includes(role);
 
@@ -926,7 +926,7 @@ const updateTravelRequestSettled = async (req, res, next) => {
 
     // Check if user has permission to edit settled status
     const notificationSettings = await travelModel.getTravelNotificationSettings();
-    const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer', 'administrator'];
+    const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
     const canEditSettled = oversightRoles.includes(req.user.role) ||
                            (notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
 

@@ -72,7 +72,7 @@ export default function TravelPage() {
       setRequests(filteredRequests);
 
       // Check if user can edit settled status
-      const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer', 'administrator'];
+      const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
       const hasRoleAccess = oversightRoles.includes(user.role);
       if (hasRoleAccess) {
         setCanEditSettled(true);
