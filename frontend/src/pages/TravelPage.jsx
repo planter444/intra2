@@ -180,11 +180,6 @@ export default function TravelPage() {
   };
 
   const filteredRequests = requests.filter((request) => {
-    if (user.role === 'employee') {
-      return String(request.userId) === String(user.id);
-    }
-    return true;
-  }).filter((request) => {
     // Employee filter
     if (selectedEmployee) {
       return String(request.userId) === String(selectedEmployee);

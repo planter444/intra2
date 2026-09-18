@@ -214,6 +214,9 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
 
   const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
 
+  console.log('listTravelRequests - SQL whereClause:', whereClause);
+  console.log('listTravelRequests - SQL params:', params);
+
   const result = await query(
     `
       SELECT
