@@ -6,16 +6,23 @@ const { logAction } = require('../services/auditService');
 const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
-const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer'];
+const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
 
 const canViewOversightTravelData = (role) => oversightRoles.includes(role);
 
-const canAccessTravelRequest = (currentUser, request) => {
+const canAccessTravelRequest = async (currentUser, request) => {
   if (canViewOversightTravelData(currentUser.role)) {
     return true;
   }
 
   if (String(request.userId) === String(currentUser.id)) {
+    return true;
+  }
+
+  // Check if user has view-all access from settings
+  const notificationSettings = await travelModel.getTravelNotificationSettings();
+  const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(String(currentUser.id));
+  if (canViewAll) {
     return true;
   }
 
@@ -76,7 +83,7 @@ const getTravelRequest = async (req, res, next) => {
       return res.status(404).json({ message: 'Travel request not found.' });
     }
 
-    if (!canAccessTravelRequest(req.user, request)) {
+    if (!(await canAccessTravelRequest(req.user, request))) {
       return res.status(403).json({ message: 'You do not have permission to view this travel request.' });
     }
 
@@ -526,7 +533,7 @@ const getTravelReceipt = async (req, res, next) => {
     }
 
     const travelRequest = await travelModel.findTravelRequestById(receipt.travelRequestId);
-    if (!canAccessTravelRequest(req.user, travelRequest)) {
+    if (!(await canAccessTravelRequest(req.user, travelRequest))) {
       return res.status(403).json({ message: 'You do not have permission to view this travel receipt.' });
     }
 
@@ -711,7 +718,7 @@ const downloadTravelReceipt = async (req, res, next) => {
     }
 
     const travelRequest = await travelModel.findTravelRequestById(receipt.travelRequestId);
-    if (!canAccessTravelRequest(req.user, travelRequest)) {
+    if (!(await canAccessTravelRequest(req.user, travelRequest))) {
       return res.status(403).json({ message: 'You do not have permission to access this receipt.' });
     }
 
