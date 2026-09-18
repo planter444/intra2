@@ -933,6 +933,8 @@ const updateTravelRequestSettled = async (req, res, next) => {
                            req.user.positionTitle === 'Administration' ||
                            (notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
 
+    console.log('updateTravelRequestSettled - positionTitle:', req.user.positionTitle, 'matches Administration:', req.user.positionTitle === 'Administration');
+
     console.log('updateTravelRequestSettled - oversightRoles:', oversightRoles);
     console.log('updateTravelRequestSettled - settledEditorIds:', notificationSettings.settledEditorIds);
     console.log('updateTravelRequestSettled - canEditSettled (role check):', oversightRoles.includes(req.user.role));
