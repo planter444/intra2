@@ -768,13 +768,14 @@ const getTravelNotificationSettings = async (req, res, next) => {
 
 const updateTravelNotificationSettings = async (req, res, next) => {
   try {
-    const { recipientIds, viewAllTravelRequestsIds } = req.body;
+    const { recipientIds, viewAllTravelRequestsIds, settledEditorIds } = req.body;
 
-    console.log('updateTravelNotificationSettings - Received:', { recipientIds, viewAllTravelRequestsIds });
+    console.log('updateTravelNotificationSettings - Received:', { recipientIds, viewAllTravelRequestsIds, settledEditorIds });
 
     const settings = await travelModel.updateTravelNotificationSettings({
       recipientIds: recipientIds || [],
       viewAllTravelRequestsIds: viewAllTravelRequestsIds || [],
+      settledEditorIds: settledEditorIds || [],
       updatedBy: req.user.id
     });
 
@@ -787,7 +788,7 @@ const updateTravelNotificationSettings = async (req, res, next) => {
       entityType: 'travel_notification_settings',
       entityId: String(settings.id || '1'),
       description: `${req.user.fullName} updated travel notification settings.`,
-      metadata: { recipientIds, viewAllTravelRequestsIds },
+      metadata: { recipientIds, viewAllTravelRequestsIds, settledEditorIds },
       ipAddress: req.ip
     });
 
