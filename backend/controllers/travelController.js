@@ -43,7 +43,7 @@ const canRequesterModify = (currentUser, request) => {
 };
 
 const canUpdateReceiptStatus = (currentUser, receipt) => {
-  if (currentUser.role === 'admin' || currentUser.role === 'ceo' || currentUser.role === 'finance' || currentUser.role === 'administrator_and_membership_officer') {
+  if (currentUser.role === 'admin' || currentUser.role === 'ceo' || currentUser.role === 'finance' || currentUser.role === 'administrator_and_membership_officer' || currentUser.positionTitle === 'Administration') {
     return true;
   }
 
@@ -72,6 +72,7 @@ const listTravelRequests = async (req, res, next) => {
     const requests = await travelModel.listTravelRequests({
       viewerId: req.user.id,
       role: req.user.role,
+      positionTitle: req.user.positionTitle,
       status: req.query.status
     });
 
@@ -929,6 +930,7 @@ const updateTravelRequestSettled = async (req, res, next) => {
     const notificationSettings = await travelModel.getTravelNotificationSettings();
     const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
     const canEditSettled = oversightRoles.includes(req.user.role) ||
+                           req.user.positionTitle === 'Administration' ||
                            (notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
 
     console.log('updateTravelRequestSettled - oversightRoles:', oversightRoles);
@@ -962,7 +964,7 @@ const updateTravelRequestSettled = async (req, res, next) => {
 
 const getPendingTravelRequestCount = async (req, res, next) => {
   try {
-    const count = await travelModel.getPendingTravelRequestCountForUserExcludingViewed(req.user.id, req.user.role);
+    const count = await travelModel.getPendingTravelRequestCountForUserExcludingViewed(req.user.id, req.user.role, req.user.positionTitle);
     res.json({ count });
   } catch (error) {
     next(error);

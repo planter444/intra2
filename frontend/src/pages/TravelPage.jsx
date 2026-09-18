@@ -73,13 +73,15 @@ export default function TravelPage() {
 
       // Check if user can edit settled status
       const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
-      const hasRoleAccess = oversightRoles.includes(user.role);
+      const hasRoleAccess = oversightRoles.includes(user.role) || user.positionTitle === 'Administration';
+      console.log('loadRequests - User role:', user.role, 'User positionTitle:', user.positionTitle, 'hasRoleAccess:', hasRoleAccess);
       if (hasRoleAccess) {
         setCanEditSettled(true);
       } else {
         try {
           const notificationSettings = await fetchTravelNotificationSettings();
           const hasSettingsAccess = notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(user.id));
+          console.log('loadRequests - hasSettingsAccess:', hasSettingsAccess, 'settledEditorIds:', notificationSettings.settledEditorIds);
           setCanEditSettled(hasSettingsAccess);
         } catch (error) {
           console.warn('Failed to load notification settings:', error.message);

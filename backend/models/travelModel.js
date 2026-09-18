@@ -165,7 +165,7 @@ const findTravelRequestById = async (id) => {
   };
 };
 
-const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
+const listTravelRequests = async ({ viewerId, role, userId, status, positionTitle } = {}) => {
   const clauses = [];
   const params = [];
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
@@ -175,9 +175,9 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
   // Admin and membership officer always have view-all access
-  const hasAutomaticViewAll = role === 'admin' || role === 'administrator_and_membership_officer';
+  const hasAutomaticViewAll = role === 'admin' || role === 'administrator_and_membership_officer' || positionTitle === 'Administration';
 
-  console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'canViewAll:', canViewAll, 'hasAutomaticViewAll:', hasAutomaticViewAll);
+  console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'positionTitle:', positionTitle, 'canViewAll:', canViewAll, 'hasAutomaticViewAll:', hasAutomaticViewAll);
 
   if (role === 'employee') {
     // Employees see their own requests, unless they have view-all access
@@ -1004,7 +1004,7 @@ const markTravelRequestAsViewed = async (travelRequestId, userId) => {
   return true;
 };
 
-const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRole) => {
+const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRole, userPositionTitle) => {
   let result;
 
   // Check if user has access to view all travel requests
@@ -1013,7 +1013,7 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
 
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
 
-  if (oversightRoles.includes(userRole) || canViewAll) {
+  if (oversightRoles.includes(userRole) || userPositionTitle === 'Administration' || canViewAll) {
     // Admin, CEO, finance, membership officer, administrator, and users with view-all access can see all pending requests
     // Exclude those they've already viewed
     result = await query(
