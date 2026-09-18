@@ -368,19 +368,47 @@ export default function TravelPage() {
                         {request.travelType === 'reimbursement' ? (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
-                            {request.currency || 'KES'} {(
-                              isLocalMovement(request)
-                                ? (
-                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                                  (request.transportationCost || 0)
-                                ) // For local movement reimbursement: DSA + transportation
-                                : (
-                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                                  ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                                  (request.transportationCost || 0) +
-                                  (request.estimatedCost || 0)
-                                )
-                            ).toLocaleString()}
+                            {(() => {
+                              // Group amounts by currency
+                              const amountsByCurrency = {};
+
+                              // Add DSA
+                              const effectiveDSA = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                              if (effectiveDSA > 0) {
+                                const currency = request.dsaCurrency || 'KES';
+                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveDSA;
+                              }
+
+                              // Add accommodation (not for local movement)
+                              if (!isLocalMovement(request)) {
+                                const effectiveAccommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                                if (effectiveAccommodation > 0) {
+                                  const currency = request.accommodationCurrency || 'KES';
+                                  amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveAccommodation;
+                                }
+                              }
+
+                              // Add transportation
+                              const transportationValue = isLocalMovement(request)
+                                ? (request.transportationCost || 0)
+                                : (request.transportationCost || 0);
+                              if (transportationValue > 0) {
+                                const currency = request.currency || 'KES';
+                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationValue;
+                              }
+
+                              // Add estimated cost (other costs)
+                              const estimatedValue = request.estimatedCost || 0;
+                              if (estimatedValue > 0) {
+                                const currency = request.currency || 'KES';
+                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedValue;
+                              }
+
+                              // Display totals by currency
+                              return Object.entries(amountsByCurrency)
+                                .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
+                                .join(' + ');
+                            })()}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1.5">

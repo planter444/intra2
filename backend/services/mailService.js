@@ -298,17 +298,41 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   const currency = travelRequest.currency || 'KES';
   const reason = travelRequest.reason || 'Not specified';
 
-  // Calculate total cost
+  // Calculate total cost grouped by currency
   const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
   const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
   const transportationCost = travelRequest.transportationCost || 0;
   const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-  // Total depends on travel type
-  const isReimbursement = travelType.toLowerCase().includes('reimbursement');
-  const totalCost = isReimbursement
-    ? dsaAmount + accommodationAmount + transportationCost + estimatedCost
-    : dsaAmount + accommodationAmount + estimatedCost;
+  // Group amounts by currency
+  const amountsByCurrency = {};
+
+  // Add DSA
+  if (dsaAmount > 0) {
+    const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+    amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+  }
+
+  // Add accommodation
+  if (accommodationAmount > 0) {
+    const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+    amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+  }
+
+  // Add transportation
+  if (transportationCost > 0) {
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+  }
+
+  // Add estimated cost (other costs)
+  if (estimatedCost > 0) {
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
+  }
+
+  // Format total by currency
+  const totalCostDisplay = Object.entries(amountsByCurrency)
+    .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
+    .join(' + ');
 
   await sendBrevoEmail({
     to,
@@ -323,7 +347,7 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
           <strong>Destination:</strong> ${destination}<br>
           <strong>Start Date:</strong> ${startDate}<br>
           <strong>End Date:</strong> ${endDate}<br>
-          <strong>Total Cost:</strong> ${currency} ${Number(totalCost).toLocaleString()}<br>
+          <strong>Total Cost:</strong> ${totalCostDisplay}<br>
           <strong>Reason:</strong> ${reason}
         </p>
         <p style="margin: 0 0 18px;">
@@ -338,13 +362,51 @@ const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decisio
   const isApproved = decision === 'approve';
   const accent = isApproved ? '#16a34a' : '#dc2626';
   const statusLabel = isApproved ? 'Approved' : 'Rejected';
-  
+
   // Format dates without time
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Not specified';
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
+
+  // Calculate total cost grouped by currency
+  const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+  const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
+  const transportationCost = travelRequest.transportationCost || 0;
+  const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
+
+  // Group amounts by currency
+  const amountsByCurrency = {};
+
+  // Add DSA
+  if (dsaAmount > 0) {
+    const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+    amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+  }
+
+  // Add accommodation
+  if (accommodationAmount > 0) {
+    const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+    amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+  }
+
+  // Add transportation
+  if (transportationCost > 0) {
+    const currency = travelRequest.currency || 'KES';
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+  }
+
+  // Add estimated cost (other costs)
+  if (estimatedCost > 0) {
+    const currency = travelRequest.currency || 'KES';
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
+  }
+
+  // Format total by currency
+  const totalCostDisplay = Object.entries(amountsByCurrency)
+    .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
+    .join(' + ');
 
   await sendBrevoEmail({
     to: [
@@ -364,7 +426,7 @@ const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decisio
           <p style="margin: 0 0 20px; font-size: 16px; color: #1e293b;">
             Hello <strong>${toName || 'there'}</strong>, your travel request has been <span style="color: ${accent}; font-weight: bold;">${statusLabel.toLowerCase()}</span> by <strong>${reviewerName}</strong>.
           </p>
-          
+
           <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
             <h3 style="margin: 0 0 12px; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Travel Details</h3>
             <table style="width: 100%; border-collapse: collapse;">
@@ -390,7 +452,7 @@ const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decisio
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Estimated Cost:</td>
-                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${travelRequest.estimatedCost || travelRequest.estimated_cost ? `${travelRequest.currency || 'KES'} ${Number(travelRequest.estimatedCost || travelRequest.estimated_cost).toLocaleString()}` : 'Not specified'}</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${totalCostDisplay || 'Not specified'}</td>
               </tr>
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 14px; vertical-align: top;">Reason:</td>
@@ -398,14 +460,14 @@ const sendTravelDecisionEmail = async ({ toEmail, toName, travelRequest, decisio
               </tr>
             </table>
           </div>
-          
+
           ${comment ? `
           <div style="background: ${isApproved ? '#dcfce7' : '#fee2e2'}; padding: 16px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid ${accent};">
             <h3 style="margin: 0 0 8px; font-size: 14px; color: #475569;">${isApproved ? 'Approval' : 'Rejection'} Comment</h3>
             <p style="margin: 0; color: #1e293b; font-size: 14px;">${comment}</p>
           </div>
           ` : ''}
-          
+
           <p style="margin: 0; color: #64748b; font-size: 14px;">If you have any questions, please contact your supervisor or the IT Officer.</p>
         </div>
         <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
