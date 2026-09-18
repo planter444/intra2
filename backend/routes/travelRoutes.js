@@ -74,6 +74,6 @@ router.get('/pending-count', getPendingTravelRequestCount);
 router.post('/requests/:id/viewed', markTravelRequestAsViewed);
 
 // Update travel request settled status
-router.patch('/requests/:id/settled', authorize('admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'), updateTravelRequestSettled);
+router.patch('/requests/:id/settled', updateTravelRequestSettled);
 
 module.exports = router;
