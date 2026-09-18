@@ -1,7 +1,10 @@
 import api from './api';
 
 export const fetchTravelRequests = async (params = {}) => {
-  const response = await api.get('/travel/requests', { params });
+  // Add timestamp to prevent caching
+  const response = await api.get('/travel/requests', { 
+    params: { ...params, _t: Date.now() }
+  });
   return response.data.requests;
 };
 
