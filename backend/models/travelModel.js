@@ -169,15 +169,15 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const params = [];
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer'];
 
-  // Check if viewer is a notification recipient
+  // Check if viewer has access to view all travel requests
   const notificationSettings = await getTravelNotificationSettings();
-  const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(viewerId);
+  const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
-  console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'isNotificationRecipient:', isNotificationRecipient);
+  console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'canViewAll:', canViewAll);
 
   if (role === 'employee') {
-    // Employees see their own requests, unless they are notification recipients
-    if (!isNotificationRecipient) {
+    // Employees see their own requests, unless they have view-all access
+    if (!canViewAll) {
       params.push(viewerId);
       clauses.push(`tr.user_id = $${params.length}`);
     }
@@ -192,14 +192,14 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
           AND is_deleted = FALSE
       )
     )`);
-  } else if (!oversightRoles.includes(role) && !isNotificationRecipient) {
-    // For any other role not in oversight and not a notification recipient, only show own requests
+  } else if (!oversightRoles.includes(role) && !canViewAll) {
+    // For any other role not in oversight and without view-all access, only show own requests
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
-  // For oversight roles (admin, ceo, finance, it_officer) and notification recipients, no user filter - they see all
+  // For oversight roles (admin, ceo, finance, it_officer) and users with view-all access, no user filter - they see all
 
-  if (userId && (oversightRoles.includes(role) || isNotificationRecipient)) {
+  if (userId && (oversightRoles.includes(role) || canViewAll)) {
     params.push(userId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
@@ -496,18 +496,20 @@ const getTravelNotificationSettings = async () => {
   if (result.rows.length === 0) {
     return {
       id: null,
-      recipientIds: []
+      recipientIds: [],
+      viewAllTravelRequestsIds: []
     };
   }
 
   const row = result.rows[0];
   return {
     id: row.id,
-    recipientIds: row.recipient_ids || []
+    recipientIds: row.recipient_ids || [],
+    viewAllTravelRequestsIds: row.view_all_travel_requests_ids || []
   };
 };
 
-const updateTravelNotificationSettings = async ({ recipientIds, updatedBy }) => {
+const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelRequestsIds, updatedBy }) => {
   const existing = await query(`SELECT id FROM travel_notification_settings LIMIT 1`);
 
   if (existing.rows.length > 0) {
@@ -516,22 +518,24 @@ const updateTravelNotificationSettings = async ({ recipientIds, updatedBy }) => 
         UPDATE travel_notification_settings
         SET
           recipient_ids = $2,
-          updated_by = $3,
+          view_all_travel_requests_ids = $3,
+          updated_by = $4,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [existing.rows[0].id, recipientIds || [], updatedBy]
+      [existing.rows[0].id, recipientIds || [], viewAllTravelRequestsIds || [], updatedBy]
     );
   } else {
     await query(
       `
         INSERT INTO travel_notification_settings (
           recipient_ids,
+          view_all_travel_requests_ids,
           updated_by
         )
-        VALUES ($1, $2)
+        VALUES ($1, $2, $3)
       `,
-      [recipientIds || [], updatedBy]
+      [recipientIds || [], viewAllTravelRequestsIds || [], updatedBy]
     );
   }
 
@@ -979,12 +983,12 @@ const markTravelRequestAsViewed = async (travelRequestId, userId) => {
 const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRole) => {
   let result;
 
-  // Check if user is a notification recipient
+  // Check if user has access to view all travel requests
   const notificationSettings = await getTravelNotificationSettings();
-  const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(userId);
+  const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(userId);
 
-  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || isNotificationRecipient) {
-    // Admin, CEO, finance, and notification recipients can see all pending requests
+  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || canViewAll) {
+    // Admin, CEO, finance, and users with view-all access can see all pending requests
     // Exclude those they've already viewed
     result = await query(
       `

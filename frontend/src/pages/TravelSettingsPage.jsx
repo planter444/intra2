@@ -11,7 +11,8 @@ import { updateSettings } from '../services/settingsService';
 export default function TravelSettingsPage() {
   const { user, settings, replaceSettings } = useAuth();
   const [notificationSettings, setNotificationSettings] = useState({
-    recipientIds: []
+    recipientIds: [],
+    viewAllTravelRequestsIds: []
   });
   const [employeeRouting, setEmployeeRouting] = useState([]);
   const [users, setUsers] = useState([]);
@@ -21,6 +22,7 @@ export default function TravelSettingsPage() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [selectedApprover, setSelectedApprover] = useState('');
   const [selectedNotificationRecipients, setSelectedNotificationRecipients] = useState([]);
+  const [selectedViewAllTravelRequests, setSelectedViewAllTravelRequests] = useState([]);
   const [designationModal, setDesignationModal] = useState({ open: false, userId: null, designation: '' });
   const [projectsModal, setProjectsModal] = useState({ open: false, project: '' });
   const [dsaSettings, setDsaSettings] = useState({
@@ -94,6 +96,7 @@ export default function TravelSettingsPage() {
       setEmployeeRouting(routingList);
       setUsers(usersList);
       setSelectedNotificationRecipients(notificationData.recipientIds || []);
+      setSelectedViewAllTravelRequests(notificationData.viewAllTravelRequestsIds || []);
     } catch (error) {
       setNotice({
         open: true,
@@ -108,8 +111,15 @@ export default function TravelSettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateTravelNotificationSettings({ recipientIds: selectedNotificationRecipients });
-      setNotificationSettings({ ...notificationSettings, recipientIds: selectedNotificationRecipients });
+      await updateTravelNotificationSettings({ 
+        recipientIds: selectedNotificationRecipients,
+        viewAllTravelRequestsIds: selectedViewAllTravelRequests
+      });
+      setNotificationSettings({ 
+        ...notificationSettings, 
+        recipientIds: selectedNotificationRecipients,
+        viewAllTravelRequestsIds: selectedViewAllTravelRequests
+      });
       
       // Save DSA settings
       await updateSettings({
@@ -155,6 +165,16 @@ export default function TravelSettingsPage() {
 
   const handleNotificationRecipientChange = (userId) => {
     setSelectedNotificationRecipients(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  const handleViewAllTravelRequestsChange = (userId) => {
+    setSelectedViewAllTravelRequests(prev => {
       if (prev.includes(userId)) {
         return prev.filter(id => id !== userId);
       } else {
@@ -583,33 +603,63 @@ export default function TravelSettingsPage() {
       </div>
 
       {activeTab === 'notifications' && (
-        <SectionCard title="Travel notification recipients" subtitle="Select employees who should receive notifications when travel requests are submitted or receipts are uploaded.">
-          <div className="space-y-4">
-            {users.length === 0 ? (
-              <p className="text-sm text-slate-500">No employees available.</p>
-            ) : (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {users.map((u) => (
-                  <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
-                    <input
-                      type="checkbox"
-                      checked={selectedNotificationRecipients.includes(String(u.id))}
-                      onChange={() => handleNotificationRecipientChange(String(u.id))}
-                      className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
-                      <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            )}
-            <p className="text-sm text-slate-500">
-              {selectedNotificationRecipients.length} employee(s) selected for notifications
-            </p>
-          </div>
-        </SectionCard>
+        <>
+          <SectionCard title="Travel notification recipients" subtitle="Select employees who should receive notifications when travel requests are submitted or receipts are uploaded.">
+            <div className="space-y-4">
+              {users.length === 0 ? (
+                <p className="text-sm text-slate-500">No employees available.</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {users.map((u) => (
+                    <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
+                      <input
+                        type="checkbox"
+                        checked={selectedNotificationRecipients.includes(String(u.id))}
+                        onChange={() => handleNotificationRecipientChange(String(u.id))}
+                        className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                        <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <p className="text-sm text-slate-500">
+                {selectedNotificationRecipients.length} employee(s) selected for notifications
+              </p>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="View All Travel Requests" subtitle="Select employees who can view all travel requests in the organization (read-only). CEO always has access.">
+            <div className="space-y-4">
+              {users.length === 0 ? (
+                <p className="text-sm text-slate-500">No employees available.</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {users.map((u) => (
+                    <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
+                      <input
+                        type="checkbox"
+                        checked={selectedViewAllTravelRequests.includes(String(u.id))}
+                        onChange={() => handleViewAllTravelRequestsChange(String(u.id))}
+                        className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                        <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <p className="text-sm text-slate-500">
+                {selectedViewAllTravelRequests.length} employee(s) selected to view all travel requests
+              </p>
+            </div>
+          </SectionCard>
+        </>
       )}
 
       {activeTab === 'designations' && (
