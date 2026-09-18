@@ -202,22 +202,40 @@ const createTravelRequest = async (req, res, next) => {
       ipAddress: req.ip
     });
 
-    // Send email notification to approver (best-effort)
+    // Send email notification to approvers and notification recipients (best-effort)
     try {
-      const approverId = await travelModel.getApproverForEmployee(req.user.id);
-      if (approverId) {
-        const approverResult = await query(
-          `SELECT id, first_name, last_name, email FROM users WHERE id = $1`,
-          [approverId]
+      const approverIds = await travelModel.getApproverForEmployee(req.user.id);
+      const recipients = [];
+
+      // Add all approvers
+      if (approverIds && approverIds.length > 0) {
+        const approverResults = await query(
+          `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
+          [approverIds]
         );
-        if (approverResult.rows.length > 0) {
-          const approver = approverResult.rows[0];
-          await sendTravelRequestSubmittedEmail({
-            recipients: [{ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email }],
-            travelRequest: request,
-            applicantName: req.user.fullName
-          });
-        }
+        approverResults.rows.forEach(approver => {
+          recipients.push({ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email });
+        });
+      }
+
+      // Add notification recipients
+      const notificationSettings = await travelModel.getTravelNotificationSettings();
+      if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
+        const notificationResults = await query(
+          `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
+          [notificationSettings.recipientIds]
+        );
+        notificationResults.rows.forEach(recipient => {
+          recipients.push({ id: recipient.id, fullName: `${recipient.first_name} ${recipient.last_name}`, email: recipient.email });
+        });
+      }
+
+      if (recipients.length > 0) {
+        await sendTravelRequestSubmittedEmail({
+          recipients,
+          travelRequest: request,
+          applicantName: req.user.fullName
+        });
       }
     } catch (emailError) {
       // Best-effort email - don't fail the request if email fails
@@ -361,19 +379,19 @@ const decideTravelRequest = async (req, res, next) => {
     }
 
     // ONLY check employee-specific routing - this is the only approval strategy
-    const approverForEmployee = await travelModel.getApproverForEmployee(request.userId);
-    
+    const approversForEmployee = await travelModel.getApproverForEmployee(request.userId);
+
     // CEO can approve their own requests
     if (req.user.role === 'ceo' && String(request.userId) === String(req.user.id)) {
       // CEO can self-approve
-    } 
-    // IT officers can approve for themselves if they are the designated approver
-    else if (req.user.role === 'it_officer' && String(request.userId) === String(req.user.id) && String(approverForEmployee) === String(req.user.id)) {
-      // IT officer can self-approve if they are the designated approver
     }
-    // User must be the designated approver for this employee
-    else if (!approverForEmployee || String(approverForEmployee) !== String(req.user.id)) {
-      return res.status(403).json({ message: 'You are not authorized to approve this travel request. Only the designated approver in employee-specific routing can approve.' });
+    // IT officers can approve for themselves if they are one of the designated approvers
+    else if (req.user.role === 'it_officer' && String(request.userId) === String(req.user.id) && approversForEmployee.includes(req.user.id)) {
+      // IT officer can self-approve if they are one of the designated approvers
+    }
+    // User must be one of the designated approvers for this employee
+    else if (!approversForEmployee || !approversForEmployee.includes(req.user.id)) {
+      return res.status(403).json({ message: 'You are not authorized to approve this travel request. Only the designated approvers in employee-specific routing can approve.' });
     }
 
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';

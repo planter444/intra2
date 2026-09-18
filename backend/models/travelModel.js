@@ -169,9 +169,16 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const params = [];
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer'];
 
+  // Check if viewer is a notification recipient
+  const notificationSettings = await getTravelNotificationSettings();
+  const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(viewerId);
+
   if (role === 'employee') {
-    params.push(viewerId);
-    clauses.push(`tr.user_id = $${params.length}`);
+    // Employees see their own requests, unless they are notification recipients
+    if (!isNotificationRecipient) {
+      params.push(viewerId);
+      clauses.push(`tr.user_id = $${params.length}`);
+    }
   } else if (role === 'supervisor') {
     params.push(viewerId);
     clauses.push(`(
@@ -183,14 +190,14 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
           AND is_deleted = FALSE
       )
     )`);
-  } else if (!oversightRoles.includes(role)) {
-    // For any other role not in oversight, only show own requests
+  } else if (!oversightRoles.includes(role) && !isNotificationRecipient) {
+    // For any other role not in oversight and not a notification recipient, only show own requests
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
-  // For oversight roles (admin, ceo, finance, it_officer), no user filter - they see all
+  // For oversight roles (admin, ceo, finance, it_officer) and notification recipients, no user filter - they see all
 
-  if (userId && oversightRoles.includes(role)) {
+  if (userId && (oversightRoles.includes(role) || isNotificationRecipient)) {
     params.push(userId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
@@ -834,7 +841,6 @@ const getApproverForEmployee = async (employeeId) => {
       FROM travel_employee_routing
       WHERE employee_id = $1
       ORDER BY created_at DESC
-      LIMIT 1
     `,
     [employeeId]
   );
@@ -850,12 +856,13 @@ const getApproverForEmployee = async (employeeId) => {
       `
     );
     if (ceoResult.rows.length > 0) {
-      return ceoResult.rows[0].id;
+      return [ceoResult.rows[0].id];
     }
-    return null;
+    return [];
   }
 
-  return result.rows[0].approver_id;
+  // Return all approvers for this employee
+  return result.rows.map(row => row.approver_id);
 };
 
 const addEmployeeRouting = async ({ employeeId, approverId }) => {
@@ -895,9 +902,13 @@ const removeEmployeeRouting = async (id) => {
 
 const getPendingTravelRequestCountForUser = async (userId, userRole) => {
   let result;
-  
-  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance') {
-    // Admin, CEO, and finance can see all pending requests
+
+  // Check if user is a notification recipient
+  const notificationSettings = await getTravelNotificationSettings();
+  const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(userId);
+
+  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || isNotificationRecipient) {
+    // Admin, CEO, finance, and notification recipients can see all pending requests
     result = await query(
       `
         SELECT COUNT(*) as count
@@ -923,7 +934,7 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
       result = { rows: [{ count: 0 }] };
     }
   } else {
-    // Regular employees can only see requests where they are the designated approver
+    // Regular employees can only see requests where they are one of the designated approvers
     result = await query(
       `
         SELECT COUNT(*) as count
@@ -934,7 +945,7 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
       [userId]
     );
   }
-  
+
   return parseInt(result.rows[0].count, 10);
 };
 
