@@ -758,11 +758,15 @@ const updateTravelNotificationSettings = async (req, res, next) => {
   try {
     const { recipientIds, viewAllTravelRequestsIds } = req.body;
 
+    console.log('updateTravelNotificationSettings - Received:', { recipientIds, viewAllTravelRequestsIds });
+
     const settings = await travelModel.updateTravelNotificationSettings({
       recipientIds: recipientIds || [],
       viewAllTravelRequestsIds: viewAllTravelRequestsIds || [],
       updatedBy: req.user.id
     });
+
+    console.log('updateTravelNotificationSettings - Saved settings:', settings);
 
     await logAction({
       actorUserId: req.user.id,
@@ -777,6 +781,7 @@ const updateTravelNotificationSettings = async (req, res, next) => {
 
     res.json({ settings });
   } catch (error) {
+    console.error('updateTravelNotificationSettings - Error:', error);
     next(error);
   }
 };

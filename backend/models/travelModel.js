@@ -490,6 +490,7 @@ const getTravelNotificationSettings = async () => {
   );
 
   if (result.rows.length === 0) {
+    console.log('getTravelNotificationSettings - No settings found, returning defaults');
     return {
       id: null,
       recipientIds: [],
@@ -498,11 +499,13 @@ const getTravelNotificationSettings = async () => {
   }
 
   const row = result.rows[0];
-  return {
+  const settings = {
     id: row.id,
     recipientIds: row.recipient_ids || [],
     viewAllTravelRequestsIds: row.view_all_travel_requests_ids || []
   };
+  console.log('getTravelNotificationSettings - Settings loaded:', settings);
+  return settings;
 };
 
 const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelRequestsIds, updatedBy }) => {
