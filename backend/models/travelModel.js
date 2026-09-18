@@ -167,7 +167,7 @@ const findTravelRequestById = async (id) => {
 const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const clauses = [];
   const params = [];
-  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer'];
+  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
 
   // Check if viewer has access to view all travel requests
   const notificationSettings = await getTravelNotificationSettings();
@@ -991,10 +991,9 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(userId);
 
-  // Admin, membership officer, and administrator always have view-all access
-  const hasAutomaticViewAll = userRole === 'admin' || userRole === 'membership_officer' || userRole === 'administrator';
+  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
 
-  if (userRole === 'admin' || userRole === 'ceo' || userRole === 'finance' || canViewAll || hasAutomaticViewAll) {
+  if (oversightRoles.includes(userRole) || canViewAll) {
     // Admin, CEO, finance, membership officer, administrator, and users with view-all access can see all pending requests
     // Exclude those they've already viewed
     result = await query(
