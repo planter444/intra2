@@ -866,28 +866,35 @@ const getApproverForEmployee = async (employeeId) => {
 };
 
 const addEmployeeRouting = async ({ employeeId, approverId }) => {
-  const result = await query(
-    `
-      INSERT INTO travel_employee_routing (employee_id, approver_id)
-      VALUES ($1, $2)
-      ON CONFLICT (employee_id, approver_id) DO NOTHING
-      RETURNING *
-    `,
-    [employeeId, approverId]
-  );
+  try {
+    const result = await query(
+      `
+        INSERT INTO travel_employee_routing (employee_id, approver_id)
+        VALUES ($1, $2)
+        RETURNING *
+      `,
+      [employeeId, approverId]
+    );
 
-  if (result.rows.length === 0) {
-    return null;
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      employeeId: row.employee_id,
+      approverId: row.approver_id,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+  } catch (error) {
+    // If duplicate, just return null (routing already exists)
+    if (error.message.includes('duplicate key')) {
+      return null;
+    }
+    throw error;
   }
-
-  const row = result.rows[0];
-  return {
-    id: row.id,
-    employeeId: row.employee_id,
-    approverId: row.approver_id,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at
-  };
 };
 
 const removeEmployeeRouting = async (id) => {
