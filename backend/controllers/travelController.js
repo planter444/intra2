@@ -909,7 +909,7 @@ const updateTravelRequestSettled = async (req, res, next) => {
     const { id } = req.params;
     const { settled } = req.body;
 
-    console.log('updateTravelRequestSettled - User role:', req.user.role, 'User ID:', req.user.id);
+    console.log('updateTravelRequestSettled - User role:', req.user.role, 'User ID:', req.user.id, 'User full name:', req.user.fullName);
 
     if (typeof settled !== 'boolean') {
       return res.status(400).json({ message: 'Settled status must be a boolean.' });
@@ -930,7 +930,11 @@ const updateTravelRequestSettled = async (req, res, next) => {
     const canEditSettled = oversightRoles.includes(req.user.role) ||
                            (notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
 
-    console.log('updateTravelRequestSettled - canEditSettled:', canEditSettled, 'settledEditorIds:', notificationSettings.settledEditorIds, 'user role in oversight:', oversightRoles.includes(req.user.role));
+    console.log('updateTravelRequestSettled - oversightRoles:', oversightRoles);
+    console.log('updateTravelRequestSettled - settledEditorIds:', notificationSettings.settledEditorIds);
+    console.log('updateTravelRequestSettled - canEditSettled (role check):', oversightRoles.includes(req.user.role));
+    console.log('updateTravelRequestSettled - canEditSettled (settings check):', notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
+    console.log('updateTravelRequestSettled - final canEditSettled:', canEditSettled);
 
     if (!canEditSettled) {
       return res.status(403).json({ message: 'You do not have permission to edit settled status.' });
