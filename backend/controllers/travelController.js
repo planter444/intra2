@@ -930,10 +930,3 @@ module.exports = {
   getPendingTravelRequestCount,
   markTravelRequestAsViewed
 };
-  updateTravelRoutingSettings,
-  getAllEmployeeRouting,
-  getApproverForEmployee,
-  addEmployeeRouting,
-  removeEmployeeRouting,
-  getPendingTravelRequestCount
-};
