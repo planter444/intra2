@@ -173,6 +173,9 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const notificationSettings = await getTravelNotificationSettings();
   const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(viewerId);
 
+  console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'isNotificationRecipient:', isNotificationRecipient);
+  console.log('listTravelRequests - notificationSettings:', notificationSettings);
+
   if (role === 'employee') {
     // Employees see their own requests, unless they are notification recipients
     if (!isNotificationRecipient) {
