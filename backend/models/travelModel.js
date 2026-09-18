@@ -503,7 +503,8 @@ const getTravelNotificationSettings = async () => {
     return {
       id: null,
       recipientIds: [],
-      viewAllTravelRequestsIds: []
+      viewAllTravelRequestsIds: [],
+      settledEditorIds: []
     };
   }
 
@@ -511,13 +512,14 @@ const getTravelNotificationSettings = async () => {
   const settings = {
     id: row.id,
     recipientIds: row.recipient_ids || [],
-    viewAllTravelRequestsIds: row.view_all_travel_requests_ids || []
+    viewAllTravelRequestsIds: row.view_all_travel_requests_ids || [],
+    settledEditorIds: row.settled_editor_ids || []
   };
   console.log('getTravelNotificationSettings - Settings loaded:', settings);
   return settings;
 };
 
-const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelRequestsIds, updatedBy }) => {
+const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelRequestsIds, settledEditorIds, updatedBy }) => {
   const existing = await query(`SELECT id FROM travel_notification_settings LIMIT 1`);
 
   if (existing.rows.length > 0) {
@@ -527,11 +529,12 @@ const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelReq
         SET
           recipient_ids = $2,
           view_all_travel_requests_ids = $3,
-          updated_by = $4,
+          settled_editor_ids = $4,
+          updated_by = $5,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [existing.rows[0].id, recipientIds || [], viewAllTravelRequestsIds || [], updatedBy]
+      [existing.rows[0].id, recipientIds || [], viewAllTravelRequestsIds || [], settledEditorIds || [], updatedBy]
     );
   } else {
     await query(
@@ -539,11 +542,12 @@ const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelReq
         INSERT INTO travel_notification_settings (
           recipient_ids,
           view_all_travel_requests_ids,
+          settled_editor_ids,
           updated_by
         )
-        VALUES ($1, $2, $3)
+        VALUES ($1, $2, $3, $4)
       `,
-      [recipientIds || [], viewAllTravelRequestsIds || [], updatedBy]
+      [recipientIds || [], viewAllTravelRequestsIds || [], settledEditorIds || [], updatedBy]
     );
   }
 

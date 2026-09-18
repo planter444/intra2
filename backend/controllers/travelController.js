@@ -904,6 +904,8 @@ const updateTravelRequestSettled = async (req, res, next) => {
     const { id } = req.params;
     const { settled } = req.body;
 
+    console.log('updateTravelRequestSettled - User role:', req.user.role, 'User ID:', req.user.id);
+
     if (typeof settled !== 'boolean') {
       return res.status(400).json({ message: 'Settled status must be a boolean.' });
     }
@@ -915,6 +917,18 @@ const updateTravelRequestSettled = async (req, res, next) => {
 
     if (!(await canAccessTravelRequest(req.user, request))) {
       return res.status(403).json({ message: 'You do not have permission to modify this travel request.' });
+    }
+
+    // Check if user has permission to edit settled status
+    const notificationSettings = await travelModel.getTravelNotificationSettings();
+    const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+    const canEditSettled = oversightRoles.includes(req.user.role) ||
+                           (notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
+
+    console.log('updateTravelRequestSettled - canEditSettled:', canEditSettled, 'settledEditorIds:', notificationSettings.settledEditorIds);
+
+    if (!canEditSettled) {
+      return res.status(403).json({ message: 'You do not have permission to edit settled status.' });
     }
 
     await travelModel.updateTravelRequestSettled(id, settled);

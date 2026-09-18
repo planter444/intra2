@@ -6,7 +6,7 @@ import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee, updateTravelRequestSettled } from '../services/travelService';
+import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee, updateTravelRequestSettled, fetchTravelNotificationSettings } from '../services/travelService';
 import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
@@ -62,6 +62,7 @@ export default function TravelPage() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [users, setUsers] = useState([]);
+  const [canEditSettled, setCanEditSettled] = useState(false);
 
   const loadRequests = async () => {
     try {
@@ -69,7 +70,23 @@ export default function TravelPage() {
       const data = await fetchTravelRequests();
       const filteredRequests = data.filter(r => r.status !== 'cancelled');
       setRequests(filteredRequests);
-      
+
+      // Check if user can edit settled status
+      const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+      const hasRoleAccess = oversightRoles.includes(user.role);
+      if (hasRoleAccess) {
+        setCanEditSettled(true);
+      } else {
+        try {
+          const notificationSettings = await fetchTravelNotificationSettings();
+          const hasSettingsAccess = notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(user.id));
+          setCanEditSettled(hasSettingsAccess);
+        } catch (error) {
+          console.warn('Failed to load notification settings:', error.message);
+          setCanEditSettled(false);
+        }
+      }
+
       // Only fetch users if user has permission (not regular employee)
       if (user.role !== 'employee') {
         try {
@@ -83,7 +100,7 @@ export default function TravelPage() {
         // For employees, only show themselves in the filter
         setUsers([{ id: user.id, firstName: user.firstName, lastName: user.lastName }]);
       }
-      
+
       // Load approvers for each unique employee
       const uniqueEmployeeIds = [...new Set(filteredRequests.map(r => r.userId))];
       const approverMap = {};
@@ -444,8 +461,8 @@ export default function TravelPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
-                      {/* Settled toggle for oversight roles */}
-                      {['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'].includes(user.role) ? (
+                      {/* Settled toggle for users with edit permission */}
+                      {canEditSettled ? (
                         <button
                           type="button"
                           onClick={(e) => {
@@ -465,7 +482,7 @@ export default function TravelPage() {
                           {request.settled ? 'Settled' : 'Settle'}
                         </button>
                       ) : (
-                        /* View-only settled indicator for normal staff */
+                        /* View-only settled indicator for users without edit permission */
                         request.settled && (
                           <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 border-emerald-200 border">
                             <CheckCircle size={12} />

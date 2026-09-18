@@ -12,7 +12,8 @@ export default function TravelSettingsPage() {
   const { user, settings, replaceSettings } = useAuth();
   const [notificationSettings, setNotificationSettings] = useState({
     recipientIds: [],
-    viewAllTravelRequestsIds: []
+    viewAllTravelRequestsIds: [],
+    settledEditorIds: []
   });
   const [employeeRouting, setEmployeeRouting] = useState([]);
   const [users, setUsers] = useState([]);
@@ -23,6 +24,7 @@ export default function TravelSettingsPage() {
   const [selectedApprover, setSelectedApprover] = useState('');
   const [selectedNotificationRecipients, setSelectedNotificationRecipients] = useState([]);
   const [selectedViewAllTravelRequests, setSelectedViewAllTravelRequests] = useState([]);
+  const [selectedSettledEditors, setSelectedSettledEditors] = useState([]);
   const [designationModal, setDesignationModal] = useState({ open: false, userId: null, designation: '' });
   const [projectsModal, setProjectsModal] = useState({ open: false, project: '' });
   const [dsaSettings, setDsaSettings] = useState({
@@ -97,6 +99,7 @@ export default function TravelSettingsPage() {
       setUsers(usersList);
       setSelectedNotificationRecipients(notificationData.recipientIds || []);
       setSelectedViewAllTravelRequests(notificationData.viewAllTravelRequestsIds || []);
+      setSelectedSettledEditors(notificationData.settledEditorIds || []);
     } catch (error) {
       setNotice({
         open: true,
@@ -111,14 +114,16 @@ export default function TravelSettingsPage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateTravelNotificationSettings({ 
+      await updateTravelNotificationSettings({
         recipientIds: selectedNotificationRecipients,
-        viewAllTravelRequestsIds: selectedViewAllTravelRequests
+        viewAllTravelRequestsIds: selectedViewAllTravelRequests,
+        settledEditorIds: selectedSettledEditors
       });
-      setNotificationSettings({ 
-        ...notificationSettings, 
+      setNotificationSettings({
+        ...notificationSettings,
         recipientIds: selectedNotificationRecipients,
-        viewAllTravelRequestsIds: selectedViewAllTravelRequests
+        viewAllTravelRequestsIds: selectedViewAllTravelRequests,
+        settledEditorIds: selectedSettledEditors
       });
       
       // Save DSA settings
@@ -656,6 +661,38 @@ export default function TravelSettingsPage() {
               )}
               <p className="text-sm text-slate-500">
                 {selectedViewAllTravelRequests.length} employee(s) selected to view all travel requests
+              </p>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="Settled Status Editors" subtitle="Select employees who can mark travel requests as settled (paid/processed). Finance, IT Officer, CEO, Administrator, and Membership Officer always have access.">
+            <div className="space-y-4">
+              {users.length === 0 ? (
+                <p className="text-sm text-slate-500">No employees available.</p>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {users.map((u) => (
+                    <label key={u.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 cursor-pointer hover:bg-slate-50">
+                      <input
+                        type="checkbox"
+                        checked={selectedSettledEditors.includes(String(u.id))}
+                        onChange={() => setSelectedSettledEditors(prev =>
+                          prev.includes(String(u.id))
+                            ? prev.filter(id => id !== String(u.id))
+                            : [...prev, String(u.id)]
+                        )}
+                        className="h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-slate-900">{u.firstName} {u.lastName}</p>
+                        <p className="text-xs text-slate-500">{u.email} • {u.role}</p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+              <p className="text-sm text-slate-500">
+                {selectedSettledEditors.length} employee(s) selected to edit settled status
               </p>
             </div>
           </SectionCard>
