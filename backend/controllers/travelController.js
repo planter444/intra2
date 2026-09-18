@@ -6,7 +6,7 @@ const { logAction } = require('../services/auditService');
 const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
-const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer'];
 
 const canViewOversightTravelData = (role) => oversightRoles.includes(role);
 
@@ -31,6 +31,11 @@ const canAccessTravelRequest = async (currentUser, request) => {
 
 const canRequesterModify = (currentUser, request) => {
   if (String(request.userId) !== String(currentUser.id)) {
+    return false;
+  }
+
+  // Owner cannot modify if settled or approved
+  if (request.settled || request.status === 'approved') {
     return false;
   }
 
@@ -921,11 +926,11 @@ const updateTravelRequestSettled = async (req, res, next) => {
 
     // Check if user has permission to edit settled status
     const notificationSettings = await travelModel.getTravelNotificationSettings();
-    const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+    const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer'];
     const canEditSettled = oversightRoles.includes(req.user.role) ||
                            (notificationSettings.settledEditorIds && notificationSettings.settledEditorIds.includes(String(req.user.id)));
 
-    console.log('updateTravelRequestSettled - canEditSettled:', canEditSettled, 'settledEditorIds:', notificationSettings.settledEditorIds);
+    console.log('updateTravelRequestSettled - canEditSettled:', canEditSettled, 'settledEditorIds:', notificationSettings.settledEditorIds, 'user role in oversight:', oversightRoles.includes(req.user.role));
 
     if (!canEditSettled) {
       return res.status(403).json({ message: 'You do not have permission to edit settled status.' });

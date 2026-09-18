@@ -168,14 +168,14 @@ const findTravelRequestById = async (id) => {
 const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const clauses = [];
   const params = [];
-  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer'];
 
   // Check if viewer has access to view all travel requests
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
-  // Admin, membership officer, and administrator always have view-all access
-  const hasAutomaticViewAll = role === 'admin' || role === 'membership_officer' || role === 'administrator';
+  // Admin and membership officer always have view-all access
+  const hasAutomaticViewAll = role === 'admin' || role === 'membership_officer';
 
   console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'canViewAll:', canViewAll, 'hasAutomaticViewAll:', hasAutomaticViewAll);
 
@@ -1011,7 +1011,7 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(userId);
 
-  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+  const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer'];
 
   if (oversightRoles.includes(userRole) || canViewAll) {
     // Admin, CEO, finance, membership officer, administrator, and users with view-all access can see all pending requests

@@ -617,8 +617,8 @@ export default function TravelDetailPage() {
 
   const config = statusConfig[request.status] || statusConfig.pending;
   // Normal staff can only edit pending/rejected requests; admin can edit any request
-  const canEdit = (String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status)) || user.role === 'admin';
-  const canCancel = String(request.userId) === String(user.id) && request.status === 'pending';
+  const canEdit = (String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status) && !request.settled) || user.role === 'admin';
+  const canCancel = String(request.userId) === String(user.id) && request.status === 'pending' && !request.settled;
   // CEO can approve any request, otherwise check employee-specific routing for approval
   const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'rejected'].includes(request.status);
   // Only admin can delete requests

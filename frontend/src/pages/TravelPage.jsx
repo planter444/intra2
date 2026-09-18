@@ -72,7 +72,7 @@ export default function TravelPage() {
       setRequests(filteredRequests);
 
       // Check if user can edit settled status
-      const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator', 'membership_officer'];
+      const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'membership_officer', 'administrator'];
       const hasRoleAccess = oversightRoles.includes(user.role);
       if (hasRoleAccess) {
         setCanEditSettled(true);
@@ -490,7 +490,7 @@ export default function TravelPage() {
                           </span>
                         )
                       )}
-                      {String(request.userId) === String(user.id) && request.status === 'pending' && (
+                      {String(request.userId) === String(user.id) && request.status === 'pending' && !request.settled && (
                         <button
                           type="button"
                           className="flex-1 sm:flex-none rounded-lg border border-slate-200 px-1.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:px-2 sm:text-sm"
