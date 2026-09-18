@@ -174,7 +174,6 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(viewerId);
 
   console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'isNotificationRecipient:', isNotificationRecipient);
-  console.log('listTravelRequests - notificationSettings:', notificationSettings);
 
   if (role === 'employee') {
     // Employees see their own requests, unless they are notification recipients
@@ -211,6 +210,9 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
   }
 
   const whereClause = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  console.log('listTravelRequests - SQL whereClause:', whereClause);
+  console.log('listTravelRequests - SQL params:', params);
+
   const result = await query(
     `
       SELECT
@@ -223,10 +225,13 @@ const listTravelRequests = async ({ viewerId, role, userId, status } = {}) => {
     params
   );
 
+  console.log('listTravelRequests - Found', result.rows.length, 'travel requests');
+
   const requests = [];
   for (const row of result.rows) {
     requests.push(await findTravelRequestById(row.id));
   }
+  console.log('listTravelRequests - Returning', requests.length, 'requests');
   return requests;
 };
 

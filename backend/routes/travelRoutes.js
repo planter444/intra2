@@ -33,7 +33,10 @@ const router = express.Router();
 router.use(authenticate);
 
 // Travel request routes
-router.get('/requests', listTravelRequests);
+router.get('/requests', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  listTravelRequests(req, res, next);
+});
 router.get('/requests/:id', getTravelRequest);
 router.post('/requests', authorize('employee', 'supervisor', 'admin', 'finance'), upload.single('supportingDocument'), createTravelRequest);
 router.put('/requests/:id', authorize('employee', 'supervisor', 'admin', 'finance'), updateTravelRequest);
