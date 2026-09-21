@@ -394,7 +394,8 @@ export default function TravelApplyPage() {
         origin: form.origin,
         destination: form.destination,
         reason: form.reason,
-        estimatedCost: form.estimatedCost ? Number(form.estimatedCost) : null,
+        estimatedCost: null, // For official travel, estimatedCost is other costs (not transportation)
+        transportationCost: form.estimatedCost ? Number(form.estimatedCost) : null, // Save transportation cost to correct field
         currency: form.currency,
         designation: form.designation,
         travelCategory: form.travelCategory,
@@ -412,7 +413,10 @@ export default function TravelApplyPage() {
       console.log('Submitting official travel booking with data:', {
         travelType: requestData.travelType,
         travelCategory: requestData.travelCategory,
-        travelTypeDetail: requestData.travelTypeDetail
+        travelTypeDetail: requestData.travelTypeDetail,
+        transportationCost: requestData.transportationCost,
+        dsaAmount: requestData.dsaAmount,
+        accommodationAmount: requestData.accommodationAmount
       });
 
       let request;

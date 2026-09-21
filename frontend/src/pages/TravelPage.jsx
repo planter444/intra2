@@ -459,15 +459,20 @@ export default function TravelPage() {
                         ) : (
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
-                            {request.currency || 'KES'} {(
-                              isLocalMovement(request)
-                                ? (request.estimatedCost || 0) // For local movement, estimatedCost is already the total
-                                : (
-                                  ((request.dsaProvided ? 0 : request.dsaAmount) || 0) +
-                                  ((request.accommodationProvided ? 0 : request.accommodationAmount) || 0) +
-                                  (request.estimatedCost || 0)
-                                )
-                            ).toLocaleString()}
+                            {request.currency || 'KES'} {(() => {
+                              // Use saved total from database for all request types
+                              if (isLocalMovement(request)) {
+                                // For local movement, estimatedCost is the total (transportation + DSA)
+                                return (request.estimatedCost || 0).toLocaleString();
+                              } else {
+                                // For official travel, calculate total from saved components
+                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                                const transportation = request.transportationCost || 0;
+                                const other = request.estimatedCost || 0;
+                                return (dsa + accommodation + transportation + other).toLocaleString();
+                              }
+                            })()}
                           </span>
                         )}
                       </div>

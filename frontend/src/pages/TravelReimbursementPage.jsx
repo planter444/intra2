@@ -316,7 +316,7 @@ export default function TravelReimbursementPage() {
         title: 'Travel reimbursement submitted',
         description: 'Your travel reimbursement request has been submitted successfully.'
       });
-      setTimeout(() => navigate('/travel/official'), 2000);
+      setTimeout(() => navigate('/travel'), 2000);
     } catch (error) {
       setNotice({
         open: true,

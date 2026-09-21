@@ -136,7 +136,7 @@ export default function TravelDetailPage() {
         origin: data.origin,
         destination: data.destination,
         reason: data.reason,
-        estimatedCost: isLocalRequest ? '' : (data.estimatedCost || ''),
+        estimatedCost: isLocalRequest ? '' : (data.estimatedCost || ''), // For official travel, this is other costs
         designation: data.designation || '',
         travelCategory: isLocalRequest ? 'Local Movement' : (data.travelCategory || ''),
         travelTypeDetail: data.travelTypeDetail || '',
@@ -149,7 +149,7 @@ export default function TravelDetailPage() {
         accommodationCurrency: data.accommodationCurrency || 'KES',
         accommodationAmount: data.accommodationAmount || '',
         accommodationProvided: data.accommodationProvided || false,
-        transportationCost: transportationValue,
+        transportationCost: transportationValue, // For official travel, this is the actual transportation cost
         fullDayEvent: data.fullDayEvent || false
       });
       
@@ -244,6 +244,8 @@ export default function TravelDetailPage() {
 
       // For local movement booking, estimatedCost is total (transportation + DSA)
       // For local movement reimbursement, estimatedCost is 0
+      // For official travel booking, estimatedCost is other costs, transportationCost is transportation
+      // For official travel reimbursement, estimatedCost is other costs, transportationCost is transportation
       const isBooking = editForm.travelType === 'booking';
       let finalEstimatedCost, finalTransportationCost;
 
@@ -260,6 +262,7 @@ export default function TravelDetailPage() {
           finalTransportationCost = parseFloat(editForm.transportationCost || 0) || null;
         }
       } else {
+        // For official travel: estimatedCost is other costs, transportationCost is transportation
         finalEstimatedCost = editForm.estimatedCost || null;
         finalTransportationCost = editForm.transportationCost || null;
       }
@@ -682,21 +685,25 @@ export default function TravelDetailPage() {
               {request.travelType === 'booking' ? (
                 <div>
                   <label className="mb-2 block text-sm font-medium text-slate-700">Estimated Transportation Cost</label>
-                  <input type="number" className="bg-white" value={isLocalMovement(editForm) ? (editForm.transportationCost || '') : (editForm.estimatedCost || '')} onChange={(e) => {
-                    if (isLocalMovement(editForm)) {
-                      setEditForm({ ...editForm, transportationCost: e.target.value });
-                    } else {
-                      setEditForm({ ...editForm, estimatedCost: e.target.value });
-                    }
+                  <input type="number" className="bg-white" value={editForm.transportationCost || ''} onChange={(e) => {
+                    setEditForm({ ...editForm, transportationCost: e.target.value });
                   }} />
                 </div>
               ) : (
                 !isLocalMovement(editForm) && (
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-700">Other Costs (Optional)</label>
-                    <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} placeholder="0.00" />
-                    <p className="mt-1 text-xs text-slate-500">Any additional costs not covered by DSA, accommodation, or transportation</p>
-                  </div>
+                  <>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Transportation Cost Incurred</label>
+                      <input type="number" className="bg-white" value={editForm.transportationCost || ''} onChange={(e) => {
+                        setEditForm({ ...editForm, transportationCost: e.target.value });
+                      }} />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-700">Other Costs (Optional)</label>
+                      <input type="number" className="bg-white" value={editForm.estimatedCost} onChange={(e) => setEditForm({ ...editForm, estimatedCost: e.target.value })} placeholder="0.00" />
+                      <p className="mt-1 text-xs text-slate-500">Any additional costs not covered by DSA, accommodation, or transportation</p>
+                    </div>
+                  </>
                 )
               )}
               <div>
