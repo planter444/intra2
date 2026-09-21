@@ -233,6 +233,9 @@ const createTravelRequest = async (req, res, next) => {
         approverResults.rows.forEach(approver => {
           recipients.push({ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email });
         });
+        console.log('Sending travel request notification to approvers:', recipients.map(r => r.fullName));
+      } else {
+        console.log('No approvers found for employee:', req.user.id);
       }
 
       if (recipients.length > 0) {
