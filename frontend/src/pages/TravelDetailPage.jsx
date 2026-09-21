@@ -625,11 +625,23 @@ export default function TravelDetailPage() {
   // CEO can approve when status is pending_ceo, supervisor can approve when status is pending
   // Also check if the current user is in the approver routing for this employee
   const isDesignatedApprover = approverForEmployee && String(approverForEmployee) === String(user.id);
-  const canDecide = (user.role === 'ceo' && request.status === 'pending_ceo') || (isDesignatedApprover && request.status === 'pending') || (user.role === 'ceo' && request.status === 'pending');
+  // Simplified: CEO can approve pending_ceo or pending; supervisor can approve pending if they are the designated approver
+  const canDecide = (user.role === 'ceo' && (request.status === 'pending_ceo' || request.status === 'pending')) || (isDesignatedApprover && request.status === 'pending');
   // Only admin can delete requests
   const canDelete = user.role === 'admin';
   const canUploadReceipt = String(request.userId) === String(user.id) && ['pending', 'approved'].includes(request.status);
   const isApprover = String(request.userId) !== String(user.id) && (user.role === 'ceo' || isDesignatedApprover);
+
+  // Debug logging
+  console.log('TravelDetailPage - Approval check:', {
+    userRole: user.role,
+    userId: user.id,
+    requestUserId: request.userId,
+    requestStatus: request.status,
+    approverForEmployee,
+    isDesignatedApprover,
+    canDecide
+  });
 
   return (
     <div className="space-y-6">

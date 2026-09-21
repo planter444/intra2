@@ -149,7 +149,51 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
   } catch (error) {
     console.error('Travel request insert error:', error.message);
     console.error('Error details:', error);
-    throw error;
+    
+    // Try fallback without new columns if column doesn't exist
+    if (error.message && (error.message.includes('column') || error.message.includes('does not exist'))) {
+      console.warn('New columns not found, trying fallback insert');
+      try {
+        result = await query(
+          `
+            INSERT INTO travel_requests (
+              user_id,
+              travel_type,
+              start_date,
+              end_date,
+              origin,
+              destination,
+              reason,
+              estimated_cost,
+              currency,
+              supporting_document_id,
+              reference_number,
+              status
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+            RETURNING id
+          `,
+          [
+            userId,
+            travelType || 'booking',
+            startDate,
+            endDate,
+            origin,
+            destination,
+            reason,
+            toNullableNumber(estimatedCost),
+            currency || 'KES',
+            supportingDocumentId || null,
+            referenceNumber
+          ]
+        );
+      } catch (fallbackError) {
+        console.error('Fallback insert also failed:', fallbackError.message);
+        throw fallbackError;
+      }
+    } else {
+      throw error;
+    }
   }
 
   return findTravelRequestById(result.rows[0].id);
@@ -1025,20 +1069,20 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
       `
     );
   } else if (userRole === 'supervisor') {
-    // Supervisors can see pending requests from their team members
+    // Supervisors can see pending requests from employees they are designated approvers for
     try {
       result = await query(
         `
           SELECT COUNT(*) as count
           FROM travel_requests tr
-          INNER JOIN users u ON u.id = tr.user_id
-          WHERE tr.status = 'pending' AND u.employee_supervisor_id = $1
+          INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
+          WHERE tr.status = 'pending' AND ter.approver_id = $1
         `,
         [userId]
       );
     } catch (error) {
-      console.warn('employee_supervisor_id column does not exist, using fallback query');
-      // Fallback: return 0 if column doesn't exist
+      console.warn('Failed to get supervisor pending count:', error.message);
+      // Fallback: return 0 if query fails
       result = { rows: [{ count: 0 }] };
     }
   } else {
