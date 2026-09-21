@@ -26,7 +26,19 @@ const canAccessTravelRequest = async (currentUser, request) => {
     return true;
   }
 
-  return currentUser.role === 'supervisor' && String(request.employeeSupervisorId) === String(currentUser.id);
+  // Check if user is a designated approver for this employee
+  if (currentUser.role === 'supervisor') {
+    try {
+      const approverIds = await travelModel.getApproverForEmployee(request.userId);
+      if (approverIds && approverIds.includes(currentUser.id)) {
+        return true;
+      }
+    } catch (error) {
+      console.warn('Failed to check approver access:', error.message);
+    }
+  }
+
+  return false;
 };
 
 const canRequesterModify = (currentUser, request) => {
