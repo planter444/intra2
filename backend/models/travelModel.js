@@ -356,7 +356,7 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
         UPDATE travel_requests
         SET
           status = COALESCE($2, status),
-          approved_by = $3,
+          approved_by = $3::BIGINT,
           approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
           rejection_reason = $4,
           updated_at = NOW()
@@ -396,7 +396,7 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
             UPDATE travel_requests
             SET
               status = COALESCE($2, status),
-              approved_by = $3,
+              approved_by = $3::BIGINT,
               approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
               rejection_reason = $4,
               updated_at = NOW()
