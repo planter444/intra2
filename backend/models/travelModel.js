@@ -1015,12 +1015,12 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
 
   if (oversightRoles.includes(userRole) || userPositionTitle === 'Administration' || canViewAll) {
     // Admin, CEO, finance, membership officer, administrator, and users with view-all access can see all pending requests
-    // Exclude those they've already viewed
+    // Include both pending and pending_ceo
     result = await query(
       `
         SELECT COUNT(*) as count
         FROM travel_requests tr
-        WHERE tr.status = 'pending'
+        WHERE tr.status IN ('pending', 'pending_ceo')
         AND tr.id NOT IN (
           SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
         )
@@ -1035,7 +1035,7 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
           SELECT COUNT(*) as count
           FROM travel_requests tr
           INNER JOIN users u ON u.id = tr.user_id
-          WHERE tr.status = 'pending' AND u.employee_supervisor_id = $1
+          WHERE tr.status IN ('pending', 'pending_ceo') AND u.employee_supervisor_id = $1
           AND tr.id NOT IN (
             SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
           )
@@ -1054,7 +1054,7 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
         SELECT COUNT(*) as count
         FROM travel_requests tr
         INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
-        WHERE tr.status = 'pending' AND ter.approver_id = $1
+        WHERE tr.status IN ('pending', 'pending_ceo') AND ter.approver_id = $1
         AND tr.id NOT IN (
           SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
         )

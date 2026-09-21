@@ -22,6 +22,7 @@ import {
 
 const statusConfig = {
   pending: { label: 'Pending', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
+  pending_ceo: { label: 'Pending CEO Approval', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
   approved: { label: 'Approved', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
   cancelled: { label: 'Cancelled', color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200' },
@@ -616,11 +617,11 @@ export default function TravelDetailPage() {
   }
 
   const config = statusConfig[request.status] || statusConfig.pending;
-  // Normal staff can only edit pending/rejected requests; admin can edit any request
-  const canEdit = (String(request.userId) === String(user.id) && ['pending', 'rejected'].includes(request.status) && !request.settled) || user.role === 'admin';
-  const canCancel = String(request.userId) === String(user.id) && request.status === 'pending' && !request.settled;
+  // Normal staff can only edit pending/rejected/pending_ceo requests; admin can edit any request
+  const canEdit = (String(request.userId) === String(user.id) && ['pending', 'rejected', 'pending_ceo'].includes(request.status) && !request.settled) || user.role === 'admin';
+  const canCancel = String(request.userId) === String(user.id) && ['pending', 'pending_ceo'].includes(request.status) && !request.settled;
   // CEO can approve any request, otherwise check employee-specific routing for approval
-  const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'rejected'].includes(request.status);
+  const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'pending_ceo', 'rejected'].includes(request.status);
   // Only admin can delete requests
   const canDelete = user.role === 'admin';
   const canUploadReceipt = String(request.userId) === String(user.id) && ['pending', 'approved'].includes(request.status);

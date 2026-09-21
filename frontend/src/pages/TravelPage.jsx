@@ -11,6 +11,7 @@ import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
   pending: { label: 'Pending', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
+  pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
   approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200' },
@@ -39,8 +40,8 @@ const canDecideTravel = (user, request, employeeApprovers) => {
     return false;
   }
   
-  // Can only approve pending or rejected requests
-  return ['pending', 'rejected'].includes(request.status);
+  // Can only approve pending, pending_ceo, or rejected requests
+  return ['pending', 'pending_ceo', 'rejected'].includes(request.status);
 };
 
 const canDeleteTravel = (user, request) => {
@@ -220,6 +221,12 @@ export default function TravelPage() {
     }
     return true;
   }).filter((request) => {
+    // Hide pending_ceo from regular employees (they only need to see their own pending requests)
+    if (user.role === 'employee' && request.status === 'pending_ceo') {
+      return false;
+    }
+    return true;
+  }).filter((request) => {
     // Search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
@@ -336,6 +343,7 @@ export default function TravelPage() {
               <option value="status">Sort by Status</option>
               <option value="type">Sort by Type</option>
               <option value="pending">Filter: Pending</option>
+              <option value="pending_ceo">Filter: Pending CEO Approval</option>
               <option value="approved">Filter: Approved</option>
               <option value="settled">Filter: Settled</option>
               <option value="not_settled">Filter: Not Settled</option>

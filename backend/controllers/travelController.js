@@ -3,7 +3,7 @@ const auditModel = require('../models/auditModel');
 const travelModel = require('../models/travelModel');
 const { query } = require('../config/db');
 const { logAction } = require('../services/auditService');
-const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, buildTravelRequestUrl } = require('../services/mailService');
+const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, sendTravelSupervisorApprovedEmail, sendTravelCEOApprovedEmail, sendTravelCEOApprovedToRecipientsEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
 const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
@@ -39,7 +39,7 @@ const canRequesterModify = (currentUser, request) => {
     return false;
   }
 
-  return ['pending', 'rejected'].includes(request.status);
+  return ['pending', 'pending_ceo', 'rejected'].includes(request.status);
 };
 
 const canUpdateReceiptStatus = (currentUser, receipt) => {
@@ -215,12 +215,12 @@ const createTravelRequest = async (req, res, next) => {
       ipAddress: req.ip
     });
 
-    // Send email notification to approvers and notification recipients (best-effort)
+    // Send email notification to immediate supervisor only (best-effort)
     try {
       const approverIds = await travelModel.getApproverForEmployee(req.user.id);
       const recipients = [];
 
-      // Add all approvers
+      // Add only the immediate supervisor (first approver)
       if (approverIds && approverIds.length > 0) {
         const approverResults = await query(
           `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
@@ -228,18 +228,6 @@ const createTravelRequest = async (req, res, next) => {
         );
         approverResults.rows.forEach(approver => {
           recipients.push({ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email });
-        });
-      }
-
-      // Add notification recipients
-      const notificationSettings = await travelModel.getTravelNotificationSettings();
-      if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
-        const notificationResults = await query(
-          `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
-          [notificationSettings.recipientIds]
-        );
-        notificationResults.rows.forEach(recipient => {
-          recipients.push({ id: recipient.id, fullName: `${recipient.first_name} ${recipient.last_name}`, email: recipient.email });
         });
       }
 
@@ -387,7 +375,7 @@ const decideTravelRequest = async (req, res, next) => {
       return res.status(400).json({ message: 'Decision must be approve or reject.' });
     }
 
-    if (!['pending', 'rejected'].includes(request.status)) {
+    if (!['pending', 'pending_ceo', 'rejected'].includes(request.status)) {
       return res.status(400).json({ message: 'Only pending or rejected travel requests can be actioned.' });
     }
 
@@ -408,7 +396,8 @@ const decideTravelRequest = async (req, res, next) => {
     }
 
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
-    const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
+    const isCEO = req.user.role === 'ceo';
+    const nextStatus = decision === 'approve' ? (isCEO ? 'approved' : 'pending_ceo') : 'rejected';
 
     const updatedRequest = await travelModel.updateTravelRequestStatus({
       id,
@@ -424,45 +413,73 @@ const decideTravelRequest = async (req, res, next) => {
       entityType: 'travel_request',
       entityId: String(id),
       description: `${req.user.fullName} ${decision}d travel request ${id}.`,
-      metadata: { comment: normalizedComment },
+      metadata: { comment: normalizedComment, isCEO },
       ipAddress: req.ip
     });
 
-    // Send email notification to applicant and notification recipients (best-effort)
+    // Send email notifications based on approval stage
     try {
       const applicantResult = await query(
         `SELECT id, first_name, last_name, email FROM users WHERE id = $1`,
         [request.userId]
       );
 
-      // Send to applicant
       if (applicantResult.rows.length > 0) {
         const applicant = applicantResult.rows[0];
-        await sendTravelDecisionEmail({
-          toEmail: applicant.email,
-          toName: `${applicant.first_name} ${applicant.last_name}`,
-          travelRequest: updatedRequest,
-          decision,
-          reviewerName: req.user.fullName,
-          comment: normalizedComment
-        });
-      }
+        const applicantName = `${applicant.first_name} ${applicant.last_name}`;
 
-      // Send to notification recipients
-      const notificationSettings = await travelModel.getTravelNotificationSettings();
-      if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
-        const notificationResults = await query(
-          `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
-          [notificationSettings.recipientIds]
-        );
-        for (const recipient of notificationResults.rows) {
+        if (decision === 'reject') {
+          // Rejection: Send to applicant
           await sendTravelDecisionEmail({
-            toEmail: recipient.email,
-            toName: `${recipient.first_name} ${recipient.last_name}`,
+            toEmail: applicant.email,
+            toName: applicantName,
             travelRequest: updatedRequest,
             decision,
             reviewerName: req.user.fullName,
             comment: normalizedComment
+          });
+        } else if (isCEO) {
+          // CEO approved: Send to applicant and notification recipients
+          await sendTravelCEOApprovedEmail({
+            toEmail: applicant.email,
+            toName: applicantName,
+            travelRequest: updatedRequest,
+            ceoName: req.user.fullName
+          });
+
+          // Send to Travel Notification Recipients (BCC, excluding CEO)
+          const notificationSettings = await travelModel.getTravelNotificationSettings();
+          if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
+            // Filter out the CEO from notification recipients
+            const recipientIdsWithoutCEO = notificationSettings.recipientIds.filter(id => String(id) !== String(req.user.id));
+            
+            if (recipientIdsWithoutCEO.length > 0) {
+              const notificationResults = await query(
+                `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
+                [recipientIdsWithoutCEO]
+              );
+              
+              const notificationRecipients = notificationResults.rows.map(r => ({
+                id: r.id,
+                fullName: `${r.first_name} ${r.last_name}`,
+                email: r.email
+              }));
+
+              await sendTravelCEOApprovedToRecipientsEmail({
+                bcc: notificationRecipients,
+                travelRequest: updatedRequest,
+                staffName: applicantName,
+                ceoName: req.user.fullName
+              });
+            }
+          }
+        } else {
+          // Supervisor approved: Send to applicant
+          await sendTravelSupervisorApprovedEmail({
+            toEmail: applicant.email,
+            toName: applicantName,
+            travelRequest: updatedRequest,
+            supervisorName: req.user.fullName
           });
         }
       }

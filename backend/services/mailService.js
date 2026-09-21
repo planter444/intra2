@@ -13,8 +13,23 @@ const ensureBrevoConfigured = () => {
   }
 };
 
-const sendBrevoEmail = async ({ to, subject, htmlContent }) => {
+const sendBrevoEmail = async ({ to, bcc, subject, htmlContent }) => {
   ensureBrevoConfigured();
+
+  const body = {
+    sender: {
+      email: env.brevoSenderEmail,
+      name: env.brevoSenderName
+    },
+    to,
+    subject,
+    htmlContent
+  };
+
+  // Add BCC if provided
+  if (bcc && bcc.length > 0) {
+    body.bcc = bcc;
+  }
 
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -22,15 +37,7 @@ const sendBrevoEmail = async ({ to, subject, htmlContent }) => {
       'Content-Type': 'application/json',
       'api-key': env.brevoApiKey
     },
-    body: JSON.stringify({
-      sender: {
-        email: env.brevoSenderEmail,
-        name: env.brevoSenderName
-      },
-      to,
-      subject,
-      htmlContent
-    })
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {
@@ -353,6 +360,295 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
         <p style="margin: 0 0 18px;">
           <a href="${requestUrl}" style="background-color: #166534; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px;">Review Travel Request</a>
         </p>
+      </div>
+    `
+  });
+};
+
+const sendTravelSupervisorApprovedEmail = async ({ toEmail, toName, travelRequest, supervisorName }) => {
+  const requestUrl = buildTravelRequestUrl(travelRequest.id);
+
+  // Format dates without time
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const origin = travelRequest.origin || 'Not specified';
+  const destination = travelRequest.destination || 'Not specified';
+  const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
+  const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: 'Your travel request has been approved by your supervisor',
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #16a34a, #22c55e); padding: 24px; border-radius: 12px 12px 0 0; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; line-height: 1.3;">Travel Request Approved by Supervisor</h1>
+          <p style="margin: 8px 0 0; opacity: 0.9;">KEREA HRMS Travel Management</p>
+        </div>
+        <div style="background: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <p style="margin: 0 0 20px; font-size: 16px; color: #1e293b;">
+            Hello <strong>${toName || 'there'}</strong>, your travel request has been approved by your supervisor <strong>${supervisorName}</strong> and is now awaiting CEO approval.
+          </p>
+
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 12px; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Travel Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 140px;">Origin:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${origin}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Destination:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${destination}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Start Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${startDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="margin: 0; color: #64748b; font-size: 14px;">You will be notified once the CEO provides final approval.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
+          This is an automated email from KEREA HRMS
+        </div>
+      </div>
+    `
+  });
+};
+
+const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoName }) => {
+  const requestUrl = buildTravelRequestUrl(travelRequest.id);
+
+  // Format dates without time
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  // Calculate total cost grouped by currency
+  const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+  const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
+  const transportationCost = travelRequest.transportationCost || 0;
+  const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
+
+  // Group amounts by currency
+  const amountsByCurrency = {};
+
+  if (dsaAmount > 0) {
+    const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+    amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+  }
+
+  if (accommodationAmount > 0) {
+    const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+    amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+  }
+
+  if (transportationCost > 0) {
+    const currency = travelRequest.currency || 'KES';
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+  }
+
+  if (estimatedCost > 0) {
+    const currency = travelRequest.currency || 'KES';
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
+  }
+
+  const totalCostDisplay = Object.entries(amountsByCurrency)
+    .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
+    .join(' + ');
+
+  const origin = travelRequest.origin || 'Not specified';
+  const destination = travelRequest.destination || 'Not specified';
+  const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
+  const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: 'Your travel request has been approved',
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #16a34a, #22c55e); padding: 24px; border-radius: 12px 12px 0 0; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; line-height: 1.3;">Travel Request Approved</h1>
+          <p style="margin: 8px 0 0; opacity: 0.9;">KEREA HRMS Travel Management</p>
+        </div>
+        <div style="background: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <p style="margin: 0 0 20px; font-size: 16px; color: #1e293b;">
+            Hello <strong>${toName || 'there'}</strong>, your travel request has been approved by the CEO <strong>${ceoName}</strong>.
+          </p>
+
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 12px; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Travel Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 140px;">Origin:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${origin}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Destination:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${destination}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Start Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${startDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Approved Amount:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${totalCostDisplay || 'Not specified'}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="margin: 0; color: #64748b; font-size: 14px;">You can proceed with your travel arrangements.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
+          This is an automated email from KEREA HRMS
+        </div>
+      </div>
+    `
+  });
+};
+
+const sendTravelCEOApprovedToRecipientsEmail = async ({ bcc, travelRequest, staffName, ceoName }) => {
+  // Format dates without time
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  // Calculate total cost grouped by currency
+  const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+  const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
+  const transportationCost = travelRequest.transportationCost || 0;
+  const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
+
+  // Group amounts by currency
+  const amountsByCurrency = {};
+
+  if (dsaAmount > 0) {
+    const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+    amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+  }
+
+  if (accommodationAmount > 0) {
+    const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+    amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+  }
+
+  if (transportationCost > 0) {
+    const currency = travelRequest.currency || 'KES';
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+  }
+
+  if (estimatedCost > 0) {
+    const currency = travelRequest.currency || 'KES';
+    amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
+  }
+
+  const totalCostDisplay = Object.entries(amountsByCurrency)
+    .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
+    .join(' + ');
+
+  const origin = travelRequest.origin || 'Not specified';
+  const destination = travelRequest.destination || 'Not specified';
+  const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
+  const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+  const reason = travelRequest.reason || 'Not specified';
+
+  // Convert bcc array to Brevo format
+  const bccRecipients = (bcc || [])
+    .filter((recipient) => recipient?.email)
+    .map((recipient) => ({ email: recipient.email, name: recipient.fullName || recipient.email }));
+
+  if (!bccRecipients.length) {
+    return;
+  }
+
+  await sendBrevoEmail({
+    to: [
+      {
+        email: env.brevoSenderEmail,
+        name: env.brevoSenderName
+      }
+    ],
+    bcc: bccRecipients,
+    subject: `Travel request for ${staffName} has been approved`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #16a34a, #22c55e); padding: 24px; border-radius: 12px 12px 0 0; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; line-height: 1.3;">Travel Request Approved</h1>
+          <p style="margin: 8px 0 0; opacity: 0.9;">KEREA HRMS Travel Management</p>
+        </div>
+        <div style="background: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <p style="margin: 0 0 20px; font-size: 16px; color: #1e293b;">
+            Travel request for <strong>${staffName}</strong> has been approved by the CEO <strong>${ceoName}</strong>.
+          </p>
+
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 12px; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Travel Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 140px;">Staff Member:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${staffName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Origin:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${origin}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Destination:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${destination}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Start Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${startDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Approved Amount:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${totalCostDisplay || 'Not specified'}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; vertical-align: top;">Reason:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${reason}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="margin: 0; color: #64748b; font-size: 14px;">Please proceed with necessary administrative arrangements.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
+          This is an automated email from KEREA HRMS
+        </div>
       </div>
     `
   });
@@ -717,6 +1013,9 @@ module.exports = {
   sendAppraisalToCeoEmail,
   sendTravelRequestSubmittedEmail,
   sendTravelDecisionEmail,
+  sendTravelSupervisorApprovedEmail,
+  sendTravelCEOApprovedEmail,
+  sendTravelCEOApprovedToRecipientsEmail,
   sendPayslipGeneratedEmail,
   sendTimesheetSubmittedEmail,
   sendTimesheetApprovedEmail,
