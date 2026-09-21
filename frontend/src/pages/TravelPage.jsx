@@ -21,14 +21,12 @@ const statusConfig = {
 
 // Helper function to determine if a request is local movement
 const isLocalMovement = (request) => {
-  // Check travel_category first
+  // Only check travel_category - do not use accommodation as a fallback
+  // Official travel can have 0 accommodation if not using hotel
   if (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') {
     return true;
   }
-  // Fallback: if accommodation is zero/null, it's likely local movement
-  const hasNoAccommodation = (!request.accommodationRate || request.accommodationRate === 0) &&
-                            (!request.accommodationAmount || request.accommodationAmount === 0);
-  return hasNoAccommodation;
+  return false;
 };
 
 const canDecideTravel = (user, request, employeeApprovers) => {
