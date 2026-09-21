@@ -96,12 +96,10 @@ export default function TravelDetailPage() {
   // Helper function to determine if a request is local movement
   const isLocalMovement = (request) => {
     if (!request) return false;
-    // Only check travel_category - do not use accommodation as a fallback
-    // Official travel can have 0 accommodation if not using hotel
-    if (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') {
-      return true;
-    }
-    return false;
+    // Check travel_category with case-insensitive comparison
+    if (!request.travelCategory) return false;
+    const category = request.travelCategory.toLowerCase();
+    return category === 'local movement' || category === 'local';
   };
 
   const loadRequest = async () => {
@@ -114,7 +112,8 @@ export default function TravelDetailPage() {
 
       // For local movement booking, extract transportation cost from estimatedCost (which is total)
       // For local movement reimbursement, use transportationCost directly
-      let transportationValue = data.transportationCost || '';
+      // For official travel, use transportationCost directly
+      let transportationValue = data.transportationCost !== null && data.transportationCost !== undefined ? data.transportationCost.toString() : '';
       if (isLocalRequest && data.travelType === 'booking') {
         // For booking: use transportationCost if it exists, otherwise extract from total
         if (data.transportationCost !== null && data.transportationCost !== undefined && data.transportationCost !== '') {
@@ -125,9 +124,6 @@ export default function TravelDetailPage() {
           const totalValue = data.estimatedCost || 0;
           transportationValue = (totalValue - dsaValue).toString();
         }
-      } else if (isLocalRequest && data.travelType === 'reimbursement') {
-        // For reimbursement: use transportationCost directly
-        transportationValue = data.transportationCost !== null && data.transportationCost !== undefined ? data.transportationCost.toString() : '';
       }
 
       setEditForm({
@@ -149,7 +145,7 @@ export default function TravelDetailPage() {
         accommodationCurrency: data.accommodationCurrency || 'KES',
         accommodationAmount: data.accommodationAmount || '',
         accommodationProvided: data.accommodationProvided || false,
-        transportationCost: transportationValue, // For official travel, this is the actual transportation cost
+        transportationCost: transportationValue, // Load saved transportation cost
         fullDayEvent: data.fullDayEvent || false
       });
       
@@ -1130,34 +1126,11 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate:</span>
-                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {((request.dsaRate || 0) > 0 ? request.dsaRate : (
-                          isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
-                          request.travelCategory === 'Within Kenya' ? 2000 :
-                          request.travelCategory === 'East Africa' ? 40 :
-                          request.travelCategory === 'International' ? 50 : 0
-                        )).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(request.dsaRate || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
-                        <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {(() => {
-                          // Use saved dsaAmount if available, otherwise calculate
-                          const savedAmount = request.dsaAmount || 0;
-                          if (savedAmount > 0) return savedAmount.toLocaleString();
-                          // Fallback calculation
-                          const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
-                                      request.travelCategory === 'Within Kenya' ? 2000 :
-                                      request.travelCategory === 'East Africa' ? 40 :
-                                      request.travelCategory === 'International' ? 50 : 0;
-                          // For Local Movement, it's per event (1 day), not calculated from dates
-                          if (isLocalMovement(request)) {
-                            return rate.toLocaleString();
-                          }
-                          if (!request.startDate || !request.endDate) return '0';
-                          const start = new Date(request.startDate);
-                          const end = new Date(request.endDate);
-                          const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                          return ((diffDays + 1) * rate).toLocaleString();
-                        })()}</span>
+                        <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {(request.dsaAmount || 0).toLocaleString()}</span>
                       </div>
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-slate-200 pt-2">
@@ -1184,7 +1157,7 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate per Night:</span>
-                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {((request.accommodationRate || 0) > 0 ? request.accommodationRate : 4000).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {(request.accommodationRate || 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Nights:</span>
@@ -1196,14 +1169,7 @@ export default function TravelDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total Accommodation:</span>
-                        <span className={`font-semibold ${request.accommodationProvided ? 'text-slate-500 line-through' : 'text-blue-700'}`}>{request.accommodationCurrency || 'KES'} {((request.accommodationAmount || 0) > 0 ? request.accommodationAmount : (() => {
-                          if (!request.startDate || !request.endDate) return 0;
-                          const rate = 4000;
-                          const start = new Date(request.startDate);
-                          const end = new Date(request.endDate);
-                          const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                          return nights * rate;
-                        })()).toLocaleString()}</span>
+                        <span className={`font-semibold ${request.accommodationProvided ? 'text-slate-500 line-through' : 'text-blue-700'}`}>{request.accommodationCurrency || 'KES'} {(request.accommodationAmount || 0).toLocaleString()}</span>
                       </div>
                       {request.accommodationProvided && (
                         <div className="flex justify-between border-t border-slate-200 pt-2">
@@ -1244,24 +1210,7 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">DSA:</span>
                         <span className={`font-medium ${request.dsaProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
-                          {request.dsaProvided ? 'Excluded (already provided)' : (() => {
-                            const dsaAmount = (request.dsaAmount || 0);
-                            if (dsaAmount > 0) return dsaAmount.toLocaleString();
-                            // Fallback calculation
-                            if (!request.startDate || !request.endDate) return '0';
-                            const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
-                                        request.travelCategory === 'Within Kenya' ? 2000 :
-                                        request.travelCategory === 'East Africa' ? 40 :
-                                        request.travelCategory === 'International' ? 50 : 0;
-                            // For Local Movement, it's per event
-                            if (request.travelCategory === 'Local Movement') {
-                              return rate.toLocaleString();
-                            }
-                            const start = new Date(request.startDate);
-                            const end = new Date(request.endDate);
-                            const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                            return ((diffDays + 1) * rate).toLocaleString();
-                          })()}
+                          {request.dsaProvided ? 'Excluded (already provided)' : `${(request.dsaAmount || 0).toLocaleString()} ${request.dsaCurrency || 'KES'}`}
                         </span>
                       </div>
                       {/* Accommodation - NOT for Local Movement */}
@@ -1269,116 +1218,31 @@ export default function TravelDetailPage() {
                         <div className="flex justify-between">
                           <span className="text-slate-600">Accommodation:</span>
                           <span className={`font-medium ${request.accommodationProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
-                            {request.accommodationProvided ? 'Excluded (already provided)' : (() => {
-                              const accommodationAmount = (request.accommodationAmount || 0);
-                              if (accommodationAmount > 0) return accommodationAmount.toLocaleString();
-                              // Fallback calculation
-                              if (!request.startDate || !request.endDate) return '0';
-                              const rate = 4000;
-                              const start = new Date(request.startDate);
-                              const end = new Date(request.endDate);
-                              const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                              return (nights * rate).toLocaleString();
-                            })()}
+                            {request.accommodationProvided ? 'Excluded (already provided)' : `${(request.accommodationAmount || 0).toLocaleString()} ${request.accommodationCurrency || 'KES'}`}
                           </span>
                         </div>
                       )}
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Transportation Cost:</span>
+                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
+                      </div>
                       {!isLocalMovement(request) && (
                         <div className="flex justify-between">
-                          <span className="text-slate-600">Estimated Transportation Cost:</span>
-                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
-                        </div>
-                      )}
-                      {isLocalMovement(request) && request.travelType === 'booking' && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">Estimated Transportation Cost:</span>
-                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {((request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0)).toLocaleString()}</span>
+                          <span className="text-slate-600">Other Costs:</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
                         </div>
                       )}
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
                           {(() => {
-                            // Calculate effective DSA (0 if provided)
-                            const effectiveDSA = request.dsaProvided ? 0 : (() => {
-                              const dsaAmount = (request.dsaAmount || 0);
-                              if (dsaAmount > 0) return dsaAmount;
-                              if (!request.startDate || !request.endDate) return 0;
-                              const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
-                                          request.travelCategory === 'Within Kenya' ? 2000 :
-                                          request.travelCategory === 'East Africa' ? 40 :
-                                          request.travelCategory === 'International' ? 50 : 0;
-                              // For Local Movement, it's per event
-                              if (isLocalMovement(request)) {
-                                return rate;
-                              }
-                              const start = new Date(request.startDate);
-                              const end = new Date(request.endDate);
-                              const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                              return (diffDays + 1) * rate;
-                            })();
-
-                            // Calculate effective accommodation (0 if provided) - NOT for Local Movement
-                            const effectiveAccommodation = isLocalMovement(request) ? 0 : (request.accommodationProvided ? 0 : (() => {
-                              const accommodationAmount = (request.accommodationAmount || 0);
-                              if (accommodationAmount > 0) return accommodationAmount;
-                              if (!request.startDate || !request.endDate) return 0;
-                              const rate = 4000;
-                              const start = new Date(request.startDate);
-                              const end = new Date(request.endDate);
-                              const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                              return nights * rate;
-                            })());
-
-                            let transportationValue;
-                            if (isLocalMovement(request)) {
-                              if (request.travelType === 'booking') {
-                                // For booking: estimatedCost is total, extract transportation
-                                transportationValue = (request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0);
-                              } else {
-                                // For reimbursement: use transportationCost directly, fallback to estimatedCost if missing
-                                transportationValue = request.transportationCost || request.estimatedCost || 0;
-                              }
-                            } else {
-                              // For official travel: use transportationCost for both booking and reimbursement
-                              transportationValue = request.transportationCost || 0;
-                            }
-
-                            // For official travel reimbursement, estimatedCost is other costs
-                            // For local movement, estimatedCost is the total (transportation + DSA)
-                            const otherCosts = isLocalMovement(request) ? 0 : (request.estimatedCost || 0);
-
-                            // Group amounts by currency
-                            const amountsByCurrency = {};
-
-                            // Add DSA
-                            if (effectiveDSA > 0) {
-                              const currency = request.dsaCurrency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveDSA;
-                            }
-
-                            // Add accommodation
-                            if (effectiveAccommodation > 0) {
-                              const currency = request.accommodationCurrency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveAccommodation;
-                            }
-
-                            // Add transportation
-                            if (transportationValue > 0) {
-                              const currency = request.currency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationValue;
-                            }
-
-                            // Add other costs
-                            if (otherCosts > 0) {
-                              const currency = request.currency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + otherCosts;
-                            }
-
-                            // Display totals by currency
-                            return Object.entries(amountsByCurrency)
-                              .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
-                              .join(' + ');
+                            // Simple calculation using saved values
+                            const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                            const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                            const transportation = request.transportationCost || 0;
+                            const other = request.estimatedCost || 0;
+                            const total = dsa + accommodation + transportation + other;
+                            return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                           })()}
                         </span>
                       </div>
@@ -1429,24 +1293,7 @@ export default function TravelDetailPage() {
                       <div className="flex justify-between">
                         <span className="text-slate-600">DSA:</span>
                         <span className={`font-medium ${request.dsaProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
-                          {request.dsaProvided ? 'Excluded (already provided)' : (() => {
-                            const dsaAmount = (request.dsaAmount || 0);
-                            if (dsaAmount > 0) return dsaAmount.toLocaleString();
-                            // Fallback calculation
-                            if (!request.startDate || !request.endDate) return '0';
-                            const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
-                                        request.travelCategory === 'Within Kenya' ? 2000 :
-                                        request.travelCategory === 'East Africa' ? 40 :
-                                        request.travelCategory === 'International' ? 50 : 0;
-                            // For Local Movement, it's per event
-                            if (request.travelCategory === 'Local Movement') {
-                              return rate.toLocaleString();
-                            }
-                            const start = new Date(request.startDate);
-                            const end = new Date(request.endDate);
-                            const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                            return ((diffDays + 1) * rate).toLocaleString();
-                          })()}
+                          {request.dsaProvided ? 'Excluded (already provided)' : `${(request.dsaAmount || 0).toLocaleString()} ${request.dsaCurrency || 'KES'}`}
                         </span>
                       </div>
                       {/* Accommodation - NOT for Local Movement */}
@@ -1454,17 +1301,7 @@ export default function TravelDetailPage() {
                         <div className="flex justify-between">
                           <span className="text-slate-600">Accommodation:</span>
                           <span className={`font-medium ${request.accommodationProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
-                            {request.accommodationProvided ? 'Excluded (already provided)' : (() => {
-                              const accommodationAmount = (request.accommodationAmount || 0);
-                              if (accommodationAmount > 0) return accommodationAmount.toLocaleString();
-                              // Fallback calculation
-                              if (!request.startDate || !request.endDate) return '0';
-                              const rate = 4000;
-                              const start = new Date(request.startDate);
-                              const end = new Date(request.endDate);
-                              const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                              return (nights * rate).toLocaleString();
-                            })()}
+                            {request.accommodationProvided ? 'Excluded (already provided)' : `${(request.accommodationAmount || 0).toLocaleString()} ${request.accommodationCurrency || 'KES'}`}
                           </span>
                         </div>
                       )}
@@ -1482,86 +1319,13 @@ export default function TravelDetailPage() {
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
                           {(() => {
-                            // Calculate effective DSA (0 if provided)
-                            const effectiveDSA = request.dsaProvided ? 0 : (() => {
-                              const dsaAmount = (request.dsaAmount || 0);
-                              if (dsaAmount > 0) return dsaAmount;
-                              if (!request.startDate || !request.endDate) return 0;
-                              const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
-                                          request.travelCategory === 'Within Kenya' ? 2000 :
-                                          request.travelCategory === 'East Africa' ? 40 :
-                                          request.travelCategory === 'International' ? 50 : 0;
-                              // For Local Movement, it's per event
-                              if (isLocalMovement(request)) {
-                                return rate;
-                              }
-                              const start = new Date(request.startDate);
-                              const end = new Date(request.endDate);
-                              const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                              return (diffDays + 1) * rate;
-                            })();
-
-                            // Calculate effective accommodation (0 if provided) - NOT for Local Movement
-                            const effectiveAccommodation = isLocalMovement(request) ? 0 : (request.accommodationProvided ? 0 : (() => {
-                              const accommodationAmount = (request.accommodationAmount || 0);
-                              if (accommodationAmount > 0) return accommodationAmount;
-                              if (!request.startDate || !request.endDate) return 0;
-                              const rate = 4000;
-                              const start = new Date(request.startDate);
-                              const end = new Date(request.endDate);
-                              const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                              return nights * rate;
-                            })());
-
-                            let transportationValue;
-                            if (isLocalMovement(request)) {
-                              if (request.travelType === 'booking') {
-                                // For booking: estimatedCost is total, extract transportation
-                                transportationValue = (request.transportationCost || 0) > 0 ? request.transportationCost : (request.estimatedCost || 0) - (request.dsaAmount || 0);
-                              } else {
-                                // For reimbursement: use transportationCost directly, fallback to estimatedCost if missing
-                                transportationValue = request.transportationCost || request.estimatedCost || 0;
-                              }
-                            } else {
-                              // For official travel: use transportationCost for both booking and reimbursement
-                              transportationValue = request.transportationCost || 0;
-                            }
-
-                            // For official travel reimbursement, estimatedCost is other costs
-                            // For local movement, estimatedCost is the total (transportation + DSA)
-                            const otherCosts = isLocalMovement(request) ? 0 : (request.estimatedCost || 0);
-
-                            // Group amounts by currency
-                            const amountsByCurrency = {};
-
-                            // Add DSA
-                            if (effectiveDSA > 0) {
-                              const currency = request.dsaCurrency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveDSA;
-                            }
-
-                            // Add accommodation
-                            if (effectiveAccommodation > 0) {
-                              const currency = request.accommodationCurrency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveAccommodation;
-                            }
-
-                            // Add transportation
-                            if (transportationValue > 0) {
-                              const currency = request.currency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationValue;
-                            }
-
-                            // Add other costs
-                            if (otherCosts > 0) {
-                              const currency = request.currency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + otherCosts;
-                            }
-
-                            // Display totals by currency
-                            return Object.entries(amountsByCurrency)
-                              .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
-                              .join(' + ');
+                            // Simple calculation using saved values
+                            const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                            const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                            const transportation = request.transportationCost || 0;
+                            const other = request.estimatedCost || 0;
+                            const total = dsa + accommodation + transportation + other;
+                            return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                           })()}
                         </span>
                       </div>

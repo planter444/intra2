@@ -21,12 +21,10 @@ const statusConfig = {
 
 // Helper function to determine if a request is local movement
 const isLocalMovement = (request) => {
-  // Only check travel_category - do not use accommodation as a fallback
-  // Official travel can have 0 accommodation if not using hotel
-  if (request.travelCategory === 'Local Movement' || request.travelCategory === 'local movement' || request.travelCategory === 'Local') {
-    return true;
-  }
-  return false;
+  // Check travel_category with case-insensitive comparison
+  if (!request || !request.travelCategory) return false;
+  const category = request.travelCategory.toLowerCase();
+  return category === 'local movement' || category === 'local';
 };
 
 const canDecideTravel = (user, request, employeeApprovers) => {
@@ -415,45 +413,20 @@ export default function TravelPage() {
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             {(() => {
-                              // Group amounts by currency
-                              const amountsByCurrency = {};
-
-                              // Add DSA
-                              const effectiveDSA = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                              if (effectiveDSA > 0) {
-                                const currency = request.dsaCurrency || 'KES';
-                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveDSA;
+                              // Use saved total from database - do not recalculate
+                              if (isLocalMovement(request)) {
+                                // For local movement, estimatedCost is the total (transportation + DSA)
+                                const total = request.estimatedCost || 0;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                              } else {
+                                // For official travel, calculate total from saved components
+                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                                const transportation = request.transportationCost || 0;
+                                const other = request.estimatedCost || 0;
+                                const total = dsa + accommodation + transportation + other;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                               }
-
-                              // Add accommodation (not for local movement)
-                              if (!isLocalMovement(request)) {
-                                const effectiveAccommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                                if (effectiveAccommodation > 0) {
-                                  const currency = request.accommodationCurrency || 'KES';
-                                  amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + effectiveAccommodation;
-                                }
-                              }
-
-                              // Add transportation
-                              const transportationValue = isLocalMovement(request)
-                                ? (request.transportationCost || 0)
-                                : (request.transportationCost || 0);
-                              if (transportationValue > 0) {
-                                const currency = request.currency || 'KES';
-                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationValue;
-                              }
-
-                              // Add estimated cost (other costs)
-                              const estimatedValue = request.estimatedCost || 0;
-                              if (estimatedValue > 0) {
-                                const currency = request.currency || 'KES';
-                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedValue;
-                              }
-
-                              // Display totals by currency
-                              return Object.entries(amountsByCurrency)
-                                .map(([currency, amount]) => `${amount.toLocaleString()} ${currency}`)
-                                .join(' + ');
                             })()}
                           </span>
                         ) : (
