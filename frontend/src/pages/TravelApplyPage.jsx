@@ -409,6 +409,12 @@ export default function TravelApplyPage() {
         selectedHotel: form.selectedHotel || null
       };
 
+      console.log('Submitting official travel booking with data:', {
+        travelType: requestData.travelType,
+        travelCategory: requestData.travelCategory,
+        travelTypeDetail: requestData.travelTypeDetail
+      });
+
       let request;
       
       if (form.travelType === 'booking' && form.supportingDocuments) {
@@ -430,6 +436,8 @@ export default function TravelApplyPage() {
         // Regular request without supporting document
         request = await createTravelRequest(requestData);
       }
+
+      console.log('Travel request created with status:', request.status, 'and category:', request.travelCategory);
 
       setSubmittedRequestId(request.id);
 

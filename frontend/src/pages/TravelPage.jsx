@@ -11,7 +11,7 @@ import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
   pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
-  pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: false },
+  pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: true },
   approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', highlight: false },
@@ -372,8 +372,11 @@ export default function TravelPage() {
             {filteredRequests.map((request) => {
               const config = statusConfig[request.status] || statusConfig.pending;
               const StatusIcon = config.icon;
-              // Only highlight pending requests for supervisors (not for staff's own requests)
-              const shouldHighlight = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
+              // Highlight pending requests for supervisors (not for staff's own requests)
+              // Highlight pending_ceo requests for CEO (not for staff's own requests)
+              const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
+              const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
+              const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO;
               return (
                 <div
                   key={request.id}
