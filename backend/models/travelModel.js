@@ -216,12 +216,20 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
       params.push(viewerId);
       clauses.push(`tr.user_id = $${params.length}`);
     }
+  } else if (role === 'ceo') {
+    // CEO only sees requests that have reached their stage (pending_ceo or beyond)
+    // CEO does NOT see pending requests (those are still with supervisors)
+    if (!status) {
+      // If no status filter specified, only show requests that are at CEO stage or beyond
+      clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
+    }
+    // If status is specified, use that filter (admin/ceo can filter by any status)
   } else if (!oversightRoles.includes(role) && !canViewAll && !hasAutomaticViewAll) {
     // For any other role not in oversight and without view-all access, only show own requests
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
   }
-  // For oversight roles (admin, ceo, finance, it_officer), membership officer, administrator, and users with view-all access, no user filter - they see all
+  // For oversight roles (admin, finance, it_officer), membership officer, administrator, and users with view-all access, no user filter - they see all
 
   if (userId && (oversightRoles.includes(role) || canViewAll || hasAutomaticViewAll)) {
     params.push(userId);
