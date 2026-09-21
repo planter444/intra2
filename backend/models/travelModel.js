@@ -72,6 +72,16 @@ const generateReferenceNumber = async () => {
 const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent }) => {
   const referenceNumber = await generateReferenceNumber();
 
+  // Helper to normalize numeric values
+  const toNullableNumber = (value) => {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'string' && ['null', 'undefined', ''].includes(value.trim().toLowerCase())) {
+      return null;
+    }
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  };
+
   let result;
   try {
     result = await query(
@@ -102,16 +112,43 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
           transportation_cost,
           full_day_event,
           reference_number,
-          status
+          status,
+          settled
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, 'pending')
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, 'pending', false)
         RETURNING id
       `,
-      [userId, travelType || 'booking', startDate, endDate, origin, destination, reason, estimatedCost || null, currency || 'KES', supportingDocumentId || null, designation || null, travelCategory || null, travelTypeDetail || null, projectProgramme || null, dsaRate || null, dsaCurrency || 'KES', dsaAmount || null, dsaProvided || false, accommodationRate || null, accommodationCurrency || 'KES', accommodationAmount || null, accommodationProvided || false, transportationCost || null, fullDayEvent || false, referenceNumber]
+      [
+        userId,
+        travelType || 'booking',
+        startDate,
+        endDate,
+        origin,
+        destination,
+        reason,
+        toNullableNumber(estimatedCost),
+        currency || 'KES',
+        supportingDocumentId || null,
+        designation || null,
+        travelCategory || null,
+        travelTypeDetail || null,
+        projectProgramme || null,
+        toNullableNumber(dsaRate),
+        dsaCurrency || 'KES',
+        toNullableNumber(dsaAmount),
+        dsaProvided || false,
+        toNullableNumber(accommodationRate),
+        accommodationCurrency || 'KES',
+        toNullableNumber(accommodationAmount),
+        accommodationProvided || false,
+        toNullableNumber(transportationCost),
+        fullDayEvent || false,
+        referenceNumber
+      ]
     );
   } catch (error) {
     console.error('Travel request insert error:', error.message);
-    // Don't use fallback - throw the actual error so it can be fixed properly
+    console.error('Error details:', error);
     throw error;
   }
 

@@ -26,16 +26,14 @@ const canAccessTravelRequest = async (currentUser, request) => {
     return true;
   }
 
-  // Check if user is a designated approver for this employee
-  if (currentUser.role === 'supervisor') {
-    try {
-      const approverIds = await travelModel.getApproverForEmployee(request.userId);
-      if (approverIds && approverIds.includes(currentUser.id)) {
-        return true;
-      }
-    } catch (error) {
-      console.warn('Failed to check approver access:', error.message);
+  // Check if user is a designated approver for this employee (regardless of role)
+  try {
+    const approverIds = await travelModel.getApproverForEmployee(request.userId);
+    if (approverIds && approverIds.includes(currentUser.id)) {
+      return true;
     }
+  } catch (error) {
+    console.warn('Failed to check approver access:', error.message);
   }
 
   return false;
@@ -114,6 +112,9 @@ const getTravelRequest = async (req, res, next) => {
 
 const createTravelRequest = async (req, res, next) => {
   try {
+    console.log('createTravelRequest - Received body:', Object.keys(req.body));
+    console.log('createTravelRequest - File:', req.file ? { name: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype } : 'No file');
+
     const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent } = req.body;
 
     if (!startDate || !endDate || !origin || !destination || !reason) {
@@ -133,11 +134,13 @@ const createTravelRequest = async (req, res, next) => {
     // Handle supporting document upload for both booking and reimbursement
     if (req.file) {
       try {
+        console.log('Attempting to save document...');
         const { storedName, targetPath } = await saveDocument({
           userId: String(req.user.id),
           folderType: 'travel',
           file: req.file
         });
+        console.log('Document saved successfully:', { storedName, targetPath });
 
         supportingDocumentPath = targetPath;
 
@@ -152,12 +155,14 @@ const createTravelRequest = async (req, res, next) => {
             [req.user.id, req.user.id, req.file.originalname, storedName, req.file.mimetype, req.file.size, targetPath]
           );
           supportingDocumentId = documentResult.rows[0].id;
+          console.log('Document record created with ID:', supportingDocumentId);
         } catch (docError) {
           console.warn('Failed to create document record (will use direct path):', docError.message);
           // Continue without document record - we'll use the direct path
         }
       } catch (uploadError) {
         console.error('Failed to upload supporting document:', uploadError.message);
+        console.error('Upload error details:', uploadError);
         // Continue without the document - it's optional
       }
     }
@@ -165,6 +170,7 @@ const createTravelRequest = async (req, res, next) => {
     // Create travel request with new fields
     let request;
     try {
+      console.log('Creating travel request in database...');
       request = await travelModel.createTravelRequest({
         userId: req.user.id,
         travelType: travelType || 'booking',
@@ -191,25 +197,11 @@ const createTravelRequest = async (req, res, next) => {
         transportationCost: transportationCost || null,
         fullDayEvent: fullDayEvent || false
       });
+      console.log('Travel request created successfully:', request.id);
     } catch (dbError) {
-      // If the error is about new columns not existing, retry without them
-      if (dbError.message && (dbError.message.includes('designation') || dbError.message.includes('travel_category'))) {
-        console.warn('New travel columns not found, creating request without them');
-        request = await travelModel.createTravelRequest({
-          userId: req.user.id,
-          travelType: travelType || 'booking',
-          startDate,
-          endDate,
-          origin,
-          destination,
-          reason,
-          estimatedCost: estimatedCost || null,
-          currency: currency || 'KES',
-          supportingDocumentId: null
-        });
-      } else {
-        throw dbError;
-      }
+      console.error('Travel request creation failed:', dbError.message);
+      next(dbError);
+      return;
     }
 
     // Include receipts in the response

@@ -10,13 +10,13 @@ import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTr
 import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
-  pending: { label: 'Pending', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
-  pending_ceo: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: false },
-  approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
-  rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
-  cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', highlight: false },
-  in_progress: { label: 'In Progress', icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: false },
-  completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false }
+  pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
+  pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+  approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
+  rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
+  cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200' },
+  in_progress: { label: 'In Progress', icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+  completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' }
 };
 
 // Helper function to determine if a request is local movement
@@ -343,7 +343,7 @@ export default function TravelPage() {
               <option value="status">Sort by Status</option>
               <option value="type">Sort by Type</option>
               <option value="pending">Filter: Pending</option>
-              <option value="pending_ceo">Filter: Pending Supervisor Approval</option>
+              <option value="pending_ceo">Filter: Pending CEO Approval</option>
               <option value="approved">Filter: Approved</option>
               <option value="settled">Filter: Settled</option>
               <option value="not_settled">Filter: Not Settled</option>
@@ -375,9 +375,7 @@ export default function TravelPage() {
               return (
                 <div
                   key={request.id}
-                  className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
-                    config.highlight && request.status === 'pending' ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
-                  }`}
+                  className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md"
                   onClick={() => navigate(`/travel/${request.id}`)}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
