@@ -96,7 +96,7 @@ export default function LocalMovementReimbursementPage() {
         title: 'Local movement reimbursement submitted',
         description: 'Your local movement reimbursement request has been submitted successfully.'
       });
-      setTimeout(() => navigate('/travel/local'), 2000);
+      setTimeout(() => navigate('/travel'), 2000);
     } catch (error) {
       setNotice({
         open: true,

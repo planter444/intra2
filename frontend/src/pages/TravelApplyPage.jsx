@@ -467,7 +467,7 @@ export default function TravelApplyPage() {
         description: 'Your travel request has been submitted successfully.'
       });
       setForm(initialForm);
-      setTimeout(() => navigate('/travel/official'), 2000);
+      setTimeout(() => navigate('/travel'), 2000);
     } catch (error) {
       setNotice({
         open: true,

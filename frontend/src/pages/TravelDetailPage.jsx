@@ -1132,21 +1132,25 @@ export default function TravelDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
-                        <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {((request.dsaAmount || 0) > 0 ? request.dsaAmount : (() => {
+                        <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {(() => {
+                          // Use saved dsaAmount if available, otherwise calculate
+                          const savedAmount = request.dsaAmount || 0;
+                          if (savedAmount > 0) return savedAmount.toLocaleString();
+                          // Fallback calculation
                           const rate = isLocalMovement(request) ? (request.fullDayEvent ? 2000 : 0) :
                                       request.travelCategory === 'Within Kenya' ? 2000 :
                                       request.travelCategory === 'East Africa' ? 40 :
                                       request.travelCategory === 'International' ? 50 : 0;
                           // For Local Movement, it's per event (1 day), not calculated from dates
                           if (isLocalMovement(request)) {
-                            return rate;
+                            return rate.toLocaleString();
                           }
-                          if (!request.startDate || !request.endDate) return 0;
+                          if (!request.startDate || !request.endDate) return '0';
                           const start = new Date(request.startDate);
                           const end = new Date(request.endDate);
                           const diffDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                          return (diffDays + 1) * rate;
-                        })()).toLocaleString()}</span>
+                          return ((diffDays + 1) * rate).toLocaleString();
+                        })()}</span>
                       </div>
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-slate-200 pt-2">
@@ -1272,10 +1276,10 @@ export default function TravelDetailPage() {
                           </span>
                         </div>
                       )}
-                      {request.estimatedCost && !isLocalMovement(request) && (
+                      {!isLocalMovement(request) && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Estimated Transportation Cost:</span>
-                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {request.estimatedCost.toLocaleString()}</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
                         </div>
                       )}
                       {isLocalMovement(request) && request.travelType === 'booking' && (
@@ -1329,12 +1333,13 @@ export default function TravelDetailPage() {
                                 transportationValue = request.transportationCost || request.estimatedCost || 0;
                               }
                             } else {
-                              // For official travel: use transportationCost for reimbursement, estimatedCost for booking
-                              transportationValue = request.travelType === 'reimbursement' ? (request.transportationCost || 0) : (request.estimatedCost || 0);
+                              // For official travel: use transportationCost for both booking and reimbursement
+                              transportationValue = request.transportationCost || 0;
                             }
 
+                            // For official travel reimbursement, estimatedCost is other costs
                             // For local movement, estimatedCost is the total (transportation + DSA)
-                            const otherCosts = isLocalMovement(request) ? 0 : (request.travelType === 'reimbursement' ? (request.estimatedCost || 0) : 0);
+                            const otherCosts = isLocalMovement(request) ? 0 : (request.estimatedCost || 0);
 
                             // Group amounts by currency
                             const amountsByCurrency = {};
@@ -1458,9 +1463,9 @@ export default function TravelDetailPage() {
                       )}
                       <div className="flex justify-between">
                         <span className="text-slate-600">Transportation Cost Incurred:</span>
-                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(isLocalMovement(request) ? (request.transportationCost || 0) : (request.transportationCost || 0)).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
                       </div>
-                      {!isLocalMovement(request) && request.estimatedCost && (
+                      {!isLocalMovement(request) && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Other Costs:</span>
                           <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
@@ -1511,12 +1516,13 @@ export default function TravelDetailPage() {
                                 transportationValue = request.transportationCost || request.estimatedCost || 0;
                               }
                             } else {
-                              // For official travel: use transportationCost for reimbursement, estimatedCost for booking
-                              transportationValue = request.travelType === 'reimbursement' ? (request.transportationCost || 0) : (request.estimatedCost || 0);
+                              // For official travel: use transportationCost for both booking and reimbursement
+                              transportationValue = request.transportationCost || 0;
                             }
 
+                            // For official travel reimbursement, estimatedCost is other costs
                             // For local movement, estimatedCost is the total (transportation + DSA)
-                            const otherCosts = isLocalMovement(request) ? 0 : (request.travelType === 'reimbursement' ? (request.estimatedCost || 0) : 0);
+                            const otherCosts = isLocalMovement(request) ? 0 : (request.estimatedCost || 0);
 
                             // Group amounts by currency
                             const amountsByCurrency = {};
