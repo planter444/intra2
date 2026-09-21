@@ -534,6 +534,76 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
   });
 };
 
+const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelRequest, supervisorName, applicantName }) => {
+  const requestUrl = buildTravelRequestUrl(travelRequest.id);
+
+  // Format dates without time
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const origin = travelRequest.origin || 'Not specified';
+  const destination = travelRequest.destination || 'Not specified';
+  const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
+  const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+
+  await sendBrevoEmail({
+    to: [
+      {
+        email: toEmail,
+        name: toName || toEmail
+      }
+    ],
+    subject: `Travel request for ${applicantName} awaiting CEO approval`,
+    htmlContent: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #2563eb, #3b82f6); padding: 24px; border-radius: 12px 12px 0 0; color: #ffffff;">
+          <h1 style="margin: 0; font-size: 24px; line-height: 1.3;">Travel Request Awaiting CEO Approval</h1>
+          <p style="margin: 8px 0 0; opacity: 0.9;">KEREA HRMS Travel Management</p>
+        </div>
+        <div style="background: #ffffff; padding: 24px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <p style="margin: 0 0 20px; font-size: 16px; color: #1e293b;">
+            Hello <strong>${toName || 'there'}</strong>, travel request for <strong>${applicantName}</strong> has been approved by supervisor <strong>${supervisorName}</strong> and is now awaiting your approval.
+          </p>
+
+          <div style="background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+            <h3 style="margin: 0 0 12px; font-size: 14px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em;">Travel Details</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px; width: 140px;">Staff Member:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${applicantName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Origin:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${origin}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Destination:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${destination}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Start Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${startDate}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
+              </tr>
+            </table>
+          </div>
+
+          <p style="margin: 0; color: #64748b; font-size: 14px;">Please review and approve or reject this travel request.</p>
+        </div>
+        <div style="text-align: center; margin-top: 20px; color: #94a3b8; font-size: 12px;">
+          This is an automated email from KEREA HRMS
+        </div>
+      </div>
+    `
+  });
+};
+
 const sendTravelCEOApprovedToRecipientsEmail = async ({ bcc, travelRequest, staffName, ceoName }) => {
   // Format dates without time
   const formatDate = (dateStr) => {
@@ -1014,6 +1084,7 @@ module.exports = {
   sendTravelRequestSubmittedEmail,
   sendTravelDecisionEmail,
   sendTravelSupervisorApprovedEmail,
+  sendTravelSupervisorApprovedToCEOEmail,
   sendTravelCEOApprovedEmail,
   sendTravelCEOApprovedToRecipientsEmail,
   sendPayslipGeneratedEmail,

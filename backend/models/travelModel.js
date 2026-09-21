@@ -350,21 +350,70 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
 };
 
 const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReason }) => {
-  await query(
-    `
-      UPDATE travel_requests
-      SET
-        status = COALESCE($2, status),
-        approved_by = COALESCE($3, approved_by),
-        approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
-        rejection_reason = COALESCE($4, rejection_reason),
-        updated_at = NOW()
-      WHERE id = $1
-    `,
-    [id, status, approvedBy || null, rejectionReason || null]
-  );
+  try {
+    const result = await query(
+      `
+        UPDATE travel_requests
+        SET
+          status = COALESCE($2, status),
+          approved_by = COALESCE($3, approvedBy),
+          approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
+          rejection_reason = COALESCE($4, rejection_reason),
+          updated_at = NOW()
+        WHERE id = $1
+      `,
+      [id, status, approvedBy || null, rejectionReason || null]
+    );
 
-  return findTravelRequestById(id);
+    return findTravelRequestById(id);
+  } catch (error) {
+    console.error('Travel request status update error:', error.message);
+    
+    // If constraint error due to pending_ceo not being in the check constraint, try to update the constraint
+    if (error.message && error.message.includes('check constraint')) {
+      console.warn('Constraint error detected, attempting to update constraint');
+      try {
+        await query(
+          `
+            ALTER TABLE travel_requests
+            DROP CONSTRAINT IF EXISTS travel_requests_status_check
+          `
+        );
+        
+        await query(
+          `
+            ALTER TABLE travel_requests
+            ADD CONSTRAINT travel_requests_status_check
+            CHECK (status IN ('pending', 'pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed'))
+          `
+        );
+        
+        console.log('Constraint updated successfully, retrying status update');
+        
+        // Retry the status update
+        const result = await query(
+          `
+            UPDATE travel_requests
+            SET
+              status = COALESCE($2, status),
+              approved_by = COALESCE($3, approved_by),
+              approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
+              rejection_reason = COALESCE($4, rejection_reason),
+              updated_at = NOW()
+            WHERE id = $1
+          `,
+          [id, status, approvedBy || null, rejectionReason || null]
+        );
+
+        return findTravelRequestById(id);
+      } catch (constraintError) {
+        console.error('Failed to update constraint:', constraintError.message);
+        throw error; // Throw original error if constraint update fails
+      }
+    } else {
+      throw error;
+    }
+  }
 };
 
 const updateTravelRequestDetails = async ({ id, startDate, endDate, origin, destination, reason, estimatedCost, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent, supportingDocumentId }) => {

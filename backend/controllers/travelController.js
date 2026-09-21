@@ -3,7 +3,7 @@ const auditModel = require('../models/auditModel');
 const travelModel = require('../models/travelModel');
 const { query } = require('../config/db');
 const { logAction } = require('../services/auditService');
-const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, sendTravelSupervisorApprovedEmail, sendTravelCEOApprovedEmail, sendTravelCEOApprovedToRecipientsEmail, buildTravelRequestUrl } = require('../services/mailService');
+const { sendTravelRequestSubmittedEmail, sendTravelReceiptNotificationEmail, sendTravelDecisionEmail, sendTravelSupervisorApprovedEmail, sendTravelSupervisorApprovedToCEOEmail, sendTravelCEOApprovedEmail, sendTravelCEOApprovedToRecipientsEmail, buildTravelRequestUrl } = require('../services/mailService');
 const { deleteStoredDocument, getRemoteDocumentUrl, isRemoteStoragePath, resolveDocumentPath, saveDocument } = require('../services/documentService');
 
 const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
@@ -459,13 +459,13 @@ const decideTravelRequest = async (req, res, next) => {
           if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
             // Filter out the CEO from notification recipients
             const recipientIdsWithoutCEO = notificationSettings.recipientIds.filter(id => String(id) !== String(req.user.id));
-            
+
             if (recipientIdsWithoutCEO.length > 0) {
               const notificationResults = await query(
                 `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
                 [recipientIdsWithoutCEO]
               );
-              
+
               const notificationRecipients = notificationResults.rows.map(r => ({
                 id: r.id,
                 fullName: `${r.first_name} ${r.last_name}`,
@@ -481,7 +481,25 @@ const decideTravelRequest = async (req, res, next) => {
             }
           }
         } else {
-          // Supervisor approved: Send to applicant
+          // Supervisor approved: Send to CEO only (not to notification recipients)
+          const ceoResult = await query(
+            `SELECT id, first_name, last_name, email FROM users WHERE role = 'ceo' LIMIT 1`
+          );
+
+          if (ceoResult.rows.length > 0) {
+            const ceo = ceoResult.rows[0];
+            const ceoName = `${ceo.first_name} ${ceo.last_name}`;
+
+            await sendTravelSupervisorApprovedToCEOEmail({
+              toEmail: ceo.email,
+              toName: ceoName,
+              travelRequest: updatedRequest,
+              supervisorName: req.user.fullName,
+              applicantName: applicantName
+            });
+          }
+
+          // Also notify the applicant that their request is awaiting CEO approval
           await sendTravelSupervisorApprovedEmail({
             toEmail: applicant.email,
             toName: applicantName,

@@ -386,8 +386,8 @@ export default function DocumentsPage() {
         open: true,
         loading: true,
         objectUrl: '',
-        fileName: document.fileName,
-        mimeType: document.mimeType,
+        fileName: document.fileName || document.file_name,
+        mimeType: document.mimeType || document.mime_type,
         documentId: document.id,
         error: ''
       };
@@ -400,8 +400,8 @@ export default function DocumentsPage() {
         open: true,
         loading: false,
         objectUrl,
-        fileName: document.fileName,
-        mimeType: blob.type || document.mimeType,
+        fileName: document.fileName || document.file_name,
+        mimeType: blob.type || document.mimeType || document.mime_type,
         documentId: document.id,
         error: ''
       });
@@ -410,12 +410,20 @@ export default function DocumentsPage() {
         open: true,
         loading: false,
         objectUrl: '',
-        fileName: document.fileName,
-        mimeType: document.mimeType,
+        fileName: document.fileName || document.file_name,
+        mimeType: document.mimeType || document.mime_type,
         documentId: document.id,
         error: error.message || 'Unable to preview this document right now.'
       });
     }
+  };
+
+  const handlePreviewRow = (row) => {
+    handlePreview({
+      id: row.id,
+      fileName: row.file_name,
+      mimeType: row.mime_type
+    });
   };
 
   const handleDownload = async (documentId) => {
@@ -584,7 +592,7 @@ export default function DocumentsPage() {
                       <div className="flex flex-wrap gap-2">
                         <button type="button" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(event) => {
                           event.stopPropagation();
-                          handlePreview(row);
+                          handlePreviewRow(row);
                         }}>
                           Preview
                         </button>
@@ -631,7 +639,7 @@ export default function DocumentsPage() {
                             { key: 'createdAt', header: 'Uploaded', render: (row) => new Date(row.createdAt).toLocaleDateString() },
                             { key: 'actions', header: 'Actions', render: (row) => (
                               <div className="flex flex-wrap gap-2">
-                                <button type="button" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => { e.stopPropagation(); handlePreview(row); }}>Preview</button>
+                                <button type="button" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => { e.stopPropagation(); handlePreviewRow(row); }}>Preview</button>
                                 <button type="button" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700" onClick={(e) => { e.stopPropagation(); handleDownload(row.id); }}>Download</button>
                               </div>
                             ) }
