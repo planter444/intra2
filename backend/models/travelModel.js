@@ -186,16 +186,36 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
       clauses.push(`tr.user_id = $${params.length}`);
     }
   } else if (role === 'supervisor') {
-    params.push(viewerId);
-    clauses.push(`(
-      tr.user_id = $${params.length}
-      OR tr.user_id IN (
-        SELECT id
-        FROM users
-        WHERE supervisor_id = $${params.length}
-          AND is_deleted = FALSE
-      )
-    )`);
+    // Supervisors see their own requests AND requests from employees they are designated approvers for
+    try {
+      const employeeRouting = await query(
+        `
+          SELECT DISTINCT employee_id
+          FROM travel_employee_routing
+          WHERE approver_id = $1
+        `,
+        [viewerId]
+      );
+      
+      const employeeIds = employeeRouting.rows.map(row => row.employee_id);
+      
+      if (employeeIds.length > 0) {
+        params.push(viewerId);
+        clauses.push(`(
+          tr.user_id = $${params.length}
+          OR tr.user_id = ANY($${params.length + 1})
+        )`);
+        params.push(employeeIds);
+      } else {
+        // If supervisor has no employees routed to them, only show their own requests
+        params.push(viewerId);
+        clauses.push(`tr.user_id = $${params.length}`);
+      }
+    } catch (error) {
+      // Fallback: only show own requests if routing query fails
+      params.push(viewerId);
+      clauses.push(`tr.user_id = $${params.length}`);
+    }
   } else if (!oversightRoles.includes(role) && !canViewAll && !hasAutomaticViewAll) {
     // For any other role not in oversight and without view-all access, only show own requests
     params.push(viewerId);

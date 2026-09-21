@@ -22,7 +22,7 @@ import {
 
 const statusConfig = {
   pending: { label: 'Pending', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
-  pending_ceo: { label: 'Pending CEO Approval', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
+  pending_ceo: { label: 'Pending Supervisor Approval', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
   approved: { label: 'Approved', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },
   cancelled: { label: 'Cancelled', color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200' },
@@ -66,6 +66,7 @@ export default function TravelDetailPage() {
   const [cancelModal, setCancelModal] = useState({ open: false });
   const [approverForEmployee, setApproverForEmployee] = useState(null);
   const [supportingDocModal, setSupportingDocModal] = useState({ open: false, file: null });
+  const [decisionModal, setDecisionModal] = useState({ open: false, decision: '', comment: '' });
 
   // Calculate accommodation amount
   const calculateAccommodationAmount = (startDate, endDate) => {
@@ -342,6 +343,7 @@ export default function TravelDetailPage() {
         title: `Travel request ${decision}d`,
         description: `The travel request has been ${decision}d successfully.`
       });
+      setDecisionModal({ open: false, decision: '', comment: '' });
       loadRequest();
     } catch (error) {
       setNotice({
@@ -620,8 +622,8 @@ export default function TravelDetailPage() {
   // Normal staff can only edit pending/rejected/pending_ceo requests; admin can edit any request
   const canEdit = (String(request.userId) === String(user.id) && ['pending', 'rejected', 'pending_ceo'].includes(request.status) && !request.settled) || user.role === 'admin';
   const canCancel = String(request.userId) === String(user.id) && ['pending', 'pending_ceo'].includes(request.status) && !request.settled;
-  // CEO can approve any request, otherwise check employee-specific routing for approval
-  const canDecide = (user.role === 'ceo' || (approverForEmployee && String(approverForEmployee) === String(user.id))) && ['pending', 'pending_ceo', 'rejected'].includes(request.status);
+  // CEO can approve when status is pending_ceo, supervisor can approve when status is pending
+  const canDecide = (user.role === 'ceo' && request.status === 'pending_ceo') || (approverForEmployee && String(approverForEmployee) === String(user.id) && request.status === 'pending') || (user.role === 'ceo' && request.status === 'pending');
   // Only admin can delete requests
   const canDelete = user.role === 'admin';
   const canUploadReceipt = String(request.userId) === String(user.id) && ['pending', 'approved'].includes(request.status);
@@ -1590,10 +1592,10 @@ export default function TravelDetailPage() {
             )}
             {canDecide && (
               <div className="flex w-full sm:w-auto gap-3">
-                <button type="button" className="flex-1 sm:flex-none rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700" onClick={() => handleDecision('approve', '')}>
+                <button type="button" className="flex-1 sm:flex-none rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700" onClick={() => setDecisionModal({ open: true, decision: 'approve', comment: '' })}>
                   Approve
                 </button>
-                <button type="button" className="flex-1 sm:flex-none rounded-2xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700" onClick={() => handleDecision('reject', '')}>
+                <button type="button" className="flex-1 sm:flex-none rounded-2xl bg-rose-600 px-4 py-2 text-sm font-medium text-white hover:bg-rose-700" onClick={() => setDecisionModal({ open: true, decision: 'reject', comment: '' })}>
                   Reject
                 </button>
               </div>
@@ -1797,6 +1799,38 @@ export default function TravelDetailPage() {
           </button>
           <button type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white" onClick={handleUploadReceipt}>
             Upload Receipt
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={decisionModal.open}
+        title={`${decisionModal.decision === 'approve' ? 'Approve' : 'Reject'} Travel Request`}
+        description={`Please ${decisionModal.decision === 'approve' ? 'approve' : 'reject'} this travel request. You may add an optional comment.`}
+        onClose={() => setDecisionModal({ open: false, decision: '', comment: '' })}
+      >
+        <div className="mt-4 space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Comment (optional)</label>
+            <textarea 
+              rows="3" 
+              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none" 
+              placeholder={decisionModal.decision === 'approve' ? 'Add an optional approval comment...' : 'Add an optional rejection reason...'}
+              value={decisionModal.comment}
+              onChange={(e) => setDecisionModal({ ...decisionModal, comment: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700" onClick={() => setDecisionModal({ open: false, decision: '', comment: '' })}>
+            Cancel
+          </button>
+          <button 
+            type="button" 
+            className={`rounded-2xl px-5 py-3 text-sm font-semibold text-white ${decisionModal.decision === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`} 
+            onClick={() => handleDecision(decisionModal.decision, decisionModal.comment)}
+          >
+            {decisionModal.decision === 'approve' ? 'Approve' : 'Reject'}
           </button>
         </div>
       </Modal>
