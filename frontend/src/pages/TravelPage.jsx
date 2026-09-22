@@ -441,12 +441,59 @@ export default function TravelPage() {
                                   }
                                 </span>
                               </div>
-                              <h3 className="mt-2 text-sm font-medium text-slate-900 truncate">
+                              <h3 className="mt-2 text-base sm:text-lg font-semibold text-slate-900 truncate">
                                 {request.origin} → {request.destination}
                               </h3>
-                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                <span>{formatDateOnly(request.startDate)}</span>
-                                {request.endDate && <span>→ {formatDateOnly(request.endDate)}</span>}
+                              <div className="mt-2 flex flex-wrap gap-3 text-xs sm:text-sm text-slate-600">
+                                <span className="flex items-center gap-1.5">
+                                  <Calendar size={10} className="sm:size-10" />
+                                  {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
+                                </span>
+                                {request.travelType === 'reimbursement' ? (
+                                  <span className="flex items-center gap-1.5">
+                                    <DollarSign size={10} className="sm:size-10" />
+                                    {(() => {
+                                      // Calculate total based on request type
+                                      if (isLocalMovement(request)) {
+                                        // For local movement: total = DSA + transportationCost
+                                        const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                        const transportation = request.transportationCost || 0;
+                                        const total = dsa + transportation;
+                                        return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                                      } else {
+                                        // For official travel: total = DSA + accommodation + transportation + other costs
+                                        const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                        const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                                        const transportation = request.transportationCost || 0;
+                                        const other = request.estimatedCost || 0;
+                                        const total = dsa + accommodation + transportation + other;
+                                        return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                                      }
+                                    })()}
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1.5">
+                                    <DollarSign size={10} className="sm:size-10" />
+                                    {request.currency || 'KES'} {(() => {
+                                      // Calculate total based on request type
+                                      if (isLocalMovement(request)) {
+                                        // For local movement: total = DSA + transportationCost
+                                        const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                        const transportation = request.transportationCost || 0;
+                                        const total = dsa + transportation;
+                                        return total.toLocaleString();
+                                      } else {
+                                        // For official travel: total = DSA + accommodation + transportation + other costs
+                                        const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                        const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                                        const transportation = request.transportationCost || 0;
+                                        const other = request.estimatedCost || 0;
+                                        const total = dsa + accommodation + transportation + other;
+                                        return total.toLocaleString();
+                                      }
+                                    })()}
+                                  </span>
+                                )}
                               </div>
                               {request.reason && (
                                 <p className="mt-2 line-clamp-2 text-xs sm:text-sm text-slate-500">{request.reason}</p>
