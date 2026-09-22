@@ -7,7 +7,7 @@ ALTER TABLE travel_requests
 ADD COLUMN IF NOT EXISTS designation VARCHAR(50) CHECK (designation IN ('Field Officer', 'Intern', 'Secretariat', 'Consultant'));
 
 ALTER TABLE travel_requests
-ADD COLUMN IF NOT EXISTS travel_category VARCHAR(30) CHECK (travel_category IN ('Within Kenya', 'East Africa', 'International'));
+ADD COLUMN IF NOT EXISTS travel_category VARCHAR(30) CHECK (travel_category IN ('Within Kenya', 'East Africa', 'International', 'Local Movement'));
 
 ALTER TABLE travel_requests
 ADD COLUMN IF NOT EXISTS travel_type_detail VARCHAR(50) CHECK (travel_type_detail IN ('Official Overnight Travel', 'Official Day Travel'));
