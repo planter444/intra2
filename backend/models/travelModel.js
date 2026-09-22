@@ -370,12 +370,32 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
         );
 
         if (ceoRouting.rows.length > 0) {
-          const employeeIds = ceoRouting.rows.map(r => r.employee_id);
-          params.push(employeeIds);
-          clauses.push(`(
-            tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')
-            OR (tr.status = 'pending' AND tr.user_id = ANY($${params.length}))
-          )`);
+          // Get employees where CEO is the FIRST approver (not just any approver)
+          const firstApproverEmployees = await query(
+            `
+              SELECT DISTINCT ter.employee_id
+              FROM travel_employee_routing ter
+              WHERE ter.approver_id = $1
+                AND ter.id = (
+                  SELECT MIN(ter2.id)
+                  FROM travel_employee_routing ter2
+                  WHERE ter2.employee_id = ter.employee_id
+                )
+            `,
+            [viewerId]
+          );
+
+          if (firstApproverEmployees.rows.length > 0) {
+            const employeeIds = firstApproverEmployees.rows.map(r => r.employee_id);
+            params.push(employeeIds);
+            clauses.push(`(
+              tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')
+              OR (tr.status = 'pending' AND tr.user_id = ANY($${params.length}))
+            )`);
+          } else {
+            // If CEO is not the first approver for anyone, only show requests at CEO stage
+            clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
+          }
         } else {
           // If CEO has no employees routed to them, only show requests at CEO stage
           clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
@@ -1306,19 +1326,24 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
 
   if (userRole === 'ceo') {
-    // CEO counts pending_ceo requests AND pending requests where CEO is the approver in routing
+    // CEO counts pending_ceo requests AND pending requests where CEO is the FIRST approver in routing
     try {
-      const ceoRouting = await query(
+      const firstApproverEmployees = await query(
         `
-          SELECT DISTINCT employee_id
-          FROM travel_employee_routing
-          WHERE approver_id = $1
+          SELECT DISTINCT ter.employee_id
+          FROM travel_employee_routing ter
+          WHERE ter.approver_id = $1
+            AND ter.id = (
+              SELECT MIN(ter2.id)
+              FROM travel_employee_routing ter2
+              WHERE ter2.employee_id = ter.employee_id
+            )
         `,
         [userId]
       );
 
-      if (ceoRouting.rows.length > 0) {
-        const employeeIds = ceoRouting.rows.map(r => r.employee_id);
+      if (firstApproverEmployees.rows.length > 0) {
+        const employeeIds = firstApproverEmployees.rows.map(r => r.employee_id);
         result = await query(
           `
             SELECT COUNT(*) as count
@@ -1334,7 +1359,7 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
           [userId, employeeIds]
         );
       } else {
-        // If CEO has no employees routed to them, only count pending_ceo
+        // If CEO is not the first approver for anyone, only count pending_ceo
         result = await query(
           `
             SELECT COUNT(*) as count
