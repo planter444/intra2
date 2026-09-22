@@ -114,6 +114,7 @@ const createTravelRequest = async (req, res, next) => {
   try {
     console.log('createTravelRequest - Received body:', Object.keys(req.body));
     console.log('createTravelRequest - File:', req.file ? { name: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype } : 'No file');
+    console.log('createTravelRequest - travelCategory:', req.body.travelCategory);
 
     const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent } = req.body;
 

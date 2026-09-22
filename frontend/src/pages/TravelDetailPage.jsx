@@ -99,13 +99,6 @@ export default function TravelDetailPage() {
     // Check travel_category with case-insensitive comparison
     if (!request.travelCategory) return false;
     const category = request.travelCategory.toLowerCase();
-    
-    // Temporary fix for specific request IDs until database is updated
-    // TODO: Remove this after updating the database
-    if (request.id === 116 || request.id === 117) {
-      return true;
-    }
-    
     return category === 'local movement' || category === 'local';
   };
 
