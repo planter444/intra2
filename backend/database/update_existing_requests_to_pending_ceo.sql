@@ -17,6 +17,7 @@ BEGIN
   RAISE NOTICE 'CEO ID: %', ceo_id;
   
   -- Update pending requests where CEO is the first approver in routing
+  -- CEO is first approver if their routing entry has the minimum ID for that employee
   UPDATE travel_requests tr
   SET status = 'pending_ceo'
   WHERE tr.status = 'pending'
@@ -24,12 +25,10 @@ BEGIN
       SELECT DISTINCT ter.employee_id
       FROM travel_employee_routing ter
       WHERE ter.approver_id = ceo_id
-        AND ter.employee_id = (
-          SELECT ter2.employee_id
+        AND ter.id = (
+          SELECT MIN(ter2.id)
           FROM travel_employee_routing ter2
-          WHERE ter2.employee_id = tr.user_id
-          ORDER BY ter2.id
-          LIMIT 1
+          WHERE ter2.employee_id = ter.employee_id
         )
     );
   

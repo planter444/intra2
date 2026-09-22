@@ -11,7 +11,7 @@ import { fetchUsers } from '../services/userService';
 import { formatDateOnly } from '../utils/leaveCalendar';
 
 const statusConfig = {
-  pending: { label: 'Pending Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
+  pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: true },
   approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
@@ -413,6 +413,10 @@ export default function TravelPage() {
                       const config = statusConfig[request.status] || statusConfig.pending;
                       const StatusIcon = config.icon;
                       const shouldHighlightForRequester = !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
+                      // For requester: if status is pending_ceo, it means CEO is the approver, so show "Pending CEO Approval"
+                      // If status is pending, show "Pending Supervisor Approval"
+                      const statusLabel = request.status === 'pending_ceo' ? 'Pending CEO Approval' : config.label;
+                      const statusConfigOverride = request.status === 'pending_ceo' ? statusConfig.pending_ceo : config;
                       return (
                         <div
                           key={request.id}
@@ -424,9 +428,9 @@ export default function TravelPage() {
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${statusConfigOverride.bgColor} ${statusConfigOverride.color} ${statusConfigOverride.borderColor} border`}>
                                   <StatusIcon size={12} />
-                                  {config.label}
+                                  {statusLabel}
                                 </span>
                                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
                                   isLocalMovement(request)
