@@ -413,17 +413,13 @@ export default function TravelPage() {
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             {(() => {
-                              // Use saved total from database - do not recalculate
+                              // Calculate total based on request type
                               if (isLocalMovement(request)) {
-                                // For local movement booking: estimatedCost is total (transportation + DSA)
-                                // For local movement reimbursement: transportationCost is the total
-                                if (request.travelType === 'booking') {
-                                  const total = request.estimatedCost || 0;
-                                  return `${total.toLocaleString()} ${request.currency || 'KES'}`;
-                                } else {
-                                  const total = request.transportationCost || 0;
-                                  return `${total.toLocaleString()} ${request.currency || 'KES'}`;
-                                }
+                                // For local movement: total = DSA + transportationCost
+                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                const transportation = request.transportationCost || 0;
+                                const total = dsa + transportation;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                               } else {
                                 // For official travel: total = DSA + accommodation + transportation + other costs
                                 const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
@@ -439,22 +435,21 @@ export default function TravelPage() {
                           <span className="flex items-center gap-1.5">
                             <DollarSign size={10} className="sm:size-10" />
                             {request.currency || 'KES'} {(() => {
-                              // Use saved total from database for all request types
+                              // Calculate total based on request type
                               if (isLocalMovement(request)) {
-                                // For local movement booking: estimatedCost is total (transportation + DSA)
-                                // For local movement reimbursement: transportationCost is the total
-                                if (request.travelType === 'booking') {
-                                  return (request.estimatedCost || 0).toLocaleString();
-                                } else {
-                                  return (request.transportationCost || 0).toLocaleString();
-                                }
+                                // For local movement: total = DSA + transportationCost
+                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                const transportation = request.transportationCost || 0;
+                                const total = dsa + transportation;
+                                return total.toLocaleString();
                               } else {
                                 // For official travel: total = DSA + accommodation + transportation + other costs
                                 const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
                                 const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
                                 const transportation = request.transportationCost || 0;
                                 const other = request.estimatedCost || 0;
-                                return (dsa + accommodation + transportation + other).toLocaleString();
+                                const total = dsa + accommodation + transportation + other;
+                                return total.toLocaleString();
                               }
                             })()}
                           </span>

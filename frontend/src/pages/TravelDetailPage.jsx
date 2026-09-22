@@ -1258,17 +1258,11 @@ export default function TravelDetailPage() {
                           {(() => {
                             // Calculate total based on request type
                             if (isLocalMovement(request)) {
-                              // For local movement booking: total = estimatedCost (transportation + DSA)
-                              // For local movement reimbursement: total = transportationCost + DSA
-                              if (request.travelType === 'booking') {
-                                const total = request.estimatedCost || 0;
-                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
-                              } else {
-                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                                const transportation = request.transportationCost || 0;
-                                const total = dsa + transportation;
-                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
-                              }
+                              // For local movement: total = DSA + transportationCost
+                              const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                              const transportation = request.transportationCost || 0;
+                              const total = dsa + transportation;
+                              return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                             } else {
                               // For official travel: total = DSA + accommodation + transportation + other costs
                               const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
@@ -1356,17 +1350,11 @@ export default function TravelDetailPage() {
                           {(() => {
                             // Calculate total based on request type
                             if (isLocalMovement(request)) {
-                              // For local movement booking: total = estimatedCost (transportation + DSA)
-                              // For local movement reimbursement: total = transportationCost + DSA
-                              if (request.travelType === 'booking') {
-                                const total = request.estimatedCost || 0;
-                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
-                              } else {
-                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                                const transportation = request.transportationCost || 0;
-                                const total = dsa + transportation;
-                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
-                              }
+                              // For local movement: total = DSA + transportationCost
+                              const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                              const transportation = request.transportationCost || 0;
+                              const total = dsa + transportation;
+                              return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                             } else {
                               // For official travel: total = DSA + accommodation + transportation + other costs
                               const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
