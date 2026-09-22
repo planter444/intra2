@@ -73,6 +73,13 @@ export default function LocalMovementReimbursementPage() {
         projectProgramme: form.projectProgramme || null // Convert empty string to null
       };
 
+      console.log('Submitting local movement reimbursement with data:', {
+        transportationCost,
+        dsaAmount,
+        dsaProvided: form.dsaProvided,
+        fullDayEvent: form.fullDayEvent
+      });
+
       const request = await createTravelRequest(payload);
 
       // Upload receipts after creating the request

@@ -1252,12 +1252,6 @@ export default function TravelDetailPage() {
                           <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
                         </div>
                       )}
-                      {isLocalMovement(request) && request.travelType === 'reimbursement' && (
-                        <div className="flex justify-between">
-                          <span className="text-slate-600">Other Costs:</span>
-                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
-                        </div>
-                      )}
                       <div className="flex justify-between border-t border-purple-200 pt-2">
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
@@ -1338,7 +1332,7 @@ export default function TravelDetailPage() {
                         </span>
                       </div>
                       {/* Accommodation - NOT for Local Movement */}
-                      {!isLocalMovement(request) && (
+                      {!isLocalMovement(request) && (request.accommodationAmount > 0 || request.accommodationRate > 0) && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Accommodation:</span>
                           <span className={`font-medium ${request.accommodationProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
