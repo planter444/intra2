@@ -403,7 +403,18 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
 
   const requests = [];
   for (const row of result.rows) {
-    requests.push(await findTravelRequestById(row.id));
+    const request = await findTravelRequestById(row.id);
+    // Check if this user has viewed the request
+    if (viewerId) {
+      const viewedResult = await query(
+        `SELECT viewed_at FROM travel_request_views WHERE travel_request_id = $1 AND user_id = $2`,
+        [row.id, viewerId]
+      );
+      request.viewedByUser = viewedResult.rows.length > 0;
+    } else {
+      request.viewedByUser = false;
+    }
+    requests.push(request);
   }
   console.log('listTravelRequests - Returning', requests.length, 'requests');
   return requests;
@@ -1257,24 +1268,13 @@ const markTravelRequestAsViewed = async (travelRequestId, userId) => {
   return true;
 };
 
-const getViewedRequestIdsForUser = async (userId) => {
-  const result = await query(
-    `
-      SELECT travel_request_id
-      FROM travel_request_views
-      WHERE user_id = $1
-    `,
-    [userId]
-  );
-  return result.rows.map(row => row.travel_request_id);
-};
-
 const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRole, userPositionTitle) => {
   let result;
 
   // Check if user has access to view all travel requests
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(userId);
+  const isNotificationRecipient = notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.includes(userId);
 
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
 
@@ -1295,6 +1295,19 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
     // Finance should not see pending count - they only handle settled status for CEO-approved requests
     if (userRole === 'finance') {
       result = { rows: [{ count: 0 }] };
+    } else if (isNotificationRecipient) {
+      // Travel notification recipients count unviewed approved requests
+      result = await query(
+        `
+          SELECT COUNT(*) as count
+          FROM travel_requests tr
+          WHERE tr.status = 'approved'
+          AND tr.id NOT IN (
+            SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+          )
+        `,
+        [userId]
+      );
     } else {
       // Admin, membership officer, administrator, and users with view-all access can see all pending requests
       result = await query(
@@ -1329,6 +1342,19 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
       // Fallback: return 0 if query fails
       result = { rows: [{ count: 0 }] };
     }
+  } else if (isNotificationRecipient) {
+    // Travel notification recipients count unviewed approved requests
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        WHERE tr.status = 'approved'
+        AND tr.id NOT IN (
+          SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+        )
+      `,
+      [userId]
+    );
   } else {
     // Regular employees can only see requests where they are one of the designated approvers
     result = await query(
@@ -1374,7 +1400,6 @@ module.exports = {
   getPendingTravelRequestCountForUser,
   getPendingTravelRequestCountForUserExcludingViewed,
   markTravelRequestAsViewed,
-  getViewedRequestIdsForUser,
   updateTravelRequestSettled,
   getSummaryStats,
   getSummaryStatsForUser
