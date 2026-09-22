@@ -151,7 +151,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
     console.error('Error details:', error);
     
     // Try fallback without new columns if column doesn't exist
-    if (error.message && (error.message.includes('column') || error.message.includes('does not exist'))) {
+    if (error.message && (error.message.includes('column') || error.message.includes('does not exist') || error.message.includes('more expressions'))) {
       console.warn('New columns not found, trying fallback insert');
       try {
         result = await query(
@@ -167,10 +167,11 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
               estimated_cost,
               currency,
               supporting_document_id,
+              travel_category,
               reference_number,
               status
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
             RETURNING id
           `,
           [
@@ -184,6 +185,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
             toNullableNumber(estimatedCost),
             currency || 'KES',
             supportingDocumentId || null,
+            travelCategory || null,
             referenceNumber
           ]
         );
