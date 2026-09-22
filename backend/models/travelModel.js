@@ -364,9 +364,10 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
   } else if (role === 'finance' || role === 'admin' || positionTitle === 'Administration') {
-    // Finance and admin should only see CEO-approved requests (unless they have view-all access)
+    // Finance and admin should see CEO-approved requests AND their own requests (unless they have view-all access)
     if (!canViewAll && !hasAutomaticViewAll) {
-      clauses.push(`tr.status IN ('approved', 'in_progress', 'completed')`);
+      clauses.push(`(tr.status IN ('approved', 'in_progress', 'completed') OR tr.user_id = $${params.length + 1})`);
+      params.push(viewerId);
     }
   }
   // For oversight roles (admin, finance, it_officer), membership officer, administrator, and users with view-all access, no user filter - they see all

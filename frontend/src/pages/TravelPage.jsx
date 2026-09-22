@@ -8,6 +8,7 @@ import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
 import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee, updateTravelRequestSettled, fetchTravelNotificationSettings } from '../services/travelService';
 import { fetchUsers } from '../services/userService';
+import { formatDateOnly } from '../utils/leaveCalendar';
 
 const statusConfig = {
   pending: { label: 'Pending Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
