@@ -54,6 +54,7 @@ const mapTravelRequest = (row) => ({
   fullDayEvent: row.full_day_event || false,
   settled: row.settled || false
 });
+});
 
 const generateReferenceNumber = async () => {
   const year = new Date().getFullYear();
@@ -430,6 +431,30 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
   } catch (error) {
     console.error('Travel request status update error:', error.message);
     
+    // Fallback: try without comment columns if they don't exist
+    if (error.message && error.message.includes('column') && (error.message.includes('supervisor_comment') || error.message.includes('ceo_comment'))) {
+      console.warn('Comment columns not found, trying fallback without comments');
+      try {
+        const result = await query(
+          `
+            UPDATE travel_requests
+            SET
+              status = COALESCE($2, status),
+              approved_by = $3::BIGINT,
+              approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
+              rejection_reason = $4,
+              updated_at = NOW()
+            WHERE id = $1
+          `,
+          [id, status, approvedBy || null, rejectionReason || null]
+        );
+        return findTravelRequestById(id);
+      } catch (fallbackError) {
+        console.error('Fallback without comments also failed:', fallbackError.message);
+        throw fallbackError;
+      }
+    }
+    
     // If constraint error due to pending_ceo not being in the check constraint, try to update the constraint
     if (error.message && error.message.includes('check constraint')) {
       console.warn('Constraint error detected, attempting to update constraint');
@@ -460,12 +485,10 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
               approved_by = $3::BIGINT,
               approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
               rejection_reason = $4,
-              supervisor_comment = $5,
-              ceo_comment = $6,
               updated_at = NOW()
             WHERE id = $1
           `,
-          [id, status, approvedBy || null, rejectionReason || null, supervisorComment || null, ceoComment || null]
+          [id, status, approvedBy || null, rejectionReason || null]
         );
 
         return findTravelRequestById(id);
