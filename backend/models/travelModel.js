@@ -149,23 +149,6 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         'pending',
         false
       ]
-      [
-        userId,
-        travelType || 'booking',
-        startDate,
-        endDate,
-        origin,
-        destination,
-        reason,
-        toNullableNumber(estimatedCost),
-        currency || 'KES',
-        supportingDocumentId || null,
-        designation || null,
-        travelCategory || null,
-        travelTypeDetail || null,
-        projectProgramme || null,
-        toNullableNumber(dsaRate),
-        dsaCurrency || 'KES',
         toNullableNumber(dsaAmount),
         dsaProvided || false,
         toNullableNumber(accommodationRate),
@@ -246,7 +229,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
                 reference_number,
                 status
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
               RETURNING id
             `,
             [
@@ -260,7 +243,8 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
               toNullableNumber(estimatedCost),
               currency || 'KES',
               supportingDocumentId || null,
-              referenceNumber
+              referenceNumber,
+              'pending'
             ]
           );
         } catch (minimalError) {
