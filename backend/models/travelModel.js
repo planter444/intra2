@@ -54,7 +54,6 @@ const mapTravelRequest = (row) => ({
   fullDayEvent: row.full_day_event || false,
   settled: row.settled || false
 });
-});
 
 const generateReferenceNumber = async () => {
   const year = new Date().getFullYear();
