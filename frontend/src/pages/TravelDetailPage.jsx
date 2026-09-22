@@ -1236,13 +1236,26 @@ export default function TravelDetailPage() {
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
                           {(() => {
-                            // Simple calculation using saved values
-                            const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                            const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                            const transportation = request.transportationCost || 0;
-                            const other = request.estimatedCost || 0;
-                            const total = dsa + accommodation + transportation + other;
-                            return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                            // Calculate total based on request type
+                            if (isLocalMovement(request)) {
+                              // For local movement booking: total = estimatedCost (transportation + DSA)
+                              // For local movement reimbursement: total = transportationCost
+                              if (request.travelType === 'booking') {
+                                const total = request.estimatedCost || 0;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                              } else {
+                                const total = request.transportationCost || 0;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                              }
+                            } else {
+                              // For official travel: total = DSA + accommodation + transportation + other costs
+                              const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                              const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                              const transportation = request.transportationCost || 0;
+                              const other = request.estimatedCost || 0;
+                              const total = dsa + accommodation + transportation + other;
+                              return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                            }
                           })()}
                         </span>
                       </div>
@@ -1319,13 +1332,26 @@ export default function TravelDetailPage() {
                         <span className="font-semibold text-slate-900">Total:</span>
                         <span className="font-bold text-purple-700 text-lg">
                           {(() => {
-                            // Simple calculation using saved values
-                            const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                            const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                            const transportation = request.transportationCost || 0;
-                            const other = request.estimatedCost || 0;
-                            const total = dsa + accommodation + transportation + other;
-                            return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                            // Calculate total based on request type
+                            if (isLocalMovement(request)) {
+                              // For local movement booking: total = estimatedCost (transportation + DSA)
+                              // For local movement reimbursement: total = transportationCost
+                              if (request.travelType === 'booking') {
+                                const total = request.estimatedCost || 0;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                              } else {
+                                const total = request.transportationCost || 0;
+                                return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                              }
+                            } else {
+                              // For official travel: total = DSA + accommodation + transportation + other costs
+                              const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                              const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                              const transportation = request.transportationCost || 0;
+                              const other = request.estimatedCost || 0;
+                              const total = dsa + accommodation + transportation + other;
+                              return `${total.toLocaleString()} ${request.currency || 'KES'}`;
+                            }
                           })()}
                         </span>
                       </div>
