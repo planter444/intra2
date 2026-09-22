@@ -436,11 +436,19 @@ const decideTravelRequest = async (req, res, next) => {
     if (decision === 'reject') {
       updateData.rejectionReason = normalizedComment || null;
     } else if (isCEO) {
-      // CEO approval: save to ceo_comment
-      updateData.ceoComment = normalizedComment || null;
+      // CEO approval: save to ceo_comment AND preserve supervisor_comment
+      // Only set ceoComment if there's a comment, otherwise don't touch it
+      if (normalizedComment) {
+        updateData.ceoComment = normalizedComment;
+      }
+      // Preserve existing supervisor comment by not including it in updateData
+      // This way the model won't overwrite it with null
     } else {
       // Supervisor approval: save to supervisor_comment
-      updateData.supervisorComment = normalizedComment || null;
+      // Only set supervisorComment if there's a comment
+      if (normalizedComment) {
+        updateData.supervisorComment = normalizedComment;
+      }
     }
 
     const updatedRequest = await travelModel.updateTravelRequestStatus(updateData);

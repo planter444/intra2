@@ -448,13 +448,13 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
           status = COALESCE($2, status),
           approved_by = $3::BIGINT,
           approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
-          rejection_reason = $4,
-          supervisor_comment = $5,
-          ceo_comment = $6,
+          rejection_reason = COALESCE($4, rejection_reason),
+          supervisor_comment = COALESCE($5, supervisor_comment),
+          ceo_comment = COALESCE($6, ceo_comment),
           updated_at = NOW()
         WHERE id = $1
       `,
-      [id, status, approvedBy || null, rejectionReason || null, supervisorComment || null, ceoComment || null]
+      [id, status, approvedBy || null, rejectionReason, supervisorComment, ceoComment]
     );
 
     return findTravelRequestById(id);
