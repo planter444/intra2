@@ -564,10 +564,13 @@ export default function TravelPage() {
                   // Highlight unviewed approved requests for travel notification recipients
                   // Highlight unviewed requests for the requester
                   const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
-                  const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
+                  const shouldHighlightForCEO = config.highlight && (request.status === 'pending_ceo' || (request.status === 'pending' && user.role === 'ceo')) && user.role === 'ceo' && String(request.userId) !== String(user.id);
                   const shouldHighlightForNotificationRecipient = isNotificationRecipient && request.status === 'approved' && !request.viewedByUser;
                   const shouldHighlightForRequester = String(request.userId) === String(user.id) && !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
                   const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient || shouldHighlightForRequester;
+                  // Show "Pending CEO Approval" when CEO is viewing a pending request
+                  const statusLabel = user.role === 'ceo' && request.status === 'pending' ? 'Pending CEO Approval' : config.label;
+                  const statusConfigOverride = user.role === 'ceo' && request.status === 'pending' ? statusConfig.pending_ceo : config;
                   return (
                     <div
                       key={request.id}
@@ -579,9 +582,9 @@ export default function TravelPage() {
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${statusConfigOverride.bgColor} ${statusConfigOverride.color} ${statusConfigOverride.borderColor} border`}>
                           <StatusIcon size={12} />
-                          {config.label}
+                          {statusLabel}
                         </span>
                         <span className="text-xs text-slate-400 truncate">{request.employeeName}</span>
                         <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${

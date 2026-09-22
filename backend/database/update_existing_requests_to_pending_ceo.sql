@@ -4,6 +4,7 @@
 DO $$
 DECLARE
   ceo_id INTEGER;
+  updated_count INTEGER;
 BEGIN
   -- Get CEO user ID
   SELECT id INTO ceo_id FROM users WHERE role = 'ceo' LIMIT 1;
@@ -32,6 +33,7 @@ BEGIN
         )
     );
   
-  RAISE NOTICE 'Updated % travel requests to pending_ceo status', ROW_COUNT;
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RAISE NOTICE 'Updated % travel requests to pending_ceo status', updated_count;
   
 END $$;

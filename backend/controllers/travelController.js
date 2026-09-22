@@ -412,13 +412,12 @@ const decideTravelRequest = async (req, res, next) => {
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
     const isCEO = req.user.role === 'ceo';
     
-    // Determine next status based on whether CEO is the first approver
+    // Determine next status based on current status and role
     let nextStatus;
     if (decision === 'approve') {
       if (isCEO) {
-        // Check if CEO is the first approver in routing
-        const isFirstApprover = approversForEmployee && approversForEmployee.length > 0 && approversForEmployee[0] === req.user.id;
-        nextStatus = isFirstApprover ? 'approved' : 'pending_ceo';
+        // CEO approving: if it's pending (CEO is first approver) or pending_ceo, approve directly
+        nextStatus = 'approved';
       } else {
         // Supervisor approval - move to CEO stage
         nextStatus = 'pending_ceo';
