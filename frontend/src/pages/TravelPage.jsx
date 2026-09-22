@@ -563,12 +563,12 @@ export default function TravelPage() {
                 {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).map((request) => {
                   const config = statusConfig[request.status] || statusConfig.pending;
                   const StatusIcon = config.icon;
-                  // Highlight pending requests for supervisors (not for staff's own requests)
-                  // Highlight pending_ceo requests for CEO (not for staff's own requests)
+                  // Highlight pending requests for supervisors (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
+                  // Highlight pending_ceo requests for CEO (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
                   // Highlight unviewed approved requests for travel notification recipients
                   // Highlight unviewed requests for the requester
                   const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
-                  const shouldHighlightForCEO = config.highlight && (request.status === 'pending_ceo' || (request.status === 'pending' && user.role === 'ceo')) && user.role === 'ceo' && String(request.userId) !== String(user.id);
+                  const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
                   const shouldHighlightForNotificationRecipient = isNotificationRecipient && request.status === 'approved' && !request.viewedByUser;
                   const shouldHighlightForRequester = String(request.userId) === String(user.id) && !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
                   const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient || shouldHighlightForRequester;
