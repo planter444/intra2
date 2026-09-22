@@ -427,13 +427,13 @@ export default function AppLayout({ children }) {
 
                       <span className="relative flex items-center gap-2">
                         {item.key === 'leaves' && pendingReviewCount > 0 ? (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">{pendingReviewCount}</span>
                         ) : item.key === 'travel' && pendingTravelCount > 0 ? (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">{pendingTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">{pendingTimesheetCount}</span>
                         ) : item.key === 'documents' && documentNotificationCount > 0 ? (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{documentNotificationCount}</span>
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">{documentNotificationCount}</span>
                         ) : null}
                         {redesignedActive ? (
                           <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border backdrop-blur-sm ${isActive ? 'border-white/70 bg-white/80 text-emerald-900' : 'border-white/20 bg-white/15 text-white group-hover:border-white/40 group-hover:bg-white/20'}`}>

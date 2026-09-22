@@ -1045,6 +1045,16 @@ const markTravelRequestAsViewed = async (req, res, next) => {
   }
 };
 
+const getViewedRequestIds = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const viewedIds = await travelModel.getViewedRequestIdsForUser(userId);
+    res.json({ viewedIds });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   listTravelRequests,
   getTravelRequest,
@@ -1069,5 +1079,6 @@ module.exports = {
   removeEmployeeRouting,
   getPendingTravelRequestCount,
   markTravelRequestAsViewed,
+  getViewedRequestIds,
   updateTravelRequestSettled
 };

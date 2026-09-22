@@ -6,7 +6,7 @@ import SectionCard from '../components/SectionCard';
 import EmptyState from '../components/EmptyState';
 import Modal from '../components/Modal';
 import { useAuth } from '../context/AuthContext';
-import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee, updateTravelRequestSettled, fetchTravelNotificationSettings } from '../services/travelService';
+import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTravelRequest, getApproverForEmployee, updateTravelRequestSettled, fetchTravelNotificationSettings, markTravelRequestAsViewed } from '../services/travelService';
 import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
@@ -61,6 +61,7 @@ export default function TravelPage() {
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [users, setUsers] = useState([]);
   const [canEditSettled, setCanEditSettled] = useState(false);
+  const [viewedRequestIds, setViewedRequestIds] = useState(new Set());
 
   const loadRequests = async () => {
     try {
@@ -85,6 +86,21 @@ export default function TravelPage() {
           console.warn('Failed to load notification settings:', error.message);
           setCanEditSettled(false);
         }
+      }
+
+      // Load viewed request IDs for the current user
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/travel/viewed-requests/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setViewedRequestIds(new Set(data.viewedIds || []));
+        }
+      } catch (error) {
+        console.warn('Failed to load viewed request IDs:', error.message);
       }
 
       // Only fetch users if user has permission (not regular employee)
@@ -393,16 +409,26 @@ export default function TravelPage() {
               const StatusIcon = config.icon;
               // Highlight pending requests for supervisors (not for staff's own requests)
               // Highlight pending_ceo requests for CEO (not for staff's own requests)
+              // Highlight unviewed requests for travel notification recipients
               const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
               const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
-              const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO;
+              const shouldHighlightForNotificationRecipient = !viewedRequestIds.has(request.id) && config.highlight && String(request.userId) !== String(user.id);
+              const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient;
               return (
                 <div
                   key={request.id}
                   className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
                     shouldHighlight ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
                   }`}
-                  onClick={() => navigate(`/travel/${request.id}`)}
+                  onClick={() => {
+                    // Mark as viewed when clicked
+                    if (!viewedRequestIds.has(request.id)) {
+                      markTravelRequestAsViewed(request.id).then(() => {
+                        setViewedRequestIds(new Set([...viewedRequestIds, request.id]));
+                      }).catch(err => console.error('Failed to mark as viewed:', err));
+                    }
+                    navigate(`/travel/${request.id}`);
+                  }}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">

@@ -1257,6 +1257,18 @@ const markTravelRequestAsViewed = async (travelRequestId, userId) => {
   return true;
 };
 
+const getViewedRequestIdsForUser = async (userId) => {
+  const result = await query(
+    `
+      SELECT travel_request_id
+      FROM travel_request_views
+      WHERE user_id = $1
+    `,
+    [userId]
+  );
+  return result.rows.map(row => row.travel_request_id);
+};
+
 const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRole, userPositionTitle) => {
   let result;
 
@@ -1362,6 +1374,7 @@ module.exports = {
   getPendingTravelRequestCountForUser,
   getPendingTravelRequestCountForUserExcludingViewed,
   markTravelRequestAsViewed,
+  getViewedRequestIdsForUser,
   updateTravelRequestSettled,
   getSummaryStats,
   getSummaryStatsForUser

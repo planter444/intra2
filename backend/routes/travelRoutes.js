@@ -73,6 +73,9 @@ router.get('/pending-count', getPendingTravelRequestCount);
 // Mark travel request as viewed
 router.post('/requests/:id/viewed', markTravelRequestAsViewed);
 
+// Get viewed request IDs for a user
+router.get('/viewed-requests/:userId', getViewedRequestIds);
+
 // Update travel request settled status
 router.patch('/requests/:id/settled', updateTravelRequestSettled);
 
