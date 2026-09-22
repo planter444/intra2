@@ -512,6 +512,25 @@ export default function TravelPage() {
                                   Cancel
                                 </button>
                               )}
+                              {/* Settle toggle for own approved requests */}
+                              {String(request.userId) === String(user.id) && request.status === 'approved' && canEditSettled && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
+                                  }}
+                                  className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
+                                    request.settled
+                                      ? 'bg-emerald-50 text-emerald-600 border-emerald-200 border'
+                                      : 'bg-slate-50 text-slate-500 border-slate-200 border hover:bg-slate-100'
+                                  }`}
+                                  title={request.settled ? 'Mark as not settled' : 'Mark as settled'}
+                                >
+                                  <CheckCircle size={12} />
+                                  {request.settled ? 'Settled' : 'Settle'}
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>

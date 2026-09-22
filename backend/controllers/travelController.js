@@ -475,16 +475,18 @@ const decideTravelRequest = async (req, res, next) => {
             supervisorComment: updatedRequest.supervisorComment
           });
 
-          // Send to Travel Notification Recipients (BCC, excluding CEO)
+          // Send to Travel Notification Recipients (BCC, excluding CEO and applicant)
           const notificationSettings = await travelModel.getTravelNotificationSettings();
           if (notificationSettings && notificationSettings.recipientIds && notificationSettings.recipientIds.length > 0) {
-            // Filter out the CEO from notification recipients
-            const recipientIdsWithoutCEO = notificationSettings.recipientIds.filter(id => String(id) !== String(req.user.id));
+            // Filter out the CEO and the applicant from notification recipients
+            const recipientIdsFiltered = notificationSettings.recipientIds.filter(id => 
+              String(id) !== String(req.user.id) && String(id) !== String(request.userId)
+            );
 
-            if (recipientIdsWithoutCEO.length > 0) {
+            if (recipientIdsFiltered.length > 0) {
               const notificationResults = await query(
                 `SELECT id, first_name, last_name, email FROM users WHERE id = ANY($1)`,
-                [recipientIdsWithoutCEO]
+                [recipientIdsFiltered]
               );
 
               const notificationRecipients = notificationResults.rows.map(r => ({

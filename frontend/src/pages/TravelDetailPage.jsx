@@ -1165,7 +1165,7 @@ export default function TravelDetailPage() {
                 ) : null}
 
                 {/* Accommodation Section - NOT for Local Movement */}
-                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && !isLocalMovement(request) && (request.accommodationRate > 0 || request.accommodationAmount > 0) ? (
+                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && !isLocalMovement(request) ? (
                   <div className={`rounded-xl border p-4 ${request.accommodationProvided ? 'border-slate-200 bg-slate-100' : 'border-blue-200 bg-blue-50'}`}>
                     <div className="flex items-center gap-2 mb-3">
                       <Building2 size={16} className={request.accommodationProvided ? 'text-slate-600' : 'text-blue-600'} />
@@ -1392,7 +1392,7 @@ export default function TravelDetailPage() {
                   )}
                   {request.supervisorComment && (
                     <div>
-                      <p className="text-xs text-slate-500">Supervisor Comment</p>
+                      <p className="text-xs text-slate-500">Immediate Supervisor Comment</p>
                       <p className="text-sm font-medium text-slate-900">{request.supervisorComment}</p>
                     </div>
                   )}
