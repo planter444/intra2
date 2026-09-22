@@ -279,7 +279,7 @@ const sendTravelReceiptNotificationEmail = async ({ recipients, travelRequest, r
   });
 };
 
-const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, applicantName }) => {
+const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, applicantName, isCEOApprover = false }) => {
   const to = (recipients || [])
     .filter((recipient) => recipient?.email)
     .map((recipient) => ({ email: recipient.email, name: recipient.fullName || recipient.email }));
@@ -289,7 +289,7 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   }
 
   const requestUrl = buildTravelRequestUrl(travelRequest.id);
-  
+
   // Format dates without time
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Not specified';
@@ -306,6 +306,9 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
   const currency = travelRequest.currency || 'KES';
   const reason = travelRequest.reason || 'Not specified';
+
+  // Adjust email subject based on whether CEO is the first approver
+  const approvalStage = isCEOApprover ? 'CEO' : 'Supervisor';
 
   // Calculate total cost grouped by currency
   const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
@@ -345,11 +348,11 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
 
   await sendBrevoEmail({
     to,
-    subject: `New travel request from ${applicantName}`,
+    subject: `New travel request from ${applicantName} - ${approvalStage} Review Required`,
     htmlContent: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #166534;">New Travel Request Submitted</h2>
-        <p style="margin: 0 0 18px;">${applicantName} has submitted a new travel request for your review.</p>
+        <p style="margin: 0 0 18px;">${applicantName} has submitted a new travel request for your review${isCEOApprover ? ' as CEO' : ''}.</p>
         <p style="margin: 0 0 18px;">
           <strong>Travel Type:</strong> ${travelType}<br>
           <strong>Origin:</strong> ${origin}<br>

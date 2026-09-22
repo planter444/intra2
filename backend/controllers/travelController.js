@@ -224,20 +224,22 @@ const createTravelRequest = async (req, res, next) => {
     try {
       const approverIds = await travelModel.getApproverForEmployee(req.user.id);
       const recipients = [];
+      let isCEOFirstApprover = false;
 
       // Add only the immediate supervisor (first approver) - not all approvers
       if (approverIds && approverIds.length > 0) {
         // Only send to the first approver (immediate supervisor)
         const firstApproverId = approverIds[0];
         const approverResults = await query(
-          `SELECT id, first_name, last_name, email FROM users WHERE id = $1`,
+          `SELECT id, first_name, last_name, email, role FROM users WHERE id = $1`,
           [firstApproverId]
         );
         if (approverResults.rows.length > 0) {
           const approver = approverResults.rows[0];
-          recipients.push({ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email });
+          recipients.push({ id: approver.id, fullName: `${approver.first_name} ${approver.last_name}`, email: approver.email, role: approver.role });
+          isCEOFirstApprover = approver.role === 'ceo';
         }
-        console.log('Sending travel request notification to immediate supervisor only:', recipients.map(r => r.fullName));
+        console.log('Sending travel request notification to immediate supervisor only:', recipients.map(r => r.fullName), 'isCEO:', isCEOFirstApprover);
       } else {
         console.log('No approvers found for employee:', req.user.id);
       }
@@ -246,7 +248,8 @@ const createTravelRequest = async (req, res, next) => {
         await sendTravelRequestSubmittedEmail({
           recipients,
           travelRequest: request,
-          applicantName: req.user.fullName
+          applicantName: req.user.fullName,
+          isCEOApprover: isCEOFirstApprover
         });
       }
     } catch (emailError) {

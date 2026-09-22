@@ -21,7 +21,7 @@ import {
 } from '../services/travelService';
 
 const statusConfig = {
-  pending: { label: 'Pending Supervisor Approval', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
+  pending: { label: 'Pending Approval', color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200' },
   pending_ceo: { label: 'Pending CEO Approval', color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200' },
   approved: { label: 'Approved', color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200' },
   rejected: { label: 'Rejected', color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200' },

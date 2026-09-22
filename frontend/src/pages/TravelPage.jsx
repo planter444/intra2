@@ -10,7 +10,7 @@ import { fetchTravelRequests, cancelTravelRequest, decideTravelRequest, deleteTr
 import { fetchUsers } from '../services/userService';
 
 const statusConfig = {
-  pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
+  pending: { label: 'Pending Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: true },
   approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
@@ -393,27 +393,122 @@ export default function TravelPage() {
             description={user.role === 'employee' ? 'You have not submitted any travel requests yet.' : 'No travel requests have been submitted yet.'}
           />
         ) : (
-          <div className="space-y-4">
-            {filteredRequests.map((request) => {
-              const config = statusConfig[request.status] || statusConfig.pending;
-              const StatusIcon = config.icon;
-              // Highlight pending requests for supervisors (not for staff's own requests)
-              // Highlight pending_ceo requests for CEO (not for staff's own requests)
-              // Highlight unviewed approved requests for travel notification recipients
-              // Highlight unviewed requests for the requester
-              const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
-              const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
-              const shouldHighlightForNotificationRecipient = isNotificationRecipient && request.status === 'approved' && !request.viewedByUser;
-              const shouldHighlightForRequester = String(request.userId) === String(user.id) && !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
-              const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient || shouldHighlightForRequester;
-              return (
-                <div
-                  key={request.id}
-                  className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
-                    shouldHighlight ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
-                  }`}
-                  onClick={() => navigate(`/travel/${request.id}`)}
-                >
+          <>
+            {/* My Travel Requests Section - for finance officers and supervisors */}
+            {(user.role === 'finance' || user.role === 'supervisor') && (
+              <>
+                <div className="border-b border-slate-200 pb-3 mb-4">
+                  <h3 className="text-lg font-semibold text-slate-900">My Travel Requests</h3>
+                  <p className="text-sm text-slate-500">Your own travel requests</p>
+                </div>
+                {filteredRequests.filter(r => String(r.userId) === String(user.id)).length === 0 ? (
+                  <EmptyState
+                    title="No travel requests found"
+                    description="You have not submitted any travel requests yet."
+                  />
+                ) : (
+                  <div className="space-y-4 mb-6">
+                    {filteredRequests.filter(r => String(r.userId) === String(user.id)).map((request) => {
+                      const config = statusConfig[request.status] || statusConfig.pending;
+                      const StatusIcon = config.icon;
+                      const shouldHighlightForRequester = !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
+                      return (
+                        <div
+                          key={request.id}
+                          className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
+                            shouldHighlightForRequester ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
+                          }`}
+                          onClick={() => navigate(`/travel/${request.id}`)}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
+                                  <StatusIcon size={12} />
+                                  {config.label}
+                                </span>
+                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
+                                  isLocalMovement(request)
+                                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                                    : request.travelType === 'booking'
+                                      ? 'bg-blue-50 text-blue-600 border-blue-200'
+                                      : 'bg-purple-50 text-purple-600 border-purple-200'
+                                } border`}>
+                                  {isLocalMovement(request)
+                                    ? (request.travelType === 'booking' ? 'Local Booking' : 'Local Reimbursement')
+                                    : (request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement')
+                                  }
+                                </span>
+                              </div>
+                              <h3 className="mt-2 text-sm font-medium text-slate-900 truncate">
+                                {request.origin} → {request.destination}
+                              </h3>
+                              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                <span>{formatDateOnly(request.startDate)}</span>
+                                {request.endDate && <span>→ {formatDateOnly(request.endDate)}</span>}
+                              </div>
+                              {request.reason && (
+                                <p className="mt-2 line-clamp-2 text-xs sm:text-sm text-slate-500">{request.reason}</p>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
+                              {String(request.userId) === String(user.id) && request.status === 'pending' && !request.settled && (
+                                <button
+                                  type="button"
+                                  className="flex-1 sm:flex-none rounded-lg border border-slate-200 px-1.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 sm:px-2 sm:text-sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleCancel(request);
+                                  }}
+                                >
+                                  Cancel
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Other Travel Requests Section */}
+            {(user.role === 'finance' || user.role === 'supervisor') && (
+              <div className="border-b border-slate-200 pb-3 mb-4">
+                <h3 className="text-lg font-semibold text-slate-900">Other Travel Requests</h3>
+                <p className="text-sm text-slate-500">Travel requests from other staff members</p>
+              </div>
+            )}
+
+            {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).length === 0 ? (
+              <EmptyState
+                title="No travel requests found"
+                description={user.role === 'employee' ? 'You have not submitted any travel requests yet.' : 'No travel requests have been submitted yet.'}
+              />
+            ) : (
+              <div className="space-y-4">
+                {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).map((request) => {
+                  const config = statusConfig[request.status] || statusConfig.pending;
+                  const StatusIcon = config.icon;
+                  // Highlight pending requests for supervisors (not for staff's own requests)
+                  // Highlight pending_ceo requests for CEO (not for staff's own requests)
+                  // Highlight unviewed approved requests for travel notification recipients
+                  // Highlight unviewed requests for the requester
+                  const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
+                  const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
+                  const shouldHighlightForNotificationRecipient = isNotificationRecipient && request.status === 'approved' && !request.viewedByUser;
+                  const shouldHighlightForRequester = String(request.userId) === String(user.id) && !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
+                  const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient || shouldHighlightForRequester;
+                  return (
+                    <div
+                      key={request.id}
+                      className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
+                        shouldHighlight ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
+                      }`}
+                      onClick={() => navigate(`/travel/${request.id}`)}
+                    >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
@@ -563,7 +658,9 @@ export default function TravelPage() {
                 </div>
               );
             })}
-          </div>
+              </div>
+            )}
+          </>
         )}
       </SectionCard>
 
