@@ -1112,11 +1112,29 @@ export default function TravelDetailPage() {
                 <h4 className="text-sm font-semibold text-slate-900">Cost Breakdown</h4>
                 
                 {/* DSA Section */}
-                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && (request.dsaAmount > 0 || request.dsaRate > 0) ? (
-                  <div className={`rounded-xl border p-4 ${request.dsaProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
+                {(request.travelType === 'booking' || request.travelType === 'reimbursement') ? (
+                  <div className={`rounded-xl border p-4 ${
+                    // Gray out if DSA is 0 or not applicable
+                    (request.dsaAmount === 0 && request.dsaRate === 0) || request.dsaProvided
+                      ? 'border-slate-200 bg-slate-100'
+                      : 'border-emerald-200 bg-emerald-50'
+                  }`}>
                     <div className="flex items-center gap-2 mb-3">
-                      <DollarSign size={16} className={request.dsaProvided ? 'text-slate-600' : 'text-emerald-600'} />
-                      <h5 className={`text-sm font-semibold ${request.dsaProvided ? 'text-slate-900' : 'text-emerald-900'}`}>DSA (Daily Subsistence Allowance)</h5>
+                      <DollarSign size={16} className={
+                        (request.dsaAmount === 0 && request.dsaRate === 0) || request.dsaProvided
+                          ? 'text-slate-600'
+                          : 'text-emerald-600'
+                      } />
+                      <h5 className={`text-sm font-semibold ${
+                        (request.dsaAmount === 0 && request.dsaRate === 0) || request.dsaProvided
+                          ? 'text-slate-900'
+                          : 'text-emerald-900'
+                      }`}>DSA (Daily Subsistence Allowance)</h5>
+                      {isLocalMovement(request) && !request.fullDayEvent && (
+                        <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
+                          Not a full-day event
+                        </span>
+                      )}
                       {request.dsaProvided && (
                         <span className="ml-2 rounded-full bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-600">
                           Excluded from total
@@ -1130,7 +1148,11 @@ export default function TravelDetailPage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
-                        <span className={`font-semibold ${request.dsaProvided ? 'text-slate-500 line-through' : 'text-emerald-700'}`}>{request.dsaCurrency || 'KES'} {(request.dsaAmount || 0).toLocaleString()}</span>
+                        <span className={`font-semibold ${
+                          (request.dsaAmount === 0 && request.dsaRate === 0) || request.dsaProvided
+                            ? 'text-slate-500'
+                            : 'text-emerald-700'
+                        }`}>{request.dsaCurrency || 'KES'} {(request.dsaAmount || 0).toLocaleString()}</span>
                       </div>
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-slate-200 pt-2">
@@ -1243,12 +1265,14 @@ export default function TravelDetailPage() {
                             // Calculate total based on request type
                             if (isLocalMovement(request)) {
                               // For local movement booking: total = estimatedCost (transportation + DSA)
-                              // For local movement reimbursement: total = transportationCost
+                              // For local movement reimbursement: total = transportationCost + DSA
                               if (request.travelType === 'booking') {
                                 const total = request.estimatedCost || 0;
                                 return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                               } else {
-                                const total = request.transportationCost || 0;
+                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                const transportation = request.transportationCost || 0;
+                                const total = dsa + transportation;
                                 return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                               }
                             } else {
@@ -1339,12 +1363,14 @@ export default function TravelDetailPage() {
                             // Calculate total based on request type
                             if (isLocalMovement(request)) {
                               // For local movement booking: total = estimatedCost (transportation + DSA)
-                              // For local movement reimbursement: total = transportationCost
+                              // For local movement reimbursement: total = transportationCost + DSA
                               if (request.travelType === 'booking') {
                                 const total = request.estimatedCost || 0;
                                 return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                               } else {
-                                const total = request.transportationCost || 0;
+                                const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
+                                const transportation = request.transportationCost || 0;
+                                const total = dsa + transportation;
                                 return `${total.toLocaleString()} ${request.currency || 'KES'}`;
                               }
                             } else {
