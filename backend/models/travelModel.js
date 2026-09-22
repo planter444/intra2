@@ -149,16 +149,6 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         'pending',
         false
       ]
-        toNullableNumber(dsaAmount),
-        dsaProvided || false,
-        toNullableNumber(accommodationRate),
-        accommodationCurrency || 'KES',
-        toNullableNumber(accommodationAmount),
-        accommodationProvided || false,
-        toNullableNumber(transportationCost),
-        fullDayEvent || false,
-        referenceNumber
-      ]
     );
   } catch (error) {
     console.error('Travel request insert error:', error.message);
