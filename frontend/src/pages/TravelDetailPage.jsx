@@ -1112,7 +1112,7 @@ export default function TravelDetailPage() {
                 <h4 className="text-sm font-semibold text-slate-900">Cost Breakdown</h4>
                 
                 {/* DSA Section */}
-                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && (!isLocalMovement(request) || request.fullDayEvent) ? (
+                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && (request.dsaAmount > 0 || request.dsaRate > 0) ? (
                   <div className={`rounded-xl border p-4 ${request.dsaProvided ? 'border-slate-200 bg-slate-100' : 'border-emerald-200 bg-emerald-50'}`}>
                     <div className="flex items-center gap-2 mb-3">
                       <DollarSign size={16} className={request.dsaProvided ? 'text-slate-600' : 'text-emerald-600'} />
@@ -1143,7 +1143,7 @@ export default function TravelDetailPage() {
                 ) : null}
 
                 {/* Accommodation Section - NOT for Local Movement */}
-                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && !isLocalMovement(request) ? (
+                {(request.travelType === 'booking' || request.travelType === 'reimbursement') && !isLocalMovement(request) && (request.accommodationRate > 0 || request.accommodationAmount > 0) ? (
                   <div className={`rounded-xl border p-4 ${request.accommodationProvided ? 'border-slate-200 bg-slate-100' : 'border-blue-200 bg-blue-50'}`}>
                     <div className="flex items-center gap-2 mb-3">
                       <Building2 size={16} className={request.accommodationProvided ? 'text-slate-600' : 'text-blue-600'} />
@@ -1191,9 +1191,7 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Amount:</span>
-                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(isLocalMovement(request)
-                          ? (request.transportationCost || 0)
-                          : (request.estimatedCost || 0)).toLocaleString()}</span>
+                        <span className="font-semibold text-amber-700">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -1214,7 +1212,7 @@ export default function TravelDetailPage() {
                         </span>
                       </div>
                       {/* Accommodation - NOT for Local Movement */}
-                      {!isLocalMovement(request) && (
+                      {!isLocalMovement(request) && (request.accommodationAmount > 0 || request.accommodationRate > 0) && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Accommodation:</span>
                           <span className={`font-medium ${request.accommodationProvided ? 'text-slate-400 italic' : 'text-slate-900'}`}>
@@ -1227,6 +1225,12 @@ export default function TravelDetailPage() {
                         <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.transportationCost || 0).toLocaleString()}</span>
                       </div>
                       {!isLocalMovement(request) && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Other Costs:</span>
+                          <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
+                        </div>
+                      )}
+                      {isLocalMovement(request) && request.travelType === 'reimbursement' && (
                         <div className="flex justify-between">
                           <span className="text-slate-600">Other Costs:</span>
                           <span className="font-medium text-slate-900">{request.currency || 'KES'} {(request.estimatedCost || 0).toLocaleString()}</span>
