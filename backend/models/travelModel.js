@@ -352,35 +352,12 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
       clauses.push(`tr.user_id = $${params.length}`);
     }
   } else if (role === 'ceo') {
-    // CEO sees requests that have reached their stage (pending_ceo or beyond)
-    // AND pending requests where CEO is the designated approver in routing
+    // CEO only sees requests that have reached their stage (pending_ceo or beyond)
+    // CEO does NOT see pending requests (those are still with supervisors)
+    // Unless CEO is the immediate supervisor in routing - then the request should be pending_ceo, not pending
     if (!status) {
-      // If no status filter specified, show requests at CEO stage OR pending requests where CEO is approver
-      try {
-        const ceoRouting = await query(
-          `
-            SELECT DISTINCT employee_id
-            FROM travel_employee_routing
-            WHERE approver_id = $1
-          `,
-          [viewerId]
-        );
-
-        if (ceoRouting.rows.length > 0) {
-          const employeeIds = ceoRouting.rows.map(r => r.employee_id);
-          params.push(employeeIds);
-          clauses.push(`(
-            tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')
-            OR (tr.status = 'pending' AND tr.user_id = ANY($${params.length}))
-          )`);
-        } else {
-          // If CEO has no employees routed to them, only show requests at CEO stage
-          clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
-        }
-      } catch (error) {
-        // Fallback: only show requests at CEO stage if routing query fails
-        clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
-      }
+      // If no status filter specified, only show requests that are at CEO stage or beyond
+      clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
     }
     // If status is specified, use that filter (admin/ceo can filter by any status)
   } else if (!oversightRoles.includes(role) && !canViewAll && !hasAutomaticViewAll) {
@@ -1303,61 +1280,18 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
   const oversightRoles = ['admin', 'ceo', 'finance', 'it_officer', 'administrator_and_membership_officer'];
 
   if (userRole === 'ceo') {
-    // CEO counts pending_ceo requests AND pending requests where CEO is the approver in routing
-    try {
-      const ceoRouting = await query(
-        `
-          SELECT DISTINCT employee_id
-          FROM travel_employee_routing
-          WHERE approver_id = $1
-        `,
-        [userId]
-      );
-
-      if (ceoRouting.rows.length > 0) {
-        const employeeIds = ceoRouting.rows.map(r => r.employee_id);
-        result = await query(
-          `
-            SELECT COUNT(*) as count
-            FROM travel_requests tr
-            WHERE (
-              (tr.status = 'pending_ceo')
-              OR (tr.status = 'pending' AND tr.user_id = ANY($2))
-            )
-            AND tr.id NOT IN (
-              SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
-            )
-          `,
-          [userId, employeeIds]
-        );
-      } else {
-        // If CEO has no employees routed to them, only count pending_ceo requests
-        result = await query(
-          `
-            SELECT COUNT(*) as count
-            FROM travel_requests tr
-            WHERE tr.status = 'pending_ceo'
-            AND tr.id NOT IN (
-              SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
-            )
-          `,
-          [userId]
-        );
-      }
-    } catch (error) {
-      // Fallback: only count pending_ceo requests if routing query fails
-      result = await query(
-        `
-          SELECT COUNT(*) as count
-          FROM travel_requests tr
-          WHERE tr.status = 'pending_ceo'
-          AND tr.id NOT IN (
-            SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
-          )
-        `,
-        [userId]
-      );
-    }
+    // CEO only counts pending_ceo requests (those awaiting CEO approval)
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        WHERE tr.status = 'pending_ceo'
+        AND tr.id NOT IN (
+          SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+        )
+      `,
+      [userId]
+    );
   } else if (userRole === 'employee') {
     // Employees count their own unviewed requests (any status)
     result = await query(
