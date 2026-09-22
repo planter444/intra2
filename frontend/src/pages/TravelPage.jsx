@@ -54,6 +54,7 @@ export default function TravelPage() {
   const [actionModal, setActionModal] = useState({ open: false, request: null, action: null });
   const [deleteModal, setDeleteModal] = useState({ open: false, request: null });
   const [cancelModal, setCancelModal] = useState({ open: false, request: null });
+  const [settleModal, setSettleModal] = useState({ open: false, request: null, action: null });
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('date');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -190,6 +191,28 @@ export default function TravelPage() {
       setNotice({
         open: true,
         title: 'Unable to delete request',
+        description: error.response?.data?.message || 'Please try again.'
+      });
+    }
+  };
+
+  const handleSettle = async () => {
+    const { request, action } = settleModal;
+    try {
+      await updateTravelRequestSettled(request.id, action === 'settle');
+      setNotice({
+        open: true,
+        title: action === 'settle' ? 'Travel request settled' : 'Travel request unsettled',
+        description: action === 'settle' 
+          ? 'The travel request has been marked as settled.'
+          : 'The travel request has been marked as not settled.'
+      });
+      setSettleModal({ open: false, request: null, action: null });
+      loadRequests();
+    } catch (error) {
+      setNotice({
+        open: true,
+        title: 'Unable to update settle status',
         description: error.response?.data?.message || 'Please try again.'
       });
     }
@@ -466,9 +489,7 @@ export default function TravelPage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            updateTravelRequestSettled(request.id, !request.settled).then(() => {
-                              setRequests(requests.map(r => r.id === request.id ? { ...r, settled: !r.settled } : r));
-                            });
+                            setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
                           }}
                           className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
                             request.settled
@@ -745,6 +766,33 @@ export default function TravelPage() {
             onClick={handleDelete}
           >
             Delete
+          </button>
+        ]}
+      />
+
+      <Modal
+        open={settleModal.open}
+        title={settleModal.action === 'settle' ? 'Settle travel request' : 'Unsettle travel request'}
+        description={settleModal.action === 'settle' 
+          ? 'Have the funds already been disbursed for this travel request? Confirm to mark it as settled.'
+          : 'Are you sure you want to mark this travel request as not settled?'}
+        onClose={() => setSettleModal({ open: false, request: null, action: null })}
+        actions={[
+          <button
+            key="cancel"
+            type="button"
+            className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700"
+            onClick={() => setSettleModal({ open: false, request: null, action: null })}
+          >
+            Cancel
+          </button>,
+          <button
+            key="confirm"
+            type="button"
+            className={`rounded-2xl px-5 py-3 text-sm font-semibold text-white ${settleModal.action === 'settle' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-rose-600 hover:bg-rose-700'}`}
+            onClick={handleSettle}
+          >
+            {settleModal.action === 'settle' ? 'Yes, settle it' : 'Yes, unsettle it'}
           </button>
         ]}
       />

@@ -410,12 +410,24 @@ const decideTravelRequest = async (req, res, next) => {
     const isCEO = req.user.role === 'ceo';
     const nextStatus = decision === 'approve' ? (isCEO ? 'approved' : 'pending_ceo') : 'rejected';
 
-    const updatedRequest = await travelModel.updateTravelRequestStatus({
+    // Save comment to appropriate field based on role
+    const updateData = {
       id,
       status: nextStatus,
-      approvedBy: req.user.id,
-      rejectionReason: decision === 'reject' ? normalizedComment || null : null
-    });
+      approvedBy: req.user.id
+    };
+
+    if (decision === 'reject') {
+      updateData.rejectionReason = normalizedComment || null;
+    } else if (isCEO) {
+      // CEO approval: save to ceo_comment
+      updateData.ceoComment = normalizedComment || null;
+    } else {
+      // Supervisor approval: save to supervisor_comment
+      updateData.supervisorComment = normalizedComment || null;
+    }
+
+    const updatedRequest = await travelModel.updateTravelRequestStatus(updateData);
 
     await logAction({
       actorUserId: req.user.id,
@@ -455,7 +467,9 @@ const decideTravelRequest = async (req, res, next) => {
             toEmail: applicant.email,
             toName: applicantName,
             travelRequest: updatedRequest,
-            ceoName: req.user.fullName
+            ceoName: req.user.fullName,
+            ceoComment: normalizedComment,
+            supervisorComment: updatedRequest.supervisorComment
           });
 
           // Send to Travel Notification Recipients (BCC, excluding CEO)
@@ -499,7 +513,8 @@ const decideTravelRequest = async (req, res, next) => {
               toName: ceoName,
               travelRequest: updatedRequest,
               supervisorName: req.user.fullName,
-              applicantName: applicantName
+              applicantName: applicantName,
+              supervisorComment: normalizedComment
             });
           }
 
@@ -508,7 +523,8 @@ const decideTravelRequest = async (req, res, next) => {
             toEmail: applicant.email,
             toName: applicantName,
             travelRequest: updatedRequest,
-            supervisorName: req.user.fullName
+            supervisorName: req.user.fullName,
+            supervisorComment: normalizedComment
           });
         }
       }

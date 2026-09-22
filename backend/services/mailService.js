@@ -227,7 +227,7 @@ const sendSupervisorDecisionToCeoEmail = async ({ recipients, request, superviso
   });
 };
 
-const buildTravelCard = ({ employeeName, employeeNo, departmentName, origin, destination, startDate, endDate, reason, estimatedCost, receiptAmount, receiptDescription }) => `
+const buildTravelCard = ({ employeeName, employeeNo, departmentName, origin, destination, startDate, endDate, reason, estimatedCost, receiptAmount, receiptDescription, supervisorComment, ceoComment }) => `
   <div style="margin: 22px 0; overflow: hidden; border-radius: 20px; border: 1px solid #dbeafe; background: #ffffff; box-shadow: 0 18px 45px rgba(30,64,175,0.12);">
     <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 18px 22px; color: #ffffff;">
       <p style="margin: 0; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.82;">KEREA HRMS Travel Desk</p>
@@ -240,7 +240,9 @@ const buildTravelCard = ({ employeeName, employeeNo, departmentName, origin, des
       <p style="margin: 0 0 10px;"><strong>Dates:</strong> ${startDate}${endDate && endDate !== startDate ? ` to ${endDate}` : ''}</p>
       ${estimatedCost ? `<p style="margin: 0 0 10px;"><strong>Estimated cost:</strong> ${estimatedCost}</p>` : ''}
       ${receiptAmount ? `<p style="margin: 0 0 10px;"><strong>Receipt amount:</strong> ${receiptAmount}</p>` : ''}
-      ${reason ? `<p style="margin: 0 0 10px;"><strong>Reason:</strong> ${reason}</p>` : ''}
+      ${reason ? `<p style="margin: 0 0 10px;"><strong>Reason for Travel:</strong> ${reason}</p>` : ''}
+      ${supervisorComment ? `<p style="margin: 0 0 10px;"><strong>Supervisor Comment:</strong> ${supervisorComment}</p>` : ''}
+      ${ceoComment ? `<p style="margin: 0 0 10px;"><strong>CEO Comment:</strong> ${ceoComment}</p>` : ''}
       ${receiptDescription ? `<p style="margin: 0;"><strong>Receipt description:</strong> ${receiptDescription}</p>` : ''}
     </div>
   </div>
@@ -365,7 +367,7 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   });
 };
 
-const sendTravelSupervisorApprovedEmail = async ({ toEmail, toName, travelRequest, supervisorName }) => {
+const sendTravelSupervisorApprovedEmail = async ({ toEmail, toName, travelRequest, supervisorName, supervisorComment }) => {
   const requestUrl = buildTravelRequestUrl(travelRequest.id);
 
   // Format dates without time
@@ -379,6 +381,7 @@ const sendTravelSupervisorApprovedEmail = async ({ toEmail, toName, travelReques
   const destination = travelRequest.destination || 'Not specified';
   const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
   const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+  const reason = travelRequest.reason || 'Not specified';
 
   await sendBrevoEmail({
     to: [
@@ -418,6 +421,16 @@ const sendTravelSupervisorApprovedEmail = async ({ toEmail, toName, travelReques
                 <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
                 <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
               </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Reason for Travel:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${reason}</td>
+              </tr>
+              ${supervisorComment ? `
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Supervisor Comment:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${supervisorComment}</td>
+              </tr>
+              ` : ''}
             </table>
           </div>
 
@@ -431,7 +444,7 @@ const sendTravelSupervisorApprovedEmail = async ({ toEmail, toName, travelReques
   });
 };
 
-const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoName }) => {
+const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoName, ceoComment, supervisorComment }) => {
   const requestUrl = buildTravelRequestUrl(travelRequest.id);
 
   // Format dates without time
@@ -478,6 +491,7 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
   const destination = travelRequest.destination || 'Not specified';
   const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
   const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+  const reason = travelRequest.reason || 'Not specified';
 
   await sendBrevoEmail({
     to: [
@@ -518,9 +532,25 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
                 <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
               </tr>
               <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Reason for Travel:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${reason}</td>
+              </tr>
+              <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Approved Amount:</td>
                 <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${totalCostDisplay || 'Not specified'}</td>
               </tr>
+              ${supervisorComment ? `
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Supervisor Comment:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${supervisorComment}</td>
+              </tr>
+              ` : ''}
+              ${ceoComment ? `
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">CEO Comment:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${ceoComment}</td>
+              </tr>
+              ` : ''}
             </table>
           </div>
 
@@ -534,7 +564,7 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
   });
 };
 
-const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelRequest, supervisorName, applicantName }) => {
+const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelRequest, supervisorName, applicantName, supervisorComment }) => {
   const requestUrl = buildTravelRequestUrl(travelRequest.id);
 
   // Format dates without time
@@ -548,6 +578,7 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
   const destination = travelRequest.destination || 'Not specified';
   const startDate = formatDate(travelRequest.startDate || travelRequest.start_date);
   const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
+  const reason = travelRequest.reason || 'Not specified';
 
   await sendBrevoEmail({
     to: [
@@ -591,6 +622,16 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
                 <td style="padding: 8px 0; color: #64748b; font-size: 14px;">End Date:</td>
                 <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${endDate}</td>
               </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Reason for Travel:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${reason}</td>
+              </tr>
+              ${supervisorComment ? `
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Supervisor Comment:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${supervisorComment}</td>
+              </tr>
+              ` : ''}
             </table>
           </div>
 

@@ -1381,13 +1381,25 @@ export default function TravelDetailPage() {
               </div>
 
               {/* Approval Information */}
-              {(request.approverName || request.rejectionReason) && (
+              {(request.approverName || request.rejectionReason || request.supervisorComment || request.ceoComment) && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-semibold text-slate-900">Approval Information</h4>
                   {request.approverName && (
                     <div>
                       <p className="text-xs text-slate-500">Approved by</p>
                       <p className="text-sm font-medium text-slate-900">{request.approverName}</p>
+                    </div>
+                  )}
+                  {request.supervisorComment && (
+                    <div>
+                      <p className="text-xs text-slate-500">Supervisor Comment</p>
+                      <p className="text-sm font-medium text-slate-900">{request.supervisorComment}</p>
+                    </div>
+                  )}
+                  {request.ceoComment && (
+                    <div>
+                      <p className="text-xs text-slate-500">CEO Comment</p>
+                      <p className="text-sm font-medium text-slate-900">{request.ceoComment}</p>
                     </div>
                   )}
                   {request.rejectionReason && (

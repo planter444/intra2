@@ -33,6 +33,8 @@ const mapTravelRequest = (row) => ({
   approvedBy: row.approved_by,
   approvedAt: row.approved_at,
   rejectionReason: row.rejection_reason,
+  supervisorComment: row.supervisor_comment || null,
+  ceoComment: row.ceo_comment || null,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
   designation: row.designation || null,
@@ -361,6 +363,11 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
     // For any other role not in oversight and without view-all access, only show own requests
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
+  } else if (role === 'finance' || role === 'admin' || positionTitle === 'Administration') {
+    // Finance and admin should only see CEO-approved requests (unless they have view-all access)
+    if (!canViewAll && !hasAutomaticViewAll) {
+      clauses.push(`tr.status IN ('approved', 'in_progress', 'completed')`);
+    }
   }
   // For oversight roles (admin, finance, it_officer), membership officer, administrator, and users with view-all access, no user filter - they see all
 
@@ -401,7 +408,7 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
   return requests;
 };
 
-const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReason }) => {
+const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReason, supervisorComment, ceoComment }) => {
   try {
     const result = await query(
       `
@@ -411,10 +418,12 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
           approved_by = $3::BIGINT,
           approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
           rejection_reason = $4,
+          supervisor_comment = $5,
+          ceo_comment = $6,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [id, status, approvedBy || null, rejectionReason || null]
+      [id, status, approvedBy || null, rejectionReason || null, supervisorComment || null, ceoComment || null]
     );
 
     return findTravelRequestById(id);
@@ -451,10 +460,12 @@ const updateTravelRequestStatus = async ({ id, status, approvedBy, rejectionReas
               approved_by = $3::BIGINT,
               approved_at = CASE WHEN $3 IS NOT NULL THEN NOW() ELSE approved_at END,
               rejection_reason = $4,
+              supervisor_comment = $5,
+              ceo_comment = $6,
               updated_at = NOW()
             WHERE id = $1
           `,
-          [id, status, approvedBy || null, rejectionReason || null]
+          [id, status, approvedBy || null, rejectionReason || null, supervisorComment || null, ceoComment || null]
         );
 
         return findTravelRequestById(id);
@@ -1246,18 +1257,23 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
       [userId]
     );
   } else if (oversightRoles.includes(userRole) || userPositionTitle === 'Administration' || canViewAll) {
-    // Admin, finance, membership officer, administrator, and users with view-all access can see all pending requests
-    result = await query(
-      `
-        SELECT COUNT(*) as count
-        FROM travel_requests tr
-        WHERE tr.status = 'pending'
-        AND tr.id NOT IN (
-          SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
-        )
-      `,
-      [userId]
-    );
+    // Finance should not see pending count - they only handle settled status for CEO-approved requests
+    if (userRole === 'finance') {
+      result = { rows: [{ count: 0 }] };
+    } else {
+      // Admin, membership officer, administrator, and users with view-all access can see all pending requests
+      result = await query(
+        `
+          SELECT COUNT(*) as count
+          FROM travel_requests tr
+          WHERE tr.status = 'pending'
+          AND tr.id NOT IN (
+            SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+          )
+        `,
+        [userId]
+      );
+    }
   } else if (userRole === 'supervisor') {
     // Supervisors can see pending requests from employees they are designated approvers for
     try {
