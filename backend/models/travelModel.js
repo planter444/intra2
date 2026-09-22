@@ -152,7 +152,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
     
     // Try fallback without new columns if column doesn't exist
     if (error.message && (error.message.includes('column') || error.message.includes('does not exist') || error.message.includes('more expressions'))) {
-      console.warn('New columns not found, trying fallback insert');
+      console.warn('New columns not found, trying fallback insert with cost columns');
       try {
         result = await query(
           `
@@ -168,10 +168,16 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
               currency,
               supporting_document_id,
               travel_category,
+              dsa_amount,
+              dsa_provided,
+              transportation_cost,
+              accommodation_amount,
+              accommodation_provided,
+              full_day_event,
               reference_number,
               status
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, 'pending')
             RETURNING id
           `,
           [
@@ -186,12 +192,56 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
             currency || 'KES',
             supportingDocumentId || null,
             travelCategory || null,
+            toNullableNumber(dsaAmount),
+            dsaProvided || false,
+            toNullableNumber(transportationCost),
+            toNullableNumber(accommodationAmount),
+            accommodationProvided || false,
+            fullDayEvent || false,
             referenceNumber
           ]
         );
       } catch (fallbackError) {
         console.error('Fallback insert also failed:', fallbackError.message);
-        throw fallbackError;
+        // Try minimal fallback with just essential columns
+        try {
+          result = await query(
+            `
+              INSERT INTO travel_requests (
+                user_id,
+                travel_type,
+                start_date,
+                end_date,
+                origin,
+                destination,
+                reason,
+                estimated_cost,
+                currency,
+                supporting_document_id,
+                reference_number,
+                status
+              )
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'pending')
+              RETURNING id
+            `,
+            [
+              userId,
+              travelType || 'booking',
+              startDate,
+              endDate,
+              origin,
+              destination,
+              reason,
+              toNullableNumber(estimatedCost),
+              currency || 'KES',
+              supportingDocumentId || null,
+              referenceNumber
+            ]
+          );
+        } catch (minimalError) {
+          console.error('Minimal fallback also failed:', minimalError.message);
+          throw minimalError;
+        }
       }
     } else {
       throw error;
