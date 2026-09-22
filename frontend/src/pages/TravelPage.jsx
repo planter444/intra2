@@ -400,10 +400,12 @@ export default function TravelPage() {
               // Highlight pending requests for supervisors (not for staff's own requests)
               // Highlight pending_ceo requests for CEO (not for staff's own requests)
               // Highlight unviewed approved requests for travel notification recipients
+              // Highlight unviewed requests for the requester
               const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && user.role === 'supervisor' && String(request.userId) !== String(user.id);
               const shouldHighlightForCEO = config.highlight && request.status === 'pending_ceo' && user.role === 'ceo' && String(request.userId) !== String(user.id);
               const shouldHighlightForNotificationRecipient = isNotificationRecipient && request.status === 'approved' && !request.viewedByUser;
-              const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient;
+              const shouldHighlightForRequester = String(request.userId) === String(user.id) && !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
+              const shouldHighlight = shouldHighlightForSupervisor || shouldHighlightForCEO || shouldHighlightForNotificationRecipient || shouldHighlightForRequester;
               return (
                 <div
                   key={request.id}

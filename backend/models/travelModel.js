@@ -1290,6 +1290,20 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
       `,
       [userId]
     );
+  } else if (userRole === 'employee') {
+    // Employees count their own unviewed requests (any status)
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests tr
+        WHERE tr.user_id = $1
+        AND tr.status IN ('pending', 'pending_ceo', 'approved', 'in_progress', 'completed')
+        AND tr.id NOT IN (
+          SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
+        )
+      `,
+      [userId]
+    );
   } else if (oversightRoles.includes(userRole) || userPositionTitle === 'Administration' || canViewAll) {
     // Finance should not see pending count - they only handle settled status for CEO-approved requests
     if (userRole === 'finance') {
