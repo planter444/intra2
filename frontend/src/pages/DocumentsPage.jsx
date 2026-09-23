@@ -568,16 +568,23 @@ export default function DocumentsPage() {
                 {
                   key: 'actions',
                   header: 'Actions',
-                  render: (row) => (
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={() => row?.userId ? setSelectedEmployeeId(String(row.userId)) : null}>
-                        <Eye size={14} />View
-                      </button>
-                    </div>
-                  )
+                  render: (row) => {
+                    if (!row || !row.userId) return null;
+                    return (
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => {
+                          e.stopPropagation();
+                          console.log('View button clicked, userId:', row.userId);
+                          setSelectedEmployeeId(String(row.userId));
+                        }}>
+                          <Eye size={14} />View
+                        </button>
+                      </div>
+                    );
+                  }
                 }
               ]}
-              rows={folderRows.filter(row => row && row.userId)}
+              rows={folderRows}
               emptyLabel="No employee folders found."
             />
           ) : (
