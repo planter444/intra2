@@ -245,6 +245,11 @@ export default function DocumentsPage() {
     }
 
     const grouped = visibleDocuments.reduce((accumulator, document) => {
+      // Skip documents without userId
+      if (!document.userId) {
+        return accumulator;
+      }
+
       const key = String(document.userId);
       if (!accumulator[key]) {
         accumulator[key] = {
@@ -290,13 +295,14 @@ export default function DocumentsPage() {
   );
 
   const selectedFolderDocuments = useMemo(
-    () => visibleDocuments.filter((document) => String(document.userId) === String(selectedEmployeeId)),
+    () => visibleDocuments.filter((document) => document.userId && String(document.userId) === String(selectedEmployeeId)),
     [selectedEmployeeId, visibleDocuments]
   );
   const documentsByCategory = useMemo(() => {
     const map = new Map();
     documentCategories.forEach((cat) => map.set(cat.code, []));
     selectedFolderDocuments.forEach((doc) => {
+      if (!doc) return;
       const found = documentCategories.find((cat) => (cat.types || []).some((t) => t.code === doc.folderType));
       const key = found ? found.code : 'uncategorized';
       if (!map.has(key)) map.set(key, []);
@@ -311,6 +317,7 @@ export default function DocumentsPage() {
     const map = new Map();
     documentCategories.forEach((cat) => map.set(cat.code, []));
     visibleDocuments.forEach((doc) => {
+      if (!doc) return;
       const found = documentCategories.find((cat) => (cat.types || []).some((t) => t.code === doc.folderType));
       const key = found ? found.code : 'uncategorized';
       if (!map.has(key)) map.set(key, []);
@@ -334,7 +341,7 @@ export default function DocumentsPage() {
       return;
     }
 
-    const hasVisibleDocuments = visibleDocuments.some((document) => String(document.userId) === String(selectedEmployeeId));
+    const hasVisibleDocuments = visibleDocuments.some((document) => document.userId && String(document.userId) === String(selectedEmployeeId));
     if (!hasVisibleDocuments) {
       setSelectedEmployeeId('');
     }
@@ -561,11 +568,14 @@ export default function DocumentsPage() {
                 {
                   key: 'actions',
                   header: 'Actions',
-                  render: (row) => (
-                    <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={() => setSelectedEmployeeId(String(row.userId))}>
-                      <Eye size={14} />View
-                    </button>
-                  )
+                  render: (row) => {
+                    if (!row || !row.userId) return null;
+                    return (
+                      <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={() => setSelectedEmployeeId(String(row.userId))}>
+                        <Eye size={14} />View
+                      </button>
+                    );
+                  }
                 }
               ]}
               rows={folderRows}
