@@ -229,7 +229,7 @@ export default function DocumentsPage() {
 
   const visibleDocuments = useMemo(
     () => documents
-      .filter((doc) => doc.folderType !== 'profile' && doc.folderType !== 'branding')
+      .filter((doc) => doc.folderType !== 'profile' && doc.folderType !== 'branding' && doc.folderType !== 'travel')
       .map((document) => ({
         ...document,
         isNew: user.role === 'ceo'
@@ -419,10 +419,14 @@ export default function DocumentsPage() {
   };
 
   const handlePreviewRow = (row) => {
+    if (!row || !row.id) {
+      console.error('Row or row.id is undefined:', row);
+      return;
+    }
     handlePreview({
       id: row.id,
-      fileName: row.file_name,
-      mimeType: row.mime_type
+      fileName: row.file_name || row.fileName,
+      mimeType: row.mime_type || row.mimeType
     });
   };
 
@@ -436,6 +440,10 @@ export default function DocumentsPage() {
   };
 
   const handleOpenDocument = (documentId) => {
+    if (!documentId) {
+      console.error('Document ID is undefined');
+      return;
+    }
     if (user.role === 'ceo') {
       setSeenDocumentIds((current) => [...new Set([...current.map(String), String(documentId)])]);
     }
@@ -602,7 +610,7 @@ export default function DocumentsPage() {
                         }}>
                           Download
                         </button>
-                        {(canManageEmployeeDocuments || (String(row.userId) === String(user.id) && (!isRestrictedDocument(row) || canManageRestrictedDocuments))) ? (
+                        {(canManageEmployeeDocuments || (row.userId && String(row.userId) === String(user.id) && (!isRestrictedDocument(row) || canManageRestrictedDocuments))) ? (
                           <button type="button" className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700" onClick={(event) => {
                             event.stopPropagation();
                             handleDelete(row);
@@ -616,7 +624,7 @@ export default function DocumentsPage() {
                 ]}
                 rows={canManageEmployeeDocuments ? selectedFolderDocuments : visibleDocuments}
                 getRowProps={(row) => ({
-                  onClick: () => handleOpenDocument(row.id),
+                  onClick: () => row && row.id ? handleOpenDocument(row.id) : null,
                   className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}`
                 })}
                 emptyLabel={canManageEmployeeDocuments ? 'No documents were found in this folder.' : 'No documents found.'}
@@ -645,7 +653,7 @@ export default function DocumentsPage() {
                             ) }
                           ]}
                           rows={docs}
-                          getRowProps={(row) => ({ onClick: () => handleOpenDocument(row.id), className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}` })}
+                          getRowProps={(row) => ({ onClick: () => row && row.id ? handleOpenDocument(row.id) : null, className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}` })}
                           emptyLabel="No documents in this category."
                         />
                       </div>
@@ -670,7 +678,7 @@ export default function DocumentsPage() {
                             { key: 'createdAt', header: 'Uploaded', render: (row) => new Date(row.createdAt).toLocaleDateString() }
                           ]}
                           rows={docs}
-                          getRowProps={(row) => ({ onClick: () => handleOpenDocument(row.id), className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}` })}
+                          getRowProps={(row) => ({ onClick: () => row && row.id ? handleOpenDocument(row.id) : null, className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}` })}
                           emptyLabel="No documents in this category."
                         />
                       </div>
