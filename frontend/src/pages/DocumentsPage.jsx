@@ -245,18 +245,14 @@ export default function DocumentsPage() {
     }
 
     const grouped = visibleDocuments.reduce((accumulator, document) => {
-      // Skip documents without userId
-      if (!document.userId) {
-        return accumulator;
-      }
-
-      const key = String(document.userId);
+      // Use uploadedBy as fallback if userId is missing
+      const key = String(document.userId || document.uploadedBy || document.id);
       if (!accumulator[key]) {
         accumulator[key] = {
           id: key,
-          userId: document.userId,
-          employeeName: document.employeeName || 'Employee',
-          employeeNo: document.employeeNo || 'No employee number',
+          userId: document.userId || document.uploadedBy,
+          employeeName: document.employeeName || document.uploadedByName || 'Unknown',
+          employeeNo: document.employeeNo || 'N/A',
           totalSize: 0,
           documentCount: 0,
           newCount: 0,
