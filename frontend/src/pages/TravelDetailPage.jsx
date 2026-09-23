@@ -1348,11 +1348,13 @@ export default function TravelDetailPage() {
                               amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
                             }
 
-                            // Add accommodation
-                            const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                            if (accommodation > 0) {
-                              const accommodationCurrency = request.accommodationCurrency || 'KES';
-                              amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
+                            // Add accommodation (NOT for local movement)
+                            if (!isLocalMovement(request)) {
+                              const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                              if (accommodation > 0) {
+                                const accommodationCurrency = request.accommodationCurrency || 'KES';
+                                amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
+                              }
                             }
 
                             // Add transportation
@@ -1362,11 +1364,13 @@ export default function TravelDetailPage() {
                               amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportation;
                             }
 
-                            // Add other costs
-                            const other = request.estimatedCost || 0;
-                            if (other > 0) {
-                              const currency = request.currency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
+                            // Add other costs (NOT for local movement)
+                            if (!isLocalMovement(request)) {
+                              const other = request.estimatedCost || 0;
+                              if (other > 0) {
+                                const currency = request.currency || 'KES';
+                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
+                              }
                             }
 
                             // Display as "9,000 KES + 80 USD"
@@ -1459,11 +1463,13 @@ export default function TravelDetailPage() {
                               amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
                             }
 
-                            // Add accommodation
-                            const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                            if (accommodation > 0) {
-                              const accommodationCurrency = request.accommodationCurrency || 'KES';
-                              amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
+                            // Add accommodation (NOT for local movement)
+                            if (!isLocalMovement(request)) {
+                              const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
+                              if (accommodation > 0) {
+                                const accommodationCurrency = request.accommodationCurrency || 'KES';
+                                amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
+                              }
                             }
 
                             // Add transportation
@@ -1473,11 +1479,13 @@ export default function TravelDetailPage() {
                               amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportation;
                             }
 
-                            // Add other costs
-                            const other = request.estimatedCost || 0;
-                            if (other > 0) {
-                              const currency = request.currency || 'KES';
-                              amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
+                            // Add other costs (NOT for local movement)
+                            if (!isLocalMovement(request)) {
+                              const other = request.estimatedCost || 0;
+                              if (other > 0) {
+                                const currency = request.currency || 'KES';
+                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
+                              }
                             }
 
                             // Display as "9,000 KES + 80 USD"

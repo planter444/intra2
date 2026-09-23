@@ -23,6 +23,13 @@ const getCorrectDSACurrency = (dbCurrency, travelCategory) => {
   return dbCurrency || 'KES';
 };
 
+// Helper to check if request is local movement
+const checkIsLocalMovement = (travelCategory) => {
+  if (!travelCategory) return false;
+  const category = travelCategory.toLowerCase();
+  return category === 'local movement' || category === 'local';
+};
+
 const ensureBrevoConfigured = () => {
   if (!env.brevoApiKey || !env.brevoSenderEmail) {
     const error = new Error('Brevo email delivery is not configured. Set BREVO_API_KEY and BREVO_SENDER_EMAIL to enable system emails.');
@@ -330,14 +337,14 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
   const approvalStage = isCEOApprover ? 'CEO' : 'Supervisor';
 
   // Calculate total cost based on travel type and category
-  const isLocalMovement = travelCategory.toLowerCase().includes('local');
+  const isLocalMovement = checkIsLocalMovement(travelCategory);
   const isReimbursement = travelType.toLowerCase().includes('reimbursement');
 
   let totalCostDisplay = 'Not specified';
   const amountsByCurrency = {};
 
   if (isLocalMovement) {
-    // Local movement: total = DSA + transportationCost
+    // Local movement: total = DSA + transportationCost (NO accommodation, NO other costs)
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
 
@@ -364,8 +371,8 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
-    // Add accommodation with its own currency
-    if (accommodationAmount > 0) {
+    // Add accommodation with its own currency (NOT for local movement)
+    if (!isLocalMovement && accommodationAmount > 0) {
       const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
       amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
     }
@@ -375,8 +382,8 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
 
-    // Add other costs with its own currency
-    if (estimatedCost > 0) {
+    // Add other costs with its own currency (NOT for local movement)
+    if (!isLocalMovement && estimatedCost > 0) {
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   } else {
@@ -392,8 +399,8 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
-    // Add accommodation with its own currency
-    if (accommodationAmount > 0) {
+    // Add accommodation with its own currency (NOT for local movement)
+    if (!isLocalMovement && accommodationAmount > 0) {
       const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
       amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
     }
@@ -403,8 +410,8 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
 
-    // Add other costs with its own currency
-    if (estimatedCost > 0) {
+    // Add other costs with its own currency (NOT for local movement)
+    if (!isLocalMovement && estimatedCost > 0) {
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   }
@@ -538,7 +545,7 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
   const amountsByCurrency = {};
 
   if (isLocalMovement) {
-    // Local movement: total = DSA + transportationCost
+    // Local movement: total = DSA + transportationCost (NO accommodation, NO other costs)
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
 
@@ -565,8 +572,8 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
-    // Add accommodation with its own currency
-    if (accommodationAmount > 0) {
+    // Add accommodation with its own currency (NOT for local movement)
+    if (!isLocalMovement && accommodationAmount > 0) {
       const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
       amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
     }
@@ -576,8 +583,8 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
 
-    // Add other costs with its own currency
-    if (estimatedCost > 0) {
+    // Add other costs with its own currency (NOT for local movement)
+    if (!isLocalMovement && estimatedCost > 0) {
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   } else {
@@ -593,8 +600,8 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
-    // Add accommodation with its own currency
-    if (accommodationAmount > 0) {
+    // Add accommodation with its own currency (NOT for local movement)
+    if (!isLocalMovement && accommodationAmount > 0) {
       const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
       amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
     }
@@ -604,8 +611,8 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
 
-    // Add other costs with its own currency
-    if (estimatedCost > 0) {
+    // Add other costs with its own currency (NOT for local movement)
+    if (!isLocalMovement && estimatedCost > 0) {
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   }
@@ -721,7 +728,7 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
   const amountsByCurrency = {};
 
   if (isLocalMovement) {
-    // Local movement: total = DSA + transportationCost
+    // Local movement: total = DSA + transportationCost (NO accommodation, NO other costs)
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
 
@@ -748,8 +755,8 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
-    // Add accommodation with its own currency
-    if (accommodationAmount > 0) {
+    // Add accommodation with its own currency (NOT for local movement)
+    if (!isLocalMovement && accommodationAmount > 0) {
       const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
       amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
     }
@@ -759,8 +766,8 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
 
-    // Add other costs with its own currency
-    if (estimatedCost > 0) {
+    // Add other costs with its own currency (NOT for local movement)
+    if (!isLocalMovement && estimatedCost > 0) {
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   } else {
@@ -776,8 +783,8 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
-    // Add accommodation with its own currency
-    if (accommodationAmount > 0) {
+    // Add accommodation with its own currency (NOT for local movement)
+    if (!isLocalMovement && accommodationAmount > 0) {
       const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
       amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
     }
@@ -787,8 +794,8 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
 
-    // Add other costs with its own currency
-    if (estimatedCost > 0) {
+    // Add other costs with its own currency (NOT for local movement)
+    if (!isLocalMovement && estimatedCost > 0) {
       amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   }
