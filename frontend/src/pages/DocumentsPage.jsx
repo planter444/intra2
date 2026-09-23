@@ -583,15 +583,18 @@ export default function DocumentsPage() {
                   {
                     key: 'fileName',
                     header: 'Document type',
-                    render: (row) => (
-                      <div className={row.isNew ? `rounded-2xl px-3 py-2 ${isAddendumDocument(row) ? 'bg-rose-50' : 'bg-amber-50'}` : isAddendumDocument(row) ? 'rounded-2xl border border-rose-100 bg-rose-50/70 px-3 py-2' : ''}>
-                        <p className={`font-medium ${isAddendumDocument(row) ? 'text-rose-700' : 'text-slate-900'}`}>{getDocumentDisplayLabel(row, folderLabelMap)}</p>
-                        <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">{row.fileName}</p>
-                      </div>
-                    )
+                    render: (row) => {
+                      if (!row) return null;
+                      return (
+                        <div className={row.isNew ? `rounded-2xl px-3 py-2 ${isAddendumDocument(row) ? 'bg-rose-50' : 'bg-amber-50'}` : isAddendumDocument(row) ? 'rounded-2xl border border-rose-100 bg-rose-50/70 px-3 py-2' : ''}>
+                          <p className={`font-medium ${isAddendumDocument(row) ? 'text-rose-700' : 'text-slate-900'}`}>{getDocumentDisplayLabel(row, folderLabelMap)}</p>
+                          <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">{row.fileName}</p>
+                        </div>
+                      );
+                    }
                   },
                   { key: 'mimeType', header: 'Type', render: (row) => getDocumentTypeLabel(row) },
-                  { key: 'fileSize', header: 'Size', render: (row) => formatDocumentSizeMb(row.fileSize) },
+                  { key: 'fileSize', header: 'Size', render: (row) => formatDocumentSizeMb(row?.fileSize || 0) },
                   { key: 'isNew', header: 'Status', render: (row) => row.isNew ? <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">New</span> : <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Seen</span> },
                   {
                     key: 'actions',
@@ -642,15 +645,15 @@ export default function DocumentsPage() {
                         </div>
                         <DataTable
                           columns={[
-                            { key: 'type', header: 'Type', render: (row) => <span className={isAddendumDocument(row) ? 'font-medium text-rose-700' : ''}>{getDocumentDisplayLabel(row, folderLabelMap)}</span> },
-                            { key: 'size', header: 'Size', render: (row) => formatDocumentSizeMb(row.fileSize) },
-                            { key: 'createdAt', header: 'Uploaded', render: (row) => new Date(row.createdAt).toLocaleDateString() },
-                            { key: 'actions', header: 'Actions', render: (row) => (
+                            { key: 'type', header: 'Type', render: (row) => row ? <span className={isAddendumDocument(row) ? 'font-medium text-rose-700' : ''}>{getDocumentDisplayLabel(row, folderLabelMap)}</span> : null },
+                            { key: 'size', header: 'Size', render: (row) => formatDocumentSizeMb(row?.fileSize || 0) },
+                            { key: 'createdAt', header: 'Uploaded', render: (row) => row?.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A' },
+                            { key: 'actions', header: 'Actions', render: (row) => row ? (
                               <div className="flex flex-wrap gap-2">
                                 <button type="button" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => { e.stopPropagation(); handlePreviewRow(row); }}>Preview</button>
                                 <button type="button" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700" onClick={(e) => { e.stopPropagation(); handleDownload(row.id); }}>Download</button>
                               </div>
-                            ) }
+                            ) : null }
                           ]}
                           rows={docs}
                           getRowProps={(row) => ({ onClick: () => row && row.id ? handleOpenDocument(row.id) : null, className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}` })}
@@ -673,9 +676,9 @@ export default function DocumentsPage() {
                         </div>
                         <DataTable
                           columns={[
-                            { key: 'type', header: 'Type', render: (row) => <span className={isAddendumDocument(row) ? 'font-medium text-rose-700' : ''}>{getDocumentDisplayLabel(row, folderLabelMap)}</span> },
-                            { key: 'size', header: 'Size', render: (row) => formatDocumentSizeMb(row.fileSize) },
-                            { key: 'createdAt', header: 'Uploaded', render: (row) => new Date(row.createdAt).toLocaleDateString() }
+                            { key: 'type', header: 'Type', render: (row) => row ? <span className={isAddendumDocument(row) ? 'font-medium text-rose-700' : ''}>{getDocumentDisplayLabel(row, folderLabelMap)}</span> : null },
+                            { key: 'size', header: 'Size', render: (row) => formatDocumentSizeMb(row?.fileSize || 0) },
+                            { key: 'createdAt', header: 'Uploaded', render: (row) => row?.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A' }
                           ]}
                           rows={docs}
                           getRowProps={(row) => ({ onClick: () => row && row.id ? handleOpenDocument(row.id) : null, className: `cursor-pointer transition ${isAddendumDocument(row) ? 'hover:bg-rose-50/70' : 'hover:bg-slate-50'}` })}
