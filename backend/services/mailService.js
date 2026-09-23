@@ -322,11 +322,16 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     // Local movement: total = DSA + transportationCost
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
-    const total = dsaAmount + transportationCost;
 
-    if (total > 0) {
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
       const dsaCurrency = travelRequest.dsaCurrency || 'KES';
-      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + total;
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
   } else if (isReimbursement) {
     // Official reimbursement: total = DSA + accommodation + transportation + other costs
@@ -334,11 +339,27 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
-    const total = dsaAmount + accommodationAmount + transportationCost + estimatedCost;
 
-    if (total > 0) {
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
       const dsaCurrency = travelRequest.dsaCurrency || 'KES';
-      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + total;
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add accommodation with its own currency
+    if (accommodationAmount > 0) {
+      const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+      amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+
+    // Add other costs with its own currency
+    if (estimatedCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   } else {
     // Official booking: total = DSA + accommodation + transportation + other costs
@@ -346,11 +367,27 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
-    const total = dsaAmount + accommodationAmount + transportationCost + estimatedCost;
 
-    if (total > 0) {
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
       const dsaCurrency = travelRequest.dsaCurrency || 'KES';
-      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + total;
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add accommodation with its own currency
+    if (accommodationAmount > 0) {
+      const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+      amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+
+    // Add other costs with its own currency
+    if (estimatedCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   }
 
@@ -477,6 +514,7 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
   const travelCategory = travelRequest.travelCategory || travelRequest.travel_category || '';
   const isLocalMovement = travelCategory.toLowerCase().includes('local');
   const isReimbursement = travelType.toLowerCase().includes('reimbursement');
+  const currency = travelRequest.currency || 'KES';
 
   let totalCostDisplay = 'Not specified';
   const amountsByCurrency = {};
@@ -485,11 +523,16 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
     // Local movement: total = DSA + transportationCost
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
-    const total = dsaAmount + transportationCost;
 
-    if (total > 0) {
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
       const dsaCurrency = travelRequest.dsaCurrency || 'KES';
-      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + total;
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
     }
   } else if (isReimbursement) {
     // Official reimbursement: total = DSA + accommodation + transportation + other costs
@@ -497,11 +540,27 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
     const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
-    const total = dsaAmount + accommodationAmount + transportationCost + estimatedCost;
 
-    if (total > 0) {
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
       const dsaCurrency = travelRequest.dsaCurrency || 'KES';
-      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + total;
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add accommodation with its own currency
+    if (accommodationAmount > 0) {
+      const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+      amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+
+    // Add other costs with its own currency
+    if (estimatedCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   } else {
     // Official booking: total = DSA + accommodation + transportation + other costs
@@ -509,11 +568,27 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
     const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
-    const total = dsaAmount + accommodationAmount + transportationCost + estimatedCost;
 
-    if (total > 0) {
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
       const dsaCurrency = travelRequest.dsaCurrency || 'KES';
-      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + total;
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add accommodation with its own currency
+    if (accommodationAmount > 0) {
+      const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+      amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+
+    // Add other costs with its own currency
+    if (estimatedCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
     }
   }
 
@@ -617,6 +692,96 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
   const endDate = formatDate(travelRequest.endDate || travelRequest.end_date);
   const reason = travelRequest.reason || 'Not specified';
 
+  // Calculate total cost based on travel type and category
+  const travelType = travelRequest.travelType || travelRequest.travel_type || 'Not specified';
+  const travelCategory = travelRequest.travelCategory || travelRequest.travel_category || '';
+  const isLocalMovement = travelCategory.toLowerCase().includes('local');
+  const isReimbursement = travelType.toLowerCase().includes('reimbursement');
+  const currency = travelRequest.currency || 'KES';
+
+  let totalCostDisplay = 'Not specified';
+  const amountsByCurrency = {};
+
+  if (isLocalMovement) {
+    // Local movement: total = DSA + transportationCost
+    const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+    const transportationCost = travelRequest.transportationCost || 0;
+
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
+      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+  } else if (isReimbursement) {
+    // Official reimbursement: total = DSA + accommodation + transportation + other costs
+    const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+    const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
+    const transportationCost = travelRequest.transportationCost || 0;
+    const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
+
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
+      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add accommodation with its own currency
+    if (accommodationAmount > 0) {
+      const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+      amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+
+    // Add other costs with its own currency
+    if (estimatedCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
+    }
+  } else {
+    // Official booking: total = DSA + accommodation + transportation + other costs
+    const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
+    const accommodationAmount = (travelRequest.accommodationProvided ? 0 : travelRequest.accommodationAmount) || 0;
+    const transportationCost = travelRequest.transportationCost || 0;
+    const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
+
+    // Add DSA with its own currency
+    if (dsaAmount > 0) {
+      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
+    }
+
+    // Add accommodation with its own currency
+    if (accommodationAmount > 0) {
+      const accommodationCurrency = travelRequest.accommodationCurrency || 'KES';
+      amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodationAmount;
+    }
+
+    // Add transportation with its own currency
+    if (transportationCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportationCost;
+    }
+
+    // Add other costs with its own currency
+    if (estimatedCost > 0) {
+      amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + estimatedCost;
+    }
+  }
+
+  // Format total by currency
+  if (Object.keys(amountsByCurrency).length > 0) {
+    totalCostDisplay = Object.entries(amountsByCurrency)
+      .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
+      .join(' + ');
+  }
+
   await sendBrevoEmail({
     to: [
       {
@@ -662,6 +827,10 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
               <tr>
                 <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Reason for Travel:</td>
                 <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${reason}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Total Cost:</td>
+                <td style="padding: 8px 0; color: #1e293b; font-size: 14px; font-weight: 500;">${totalCostDisplay}</td>
               </tr>
               ${supervisorComment ? `
               <tr>

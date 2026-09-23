@@ -115,6 +115,12 @@ const createTravelRequest = async (req, res, next) => {
     console.log('createTravelRequest - Received body:', Object.keys(req.body));
     console.log('createTravelRequest - File:', req.file ? { name: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype } : 'No file');
     console.log('createTravelRequest - travelCategory:', req.body.travelCategory);
+    console.log('createTravelRequest - dsaRate:', req.body.dsaRate);
+    console.log('createTravelRequest - dsaCurrency:', req.body.dsaCurrency);
+    console.log('createTravelRequest - dsaAmount:', req.body.dsaAmount);
+    console.log('createTravelRequest - accommodationRate:', req.body.accommodationRate);
+    console.log('createTravelRequest - accommodationCurrency:', req.body.accommodationCurrency);
+    console.log('createTravelRequest - accommodationAmount:', req.body.accommodationAmount);
 
     const { travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent } = req.body;
 
