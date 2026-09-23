@@ -229,7 +229,7 @@ export default function DocumentsPage() {
 
   const visibleDocuments = useMemo(
     () => documents
-      .filter((doc) => doc.folderType !== 'profile' && doc.folderType !== 'branding' && doc.folderType !== 'travel')
+      .filter((doc) => doc && doc.folderType !== 'profile' && doc.folderType !== 'branding' && doc.folderType !== 'travel')
       .map((document) => ({
         ...document,
         isNew: user.role === 'ceo'
@@ -568,17 +568,16 @@ export default function DocumentsPage() {
                 {
                   key: 'actions',
                   header: 'Actions',
-                  render: (row) => {
-                    if (!row || !row.userId) return null;
-                    return (
-                      <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={() => setSelectedEmployeeId(String(row.userId))}>
+                  render: (row) => (
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={() => row?.userId ? setSelectedEmployeeId(String(row.userId)) : null}>
                         <Eye size={14} />View
                       </button>
-                    );
-                  }
+                    </div>
+                  )
                 }
               ]}
-              rows={folderRows}
+              rows={folderRows.filter(row => row && row.userId)}
               emptyLabel="No employee folders found."
             />
           ) : (
