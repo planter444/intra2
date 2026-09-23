@@ -74,6 +74,24 @@ const generateReferenceNumber = async () => {
 const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent }) => {
   const referenceNumber = await generateReferenceNumber();
 
+  // Check if the first approver is the CEO
+  let initialStatus = 'pending';
+  try {
+    const approvers = await getApproverForEmployee(userId);
+    if (approvers && approvers.length > 0) {
+      const firstApproverId = approvers[0];
+      const approverResult = await query(
+        `SELECT role FROM users WHERE id = $1`,
+        [firstApproverId]
+      );
+      if (approverResult.rows.length > 0 && approverResult.rows[0].role === 'ceo') {
+        initialStatus = 'pending_ceo';
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to check first approver, defaulting to pending:', error.message);
+  }
+
   // Helper to normalize numeric values
   const toNullableNumber = (value) => {
     if (value === undefined || value === null) return null;
@@ -117,7 +135,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
           status,
           settled
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, false)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29, false)
         RETURNING id
       `,
       [
@@ -146,7 +164,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         toNullableNumber(transportationCost),
         fullDayEvent || false,
         referenceNumber,
-        'pending',
+        initialStatus,
         false
       ]
     );
@@ -181,7 +199,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
               reference_number,
               status
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
               RETURNING id
             `,
             [
@@ -203,7 +221,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
               accommodationProvided || false,
               fullDayEvent || false,
               referenceNumber,
-              'pending'
+              initialStatus
             ]
         );
       } catch (fallbackError) {
@@ -226,7 +244,7 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
                 reference_number,
                 status
               )
-              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending')
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
               RETURNING id
             `,
             [
@@ -240,7 +258,8 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
               toNullableNumber(estimatedCost),
               currency || 'KES',
               supportingDocumentId || null,
-              referenceNumber
+              referenceNumber,
+              initialStatus
             ]
           );
         } catch (minimalError) {
