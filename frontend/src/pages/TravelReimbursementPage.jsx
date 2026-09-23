@@ -282,13 +282,36 @@ export default function TravelReimbursementPage() {
     setLoading(true);
 
     try {
+      // Calculate DSA rate from settings if not provided
+      let dsaRate = form.dsaRate ? Number(form.dsaRate) : null;
+      let dsaCurrency = form.dsaCurrency || 'KES';
+      if (!dsaRate && form.travelCategory && settings?.travel?.dsa) {
+        const dsaRateInfo = getDSARate(form.designation, form.travelCategory, form.travelTypeDetail, settings);
+        if (dsaRateInfo) {
+          dsaRate = dsaRateInfo.rate;
+          dsaCurrency = dsaRateInfo.currency;
+        }
+      }
+
+      // Calculate accommodation rate from settings if not provided
+      let accommodationRate = form.accommodationRate ? Number(form.accommodationRate) : null;
+      let accommodationCurrency = form.accommodationCurrency || 'KES';
+      if (!accommodationRate && settings?.travel?.accommodation?.rate) {
+        accommodationRate = settings.travel.accommodation.rate;
+        accommodationCurrency = settings.travel.accommodation.currency || 'KES';
+      }
+
       const payload = {
         ...form,
         userId: user.id,
+        dsaRate: dsaRate,
+        dsaCurrency: dsaCurrency,
         dsaAmount: parseFloat(form.dsaAmount) || 0,
         estimatedCost: parseFloat(form.estimatedCost) || 0,
         transportationCost: parseFloat(form.transportationCost) || 0,
         dsaProvided: form.dsaProvided || false,
+        accommodationRate: accommodationRate,
+        accommodationCurrency: accommodationCurrency,
         accommodationAmount: parseFloat(form.accommodationAmount) || 0,
         accommodationProvided: form.accommodationProvided || false
       };
