@@ -133,6 +133,26 @@ export default function TravelDetailPage() {
     return null;
   };
 
+  // Get correct DSA currency from settings (override database if wrong)
+  const getCorrectDSACurrency = (dbCurrency, travelCategory) => {
+    const dsaSettings = settings?.travel?.dsa;
+    if (!travelCategory || !dsaSettings) return dbCurrency || 'KES';
+
+    if (travelCategory === 'Within Kenya') {
+      return dsaSettings?.kenyaCurrency || 'KES';
+    }
+
+    if (travelCategory === 'East Africa') {
+      return dsaSettings?.eastAfricaCurrency || 'USD';
+    }
+
+    if (travelCategory === 'International') {
+      return dsaSettings?.internationalCurrency || 'USD';
+    }
+
+    return dbCurrency || 'KES';
+  };
+
   // Get accommodation rate from settings
   const getAccommodationRateFromSettings = () => {
     return {
@@ -1196,7 +1216,7 @@ export default function TravelDetailPage() {
                           {(() => {
                             const dsaRateInfo = getDSARateFromSettings(request.designation, request.travelCategory, request.travelTypeDetail);
                             const displayRate = request.dsaRate > 0 ? request.dsaRate : (dsaRateInfo?.rate || 0);
-                            const displayCurrency = request.dsaRate > 0 ? (request.dsaCurrency || 'KES') : (dsaRateInfo?.currency || 'KES');
+                            const displayCurrency = request.dsaRate > 0 ? getCorrectDSACurrency(request.dsaCurrency, request.travelCategory) : (dsaRateInfo?.currency || 'KES');
                             return `${displayCurrency} ${displayRate.toLocaleString()}`;
                           })()}
                         </span>
@@ -1207,7 +1227,7 @@ export default function TravelDetailPage() {
                           (request.dsaAmount === 0 && request.dsaRate === 0) || request.dsaProvided
                             ? 'text-slate-500'
                             : 'text-emerald-700'
-                        }`}>{request.dsaCurrency || 'KES'} {(request.dsaAmount || 0).toLocaleString()}</span>
+                        }`}>{getCorrectDSACurrency(request.dsaCurrency, request.travelCategory)} {(request.dsaAmount || 0).toLocaleString()}</span>
                       </div>
                       {request.dsaProvided && (
                         <div className="flex justify-between border-t border-slate-200 pt-2">
@@ -1320,35 +1340,35 @@ export default function TravelDetailPage() {
                           {(() => {
                             // Calculate total grouped by currency
                             const amountsByCurrency = {};
-                          
-                            // Add DSA
+
+                            // Add DSA with correct currency from settings
                             const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
                             if (dsa > 0) {
-                              const dsaCurrency = request.dsaCurrency || 'KES';
+                              const dsaCurrency = getCorrectDSACurrency(request.dsaCurrency, request.travelCategory);
                               amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
                             }
-                          
+
                             // Add accommodation
                             const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
                             if (accommodation > 0) {
                               const accommodationCurrency = request.accommodationCurrency || 'KES';
                               amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
                             }
-                          
+
                             // Add transportation
                             const transportation = request.transportationCost || 0;
                             if (transportation > 0) {
                               const currency = request.currency || 'KES';
                               amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportation;
                             }
-                          
+
                             // Add other costs
                             const other = request.estimatedCost || 0;
                             if (other > 0) {
                               const currency = request.currency || 'KES';
                               amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
                             }
-                          
+
                             // Display as "9,000 KES + 80 USD"
                             return Object.entries(amountsByCurrency)
                               .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
@@ -1431,35 +1451,35 @@ export default function TravelDetailPage() {
                           {(() => {
                             // Calculate total grouped by currency
                             const amountsByCurrency = {};
-                          
-                            // Add DSA
+
+                            // Add DSA with correct currency from settings
                             const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
                             if (dsa > 0) {
-                              const dsaCurrency = request.dsaCurrency || 'KES';
+                              const dsaCurrency = getCorrectDSACurrency(request.dsaCurrency, request.travelCategory);
                               amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
                             }
-                          
+
                             // Add accommodation
                             const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
                             if (accommodation > 0) {
                               const accommodationCurrency = request.accommodationCurrency || 'KES';
                               amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
                             }
-                          
+
                             // Add transportation
                             const transportation = request.transportationCost || 0;
                             if (transportation > 0) {
                               const currency = request.currency || 'KES';
                               amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportation;
                             }
-                          
+
                             // Add other costs
                             const other = request.estimatedCost || 0;
                             if (other > 0) {
                               const currency = request.currency || 'KES';
                               amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
                             }
-                          
+
                             // Display as "9,000 KES + 80 USD"
                             return Object.entries(amountsByCurrency)
                               .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)

@@ -28,6 +28,26 @@ const isLocalMovement = (request) => {
   return category === 'local movement' || category === 'local';
 };
 
+// Get correct DSA currency from settings (override database if wrong)
+const getCorrectDSACurrency = (dbCurrency, travelCategory, settings) => {
+  const dsaSettings = settings?.travel?.dsa;
+  if (!travelCategory || !dsaSettings) return dbCurrency || 'KES';
+
+  if (travelCategory === 'Within Kenya') {
+    return dsaSettings?.kenyaCurrency || 'KES';
+  }
+
+  if (travelCategory === 'East Africa') {
+    return dsaSettings?.eastAfricaCurrency || 'USD';
+  }
+
+  if (travelCategory === 'International') {
+    return dsaSettings?.internationalCurrency || 'USD';
+  }
+
+  return dbCurrency || 'KES';
+};
+
 const canDecideTravel = (user, request, employeeApprovers) => {
   // ONLY check employee-specific routing - this is the only approval strategy
   const designatedApproverId = employeeApprovers[request.userId];
@@ -47,7 +67,7 @@ const canDeleteTravel = (user, request) => {
 
 export default function TravelPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, settings } = useAuth();
   const [requests, setRequests] = useState([]);
   const [employeeApprovers, setEmployeeApprovers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -460,10 +480,10 @@ export default function TravelPage() {
                                       // Calculate total grouped by currency
                                       const amountsByCurrency = {};
                                       
-                                      // Add DSA
+                                      // Add DSA with correct currency from settings
                                       const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
                                       if (dsa > 0) {
-                                        const dsaCurrency = request.dsaCurrency || 'KES';
+                                        const dsaCurrency = getCorrectDSACurrency(request.dsaCurrency, request.travelCategory, settings);
                                         amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
                                       }
                                       
@@ -501,10 +521,10 @@ export default function TravelPage() {
                                       // Calculate total grouped by currency
                                       const amountsByCurrency = {};
                                       
-                                      // Add DSA
+                                      // Add DSA with correct currency from settings
                                       const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
                                       if (dsa > 0) {
-                                        const dsaCurrency = request.dsaCurrency || 'KES';
+                                        const dsaCurrency = getCorrectDSACurrency(request.dsaCurrency, request.travelCategory, settings);
                                         amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
                                       }
                                       
