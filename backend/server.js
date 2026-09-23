@@ -55,7 +55,11 @@ const start = async () => {
     crossOriginResourcePolicy: false,
     crossOriginEmbedderPolicy: false
   }));
-  app.use(cors({ origin: env.frontendUrl, credentials: false, exposedHeaders: ['Content-Disposition', 'Content-Type'] }));
+  app.use(cors({
+    origin: ['http://localhost:5173', 'https://kerea2.netlify.app', env.frontendUrl],
+    credentials: false,
+    exposedHeaders: ['Content-Disposition', 'Content-Type']
+  }));
   app.use(express.json({ limit: '2mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(morgan('dev'));
