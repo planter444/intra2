@@ -5,6 +5,24 @@ const periodLabelOf = (period) => {
   return Number.isNaN(date.getTime()) ? period : date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 };
 
+// Get correct DSA currency based on travel category
+const getCorrectDSACurrency = (dbCurrency, travelCategory) => {
+  if (!travelCategory) return dbCurrency || 'KES';
+
+  const category = travelCategory.toLowerCase();
+  if (category === 'within kenya') {
+    return 'KES';
+  }
+  if (category === 'east africa') {
+    return 'USD';
+  }
+  if (category === 'international') {
+    return 'USD';
+  }
+
+  return dbCurrency || 'KES';
+};
+
 const ensureBrevoConfigured = () => {
   if (!env.brevoApiKey || !env.brevoSenderEmail) {
     const error = new Error('Brevo email delivery is not configured. Set BREVO_API_KEY and BREVO_SENDER_EMAIL to enable system emails.');
@@ -323,9 +341,9 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -340,9 +358,9 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -368,9 +386,9 @@ const sendTravelRequestSubmittedEmail = async ({ recipients, travelRequest, appl
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -524,9 +542,9 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -541,9 +559,9 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -569,9 +587,9 @@ const sendTravelCEOApprovedEmail = async ({ toEmail, toName, travelRequest, ceoN
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -707,9 +725,9 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
     const dsaAmount = (travelRequest.dsaProvided ? 0 : travelRequest.dsaAmount) || 0;
     const transportationCost = travelRequest.transportationCost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -724,9 +742,9 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
@@ -752,9 +770,9 @@ const sendTravelSupervisorApprovedToCEOEmail = async ({ toEmail, toName, travelR
     const transportationCost = travelRequest.transportationCost || 0;
     const estimatedCost = travelRequest.estimatedCost || travelRequest.estimated_cost || 0;
 
-    // Add DSA with its own currency
+    // Add DSA with its own currency (override from travel category)
     if (dsaAmount > 0) {
-      const dsaCurrency = travelRequest.dsaCurrency || 'KES';
+      const dsaCurrency = getCorrectDSACurrency(travelRequest.dsaCurrency, travelCategory);
       amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsaAmount;
     }
 
