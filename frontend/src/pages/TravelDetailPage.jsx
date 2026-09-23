@@ -93,6 +93,54 @@ export default function TravelDetailPage() {
     }
   };
 
+  // Get DSA rate from settings based on travel category
+  const getDSARateFromSettings = (designation, travelCategory, travelTypeDetail) => {
+    if (!travelCategory) return null;
+
+    const dsaMode = settings?.travel?.dsa?.mode || 'standard';
+    const dsaSettings = settings?.travel?.dsa;
+
+    if (dsaMode === 'standard') {
+      const applicableTo = dsaSettings?.applicableTo || ['all'];
+      const isApplicable = applicableTo.includes('all') || applicableTo.includes(designation?.toLowerCase().replace(/\s+/g, ''));
+
+      if (!isApplicable) return null;
+
+      if (travelCategory === 'Within Kenya') {
+        return {
+          rate: dsaSettings?.kenyaRate || 2000,
+          currency: dsaSettings?.kenyaCurrency || 'KES'
+        };
+      }
+
+      if (travelCategory === 'East Africa') {
+        return {
+          rate: dsaSettings?.eastAfricaRate || 40,
+          currency: dsaSettings?.eastAfricaCurrency || 'USD'
+        };
+      }
+
+      if (travelCategory === 'International') {
+        return {
+          rate: dsaSettings?.internationalRate || 50,
+          currency: dsaSettings?.internationalCurrency || 'USD'
+        };
+      }
+
+      return null;
+    }
+
+    return null;
+  };
+
+  // Get accommodation rate from settings
+  const getAccommodationRateFromSettings = () => {
+    return {
+      rate: settings?.travel?.accommodation?.rate || 4000,
+      currency: settings?.travel?.accommodation?.currency || 'KES'
+    };
+  };
+
   // Helper function to determine if a request is local movement
   const isLocalMovement = (request) => {
     if (!request) return false;
@@ -1144,7 +1192,14 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate per Day:</span>
-                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(request.dsaRate > 0 ? request.dsaRate : 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">
+                          {(() => {
+                            const dsaRateInfo = getDSARateFromSettings(request.designation, request.travelCategory, request.travelTypeDetail);
+                            const displayRate = request.dsaRate > 0 ? request.dsaRate : (dsaRateInfo?.rate || 0);
+                            const displayCurrency = request.dsaRate > 0 ? (request.dsaCurrency || 'KES') : (dsaRateInfo?.currency || 'KES');
+                            return `${displayCurrency} ${displayRate.toLocaleString()}`;
+                          })()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
@@ -1179,7 +1234,14 @@ export default function TravelDetailPage() {
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-slate-600">Rate per Night:</span>
-                        <span className="font-medium text-slate-900">{request.accommodationCurrency || 'KES'} {(request.accommodationRate || 0).toLocaleString()}</span>
+                        <span className="font-medium text-slate-900">
+                          {(() => {
+                            const accommodationRateInfo = getAccommodationRateFromSettings();
+                            const displayRate = request.accommodationRate > 0 ? request.accommodationRate : (accommodationRateInfo?.rate || 0);
+                            const displayCurrency = request.accommodationRate > 0 ? (request.accommodationCurrency || 'KES') : (accommodationRateInfo?.currency || 'KES');
+                            return `${displayCurrency} ${displayRate.toLocaleString()}`;
+                          })()}
+                        </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Nights:</span>
