@@ -106,6 +106,14 @@ export default function TravelDetailPage() {
 
       if (!isApplicable) return null;
 
+      // Handle local movement
+      if (travelCategory === 'Local Movement' || travelCategory === 'Local') {
+        return {
+          rate: dsaSettings?.localMovementRate || 2000,
+          currency: 'KES'
+        };
+      }
+
       if (travelCategory === 'Within Kenya') {
         return {
           rate: dsaSettings?.kenyaRate || 2000,
@@ -137,6 +145,11 @@ export default function TravelDetailPage() {
   const getCorrectDSACurrency = (dbCurrency, travelCategory) => {
     const dsaSettings = settings?.travel?.dsa;
     if (!travelCategory || !dsaSettings) return dbCurrency || 'KES';
+
+    // Handle local movement
+    if (travelCategory === 'Local Movement' || travelCategory === 'Local') {
+      return 'KES';
+    }
 
     if (travelCategory === 'Within Kenya') {
       return dsaSettings?.kenyaCurrency || 'KES';

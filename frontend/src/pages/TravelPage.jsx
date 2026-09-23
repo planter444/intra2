@@ -33,6 +33,11 @@ const getCorrectDSACurrency = (dbCurrency, travelCategory, settings) => {
   const dsaSettings = settings?.travel?.dsa;
   if (!travelCategory || !dsaSettings) return dbCurrency || 'KES';
 
+  // Handle local movement
+  if (travelCategory === 'Local Movement' || travelCategory === 'Local') {
+    return 'KES';
+  }
+
   if (travelCategory === 'Within Kenya') {
     return dsaSettings?.kenyaCurrency || 'KES';
   }

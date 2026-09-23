@@ -58,6 +58,15 @@ const getDSARate = (designation, travelCategory, travelTypeDetail, settings) => 
       return null;
     }
 
+    // Handle local movement
+    if (travelCategory === 'Local Movement' || travelCategory === 'Local') {
+      return {
+        rate: dsaSettings?.localMovementRate || 2000,
+        currency: 'KES',
+        unit: 'per day'
+      };
+    }
+
     if (travelCategory === 'Within Kenya') {
       return {
         rate: dsaSettings?.kenyaRate || 2000,

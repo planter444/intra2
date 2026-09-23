@@ -10,6 +10,9 @@ const getCorrectDSACurrency = (dbCurrency, travelCategory) => {
   if (!travelCategory) return dbCurrency || 'KES';
 
   const category = travelCategory.toLowerCase();
+  if (category === 'local movement' || category === 'local') {
+    return 'KES';
+  }
   if (category === 'within kenya') {
     return 'KES';
   }
