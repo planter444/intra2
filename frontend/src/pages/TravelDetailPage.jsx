@@ -1143,8 +1143,8 @@ export default function TravelDetailPage() {
                     </div>
                     <div className="grid gap-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-slate-600">Rate:</span>
-                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(request.dsaRate || 0).toLocaleString()}</span>
+                        <span className="text-slate-600">Rate per Day:</span>
+                        <span className="font-medium text-slate-900">{request.dsaCurrency || 'KES'} {(request.dsaRate > 0 ? request.dsaRate : 0).toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-slate-600">Total DSA:</span>
