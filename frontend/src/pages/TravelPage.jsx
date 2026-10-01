@@ -54,14 +54,19 @@ const getCorrectDSACurrency = (dbCurrency, travelCategory, settings) => {
 };
 
 const canDecideTravel = (user, request, employeeApprovers) => {
+  // CEO can always approve pending_ceo requests regardless of routing
+  if (user.role === 'ceo' && request.status === 'pending_ceo') {
+    return true;
+  }
+
   // ONLY check employee-specific routing - this is the only approval strategy
   const designatedApproverId = employeeApprovers[request.userId];
-  
+
   // User must be the designated approver for this employee
   if (!designatedApproverId || String(designatedApproverId) !== String(user.id)) {
     return false;
   }
-  
+
   // Can only approve pending, pending_ceo, or rejected requests
   return ['pending', 'pending_ceo', 'rejected'].includes(request.status);
 };
