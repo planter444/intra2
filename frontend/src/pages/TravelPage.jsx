@@ -277,10 +277,7 @@ export default function TravelPage() {
     }
     return true;
   }).filter((request) => {
-    // Hide pending_ceo from regular employees (they only need to see their own pending requests)
-    if (user.role === 'employee' && request.status === 'pending_ceo') {
-      return false;
-    }
+    // Employees can see all their requests regardless of status
     return true;
   }).filter((request) => {
     // Search filter
@@ -821,19 +818,6 @@ export default function TravelPage() {
                           }}
                         >
                           Cancel
-                        </button>
-                      )}
-                      {canDecideTravel(user, request, employeeApprovers) && (
-                        <button
-                          type="button"
-                          className="flex-1 sm:flex-none rounded-lg bg-brand-gradient px-2 py-1.5 text-xs font-medium text-white hover:opacity-90 sm:px-3 sm:text-sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/travel/${request.id}`);
-                          }}
-                        >
-                          <Eye size={14} className="inline mr-1" />
-                          View
                         </button>
                       )}
                       {canDeleteTravel(user, request) && (

@@ -402,8 +402,12 @@ const decideTravelRequest = async (req, res, next) => {
     // ONLY check employee-specific routing - this is the only approval strategy
     const approversForEmployee = await travelModel.getApproverForEmployee(request.userId);
 
+    // CEO can always approve pending_ceo requests (final approval stage)
+    if (req.user.role === 'ceo' && request.status === 'pending_ceo') {
+      // CEO can approve pending_ceo requests regardless of routing
+    }
     // CEO can approve their own requests
-    if (req.user.role === 'ceo' && String(request.userId) === String(req.user.id)) {
+    else if (req.user.role === 'ceo' && String(request.userId) === String(req.user.id)) {
       // CEO can self-approve
     }
     // IT officers can approve for themselves if they are one of the designated approvers
