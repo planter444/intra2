@@ -66,7 +66,7 @@ export default function LeavesPage() {
   const isCeo = user?.role === 'ceo';
   const isChairman = user?.role === 'chairman' || user?.role === 'chairperson';
   const canApplyForLeave = !isChairman; // Chairman cannot apply for leave
-  const showPersonalHistory = !isCeo; // CEO sees overview, not personal history
+  const showPersonalHistory = !isCeo && !isChairman; // CEO and Chairman see overview, not personal history
   const leaveCardsOpacity = Number(settings?.interface?.pageExperience?.leave?.leaveCardsOpacity ?? 1) || 1;
 
   useEffect(() => {
@@ -176,11 +176,11 @@ export default function LeavesPage() {
             <CeoLeaveTypeCard key={lt.code || lt.label || index} lt={lt} index={index} opacity={leaveCardsOpacity} />
           ))}
         </div>
-      ) : (
+      ) : !isChairman ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {balances.map((balance, index) => <LeaveBalanceCard key={balance.id} balance={balance} index={index} myRequests={myRequests} opacity={leaveCardsOpacity} />)}
         </div>
-      )}
+      ) : null}
 
       <div className={showPersonalHistory && user?.role !== 'supervisor' ? 'grid gap-6 lg:grid-cols-[minmax(0,1.15fr),minmax(0,1fr)]' : 'space-y-6'}>
         {showPersonalHistory ? (
