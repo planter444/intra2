@@ -64,7 +64,7 @@ export default function LeavesPage() {
   const [balances, setBalances] = useState([]);
   const [requests, setRequests] = useState([]);
   const isCeo = user?.role === 'ceo';
-  const isChairman = user?.role === 'chairman' || user?.role === 'chairperson';
+  const isChairman = user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair';
   const canApplyForLeave = !isChairman; // Chairman cannot apply for leave
   const showPersonalHistory = !isCeo && !isChairman; // CEO and Chairman see overview, not personal history
   const leaveCardsOpacity = Number(settings?.interface?.pageExperience?.leave?.leaveCardsOpacity ?? 1) || 1;
@@ -109,7 +109,7 @@ export default function LeavesPage() {
       return externalRequests.filter((request) => String(request.employeeSupervisorId) === String(user.id));
     }
 
-    if (user?.role === 'chairman' || user?.role === 'chairperson') {
+    if (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair') {
       // Chairman/Chairperson sees all leave requests
       return externalRequests;
     }
@@ -160,7 +160,7 @@ export default function LeavesPage() {
               <span className="inline-flex items-center gap-2"><Plus size={16} />Apply for Leave</span>
             </button>
           ] : []),
-          ...(user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'chairman' || user?.role === 'chairperson' ? [
+          ...(user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' ? [
             <Link key="report" to="/leave-report" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <span className="inline-flex items-center gap-2"><FileText size={16} />Leave Report</span>
             </Link>
@@ -206,14 +206,14 @@ export default function LeavesPage() {
         ) : null}
 
         <SectionCard
-          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' ? 'Leaves' : 'Leave status tracker'}
+          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' ? 'Leaves' : 'Leave status tracker'}
           subtitle={user?.role === 'supervisor'
             ? 'Leave requests from employees who report to you.'
-            : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson'
+            : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair'
               ? 'Company leave requests currently visible to you.'
               : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
         >
-          {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson') ? (
+          {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair') ? (
             visibleLeaveRequests.length ? (
               <div className="space-y-3">
                 {visibleLeaveRequests.map((request) => {

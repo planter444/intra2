@@ -70,7 +70,8 @@ const defaultNavigationByRole = {
   ceo: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel', 'timesheets', 'kpi_self'],
   finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel', 'timesheets', 'kpi_self'],
   chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance'],
-  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance']
+  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance'],
+  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance']
 };
 
 export default function AppLayout({ children }) {

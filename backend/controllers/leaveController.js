@@ -373,7 +373,7 @@ const listLeaveTypes = async (req, res, next) => {
   try {
     const leaveTypes = await leaveModel.listLeaveTypes();
     // Chairman/Chairperson sees all leave types regardless of gender
-    const filteredLeaveTypes = (req.user?.role === 'chairman' || req.user?.role === 'chairperson')
+    const filteredLeaveTypes = (req.user?.role === 'chairman' || req.user?.role === 'chairperson' || req.user?.role === 'chair')
       ? leaveTypes
       : filterGenderRestrictedItems(leaveTypes, req.user?.gender);
     res.json({ leaveTypes: filteredLeaveTypes });
@@ -779,7 +779,7 @@ const decideRequest = async (req, res, next) => {
     }
 
     // Chairman/Chairperson can approve CEO leave requests
-    if ((req.user.role === 'chairman' || req.user.role === 'chairperson') && request.status === 'pending_supervisor') {
+    if ((req.user.role === 'chairman' || req.user.role === 'chairperson' || req.user.role === 'chair') && request.status === 'pending_supervisor') {
       const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
       const updatedRequest = await leaveModel.updateRequestStatus({
         id,
