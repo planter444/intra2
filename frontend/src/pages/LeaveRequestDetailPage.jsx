@@ -22,6 +22,14 @@ import { countKenyaLeaveDays } from '../utils/leaveCalendar';
 import { formatDateRangeDisplay, formatDateTimeDisplay, formatStatusLabel, normalizeDateInput } from '../utils/formatters';
 import { getAvailableBalanceDays } from '../utils/leave';
 
+const formatStatusLabelForCEO = (status) => {
+  // For CEO viewing their own leave request, show "Pending Chairperson" instead of "Pending CEO"
+  if (status === 'pending_supervisor' || status === 'pending_hr' || status === 'pending_ceo') {
+    return 'Pending Chairperson';
+  }
+  return formatStatusLabel(status);
+};
+
 const getStatusBadgeClassName = (status) => {
   if (status === 'approved') {
     return 'bg-emerald-100 text-emerald-700';
@@ -341,7 +349,7 @@ export default function LeaveRequestDetailPage() {
         subtitle={`Request ID #${request.id}`}
         actions={[
           <span key="status" className={`inline-flex items-center rounded-full px-4 py-2 text-sm font-semibold ${getStatusBadgeClassName(request.status)}`}>
-            {formatStatusLabel(request.status)}
+            {isCeoViewingOwnRequest ? formatStatusLabelForCEO(request.status) : formatStatusLabel(request.status)}
           </span>,
           <button key="back" type="button" onClick={() => navigate('/leaves')} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
             <span className="inline-flex items-center gap-2"><ArrowLeft size={16} />Back to leave dashboard</span>
@@ -484,7 +492,7 @@ export default function LeaveRequestDetailPage() {
               {[timeline.submitted, timeline.supervisor, timeline.ceo].filter(Boolean).map((entry, index) => (
                 <div key={entry.label} className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3">
                   <div>
-                    <p className="font-medium text-slate-900">{entry.label}</p>
+                    <p className="font-medium text-slate-900">{isCeoViewingOwnRequest && entry.label === 'CEO' ? 'Chairperson' : entry.label}</p>
                     <p className="mt-1 text-sm text-slate-500">{formatDateTimeDisplay(entry.time)}</p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${index === 0 ? 'bg-blue-100 text-blue-700' : getDecisionBadgeClassName(entry.decision)}`}>
@@ -523,7 +531,7 @@ export default function LeaveRequestDetailPage() {
         ) : null}
 
         {timeline.ceo ? (
-          <SectionCard title={`${timeline.ceo.label} Review`} subtitle={`Latest ${timeline.ceo.label} review details for this leave request.`}>
+          <SectionCard title={`${isCeoViewingOwnRequest ? 'Chairperson' : timeline.ceo.label} Review`} subtitle={`Latest ${isCeoViewingOwnRequest ? 'Chairperson' : timeline.ceo.label} review details for this leave request.`}>
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
