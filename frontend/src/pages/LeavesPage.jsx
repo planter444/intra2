@@ -110,8 +110,11 @@ export default function LeavesPage() {
     }
 
     if (user?.role === 'chairman' || user?.role === 'chairperson') {
-      // Chairman/Chairperson sees all leave requests
-      return externalRequests;
+      // Chairman/Chairperson sees only CEO leave requests
+      return externalRequests.filter((request) => 
+        request.employeeName?.toLowerCase().includes('ceo') || 
+        request.employeePositionTitle?.toLowerCase().includes('ceo')
+      );
     }
 
     if (user?.role === 'admin' || user?.role === 'ceo') {
@@ -206,13 +209,13 @@ export default function LeavesPage() {
         ) : null}
 
         <SectionCard
-          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' ? 'Leaves' : user?.role === 'chairman' || user?.role === 'chairperson' ? 'All Leaves' : 'Leave status tracker'}
+          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' ? 'Leaves' : user?.role === 'chairman' || user?.role === 'chairperson' ? 'CEO Leave Requests' : 'Leave status tracker'}
           subtitle={user?.role === 'supervisor'
             ? 'Leave requests from employees who report to you.'
             : user?.role === 'ceo' || user?.role === 'admin'
               ? 'Company leave requests currently visible to you.'
               : user?.role === 'chairman' || user?.role === 'chairperson'
-                ? 'All company leave requests. CEO requests are highlighted for your approval.'
+                ? 'Leave requests from the CEO pending your approval.'
                 : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
         >
           {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson') ? (
@@ -220,12 +223,9 @@ export default function LeavesPage() {
               <div className="space-y-3">
                 {visibleLeaveRequests.map((request) => {
                   const isPending = reviewRequests.some((entry) => entry.id === request.id);
-                  const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo');
-                  const isChairman = user?.role === 'chairman' || user?.role === 'chairperson';
 
                   return (
                     <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
-                      isChairman && isCeoRequest ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                       isPending ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                       'border-slate-200 bg-white'
                     }`}>
