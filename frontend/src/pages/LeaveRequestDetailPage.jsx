@@ -192,9 +192,9 @@ export default function LeaveRequestDetailPage() {
     && !request.ceoApproverId;
   const canReviseCeoDecision = request && !isRequestOwner && user?.role === 'ceo' && ['approved', 'rejected'].includes(request.status) && String(request.ceoApproverId) === String(user?.id);
   
-  // Determine final stage label based on supervisor role
-  const isChairmanSupervisor = request?.supervisorApproverRole === 'chairman' || request?.supervisorApproverRole === 'chairperson';
-  const finalStageLabel = isChairmanSupervisor ? 'Chairperson' : 'CEO';
+  // For CEO viewing their own leave request, show Chairperson instead of CEO
+  const isCeoViewingOwnRequest = user?.role === 'ceo' && isRequestOwner;
+  const finalStageLabel = isCeoViewingOwnRequest ? 'Chairperson' : 'CEO';
   
   const timeline = request?.timeline || {
     submitted: { label: 'Applied', time: request?.createdAt, actorName: request?.employeeName },

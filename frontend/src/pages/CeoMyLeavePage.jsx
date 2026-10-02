@@ -12,8 +12,14 @@ import { formatDateRangeDisplay, formatStatusLabel } from '../utils/formatters';
 import { getAvailableBalanceDays } from '../utils/leave';
 
 const formatStatusLabelForCEO = (request) => {
-  // For CEO leave requests going to chairman, show "Pending Chairperson" instead of "Pending CEO"
-  if (request.status === 'pending_supervisor' && (request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson')) {
+  // For CEO leave requests, show "Pending Chairperson" instead of "Pending CEO"
+  if (request.status === 'pending_supervisor') {
+    return 'Pending Chairperson';
+  }
+  if (request.status === 'pending_hr') {
+    return 'Pending Chairperson';
+  }
+  if (request.status === 'pending_ceo') {
     return 'Pending Chairperson';
   }
   return formatStatusLabel(request.status);
