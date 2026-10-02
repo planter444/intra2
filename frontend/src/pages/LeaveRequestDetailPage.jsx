@@ -517,7 +517,8 @@ export default function LeaveRequestDetailPage() {
           </SectionCard>
         ) : null}
 
-        <SectionCard title="CEO Review" subtitle="Latest CEO review details for this leave request.">
+        {timeline.ceo ? (
+          <SectionCard title={`${timeline.ceo.label} Review`} subtitle={`Latest ${timeline.ceo.label} review details for this leave request.`}>
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -538,6 +539,7 @@ export default function LeaveRequestDetailPage() {
             </div>
           </div>
         </SectionCard>
+        ) : null}
       </div>
 
       <Modal
