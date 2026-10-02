@@ -294,6 +294,17 @@ const buildLeaveRouting = async (user) => {
   // CEO leave requests go to Chairman for approval
   if (user.role === 'ceo') {
     const chairman = await userModel.findOne({ role: 'chairman', isActive: true, isDeleted: false });
+    if (!chairman) {
+      // Try chairperson as fallback
+      const chairperson = await userModel.findOne({ role: 'chairperson', isActive: true, isDeleted: false });
+      if (chairperson) {
+        return {
+          requiresSupervisorReview: true,
+          initialStatus: 'pending_supervisor',
+          supervisorApproverId: chairperson.id
+        };
+      }
+    }
     if (chairman) {
       return {
         requiresSupervisorReview: true,
@@ -480,8 +491,8 @@ const createRequest = async (req, res, next) => {
   try {
     const { leaveTypeCode, startDate, endDate, reason } = req.body;
 
-    if (req.user.role === 'chairman') {
-      return res.status(403).json({ message: 'Chairman accounts are limited to approvals only.' });
+    if (req.user.role === 'chairman' || req.user.role === 'chairperson') {
+      return res.status(403).json({ message: 'Chairperson accounts are limited to approvals only.' });
     }
 
     if (!leaveTypeCode || !startDate || !endDate) {
@@ -732,8 +743,8 @@ const decideRequest = async (req, res, next) => {
       return res.json({ request: updatedRequest });
     }
 
-    // Chairman can approve CEO leave requests
-    if (req.user.role === 'chairman' && request.status === 'pending_supervisor') {
+    // Chairman/Chairperson can approve CEO leave requests
+    if ((req.user.role === 'chairman' || req.user.role === 'chairperson') && request.status === 'pending_supervisor') {
       const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
       const updatedRequest = await leaveModel.updateRequestStatus({
         id,

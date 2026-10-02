@@ -69,7 +69,8 @@ const defaultNavigationByRole = {
   admin: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel', 'timesheets', 'kpi_self'],
   ceo: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel', 'timesheets', 'kpi_self'],
   finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel', 'timesheets', 'kpi_self'],
-  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance']
+  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance'],
+  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance']
 };
 
 export default function AppLayout({ children }) {
@@ -86,7 +87,7 @@ export default function AppLayout({ children }) {
   const redesignedTheme = redesignedActive ? getRedesignedTheme(settings) : null;
   const roleDisplay = user?.role === 'admin' ? 'IT Officer'
     : user?.role === 'finance' ? 'Finance Officer'
-    : user?.role === 'chairman' ? 'Chairman'
+    : (user?.role === 'chairman' || user?.role === 'chairperson') ? 'Chairperson'
     : (user?.role === 'hr' || user?.role === 'ceo') ? 'CEO'
     : user?.role?.toUpperCase();
   const mobileMenuOpenStyle = {

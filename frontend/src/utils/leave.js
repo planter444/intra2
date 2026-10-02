@@ -39,8 +39,8 @@ export const isLeaveRequestActionableByUser = (request, user) => {
       );
   }
 
-  if (user.role === 'chairman') {
-    // Chairman can approve CEO leave requests
+  if (user.role === 'chairman' || user.role === 'chairperson') {
+    // Chairman/Chairperson can approve CEO leave requests
     return request.status === 'pending_supervisor' && String(request.supervisorApproverId) === String(user.id);
   }
 
