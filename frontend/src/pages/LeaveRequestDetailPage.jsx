@@ -199,6 +199,14 @@ export default function LeaveRequestDetailPage() {
     );
   const canOperationalReview = request && !isRequestOwner && (user?.role === 'admin' || user?.role === 'ceo') && request.status === 'pending_hr';
   const canFinalCeoReview = request && !isRequestOwner && user?.role === 'ceo' && request.status === 'pending_ceo';
+
+  // For CEO viewing their own leave request, show Chairperson instead of CEO
+  const isCeoViewingOwnRequest = user?.role === 'ceo' && isRequestOwner;
+  const isChairmanViewingCeoRequest = request
+    && (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair'))
+    && (request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo'));
+  const finalStageLabel = isCeoViewingOwnRequest || isChairmanViewingCeoRequest ? 'Chairperson' : 'CEO';
+
   const canChairmanReview = request
     && !isRequestOwner
     && isChairmanViewingCeoRequest
@@ -211,13 +219,6 @@ export default function LeaveRequestDetailPage() {
     && request.supervisorApproverRole !== 'ceo'
     && !request.ceoApproverId;
   const canReviseCeoDecision = request && !isRequestOwner && user?.role === 'ceo' && ['approved', 'rejected'].includes(request.status) && String(request.ceoApproverId) === String(user?.id);
-
-  // For CEO viewing their own leave request, show Chairperson instead of CEO
-  const isCeoViewingOwnRequest = user?.role === 'ceo' && isRequestOwner;
-  const isChairmanViewingCeoRequest = request
-    && (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair'))
-    && (request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo'));
-  const finalStageLabel = isCeoViewingOwnRequest || isChairmanViewingCeoRequest ? 'Chairperson' : 'CEO';
 
   const hasUnsavedChanges = useMemo(
     () => editing && (
