@@ -191,11 +191,16 @@ export default function LeaveRequestDetailPage() {
     && request.supervisorApproverRole !== 'ceo'
     && !request.ceoApproverId;
   const canReviseCeoDecision = request && !isRequestOwner && user?.role === 'ceo' && ['approved', 'rejected'].includes(request.status) && String(request.ceoApproverId) === String(user?.id);
+  
+  // Determine final stage label based on supervisor role
+  const isChairmanSupervisor = request?.supervisorApproverRole === 'chairman' || request?.supervisorApproverRole === 'chairperson';
+  const finalStageLabel = isChairmanSupervisor ? 'Chairperson' : 'CEO';
+  
   const timeline = request?.timeline || {
     submitted: { label: 'Applied', time: request?.createdAt, actorName: request?.employeeName },
     supervisor: visibleSupervisorStage ? { label: 'Supervisor', time: null, actorName: request?.supervisorApproverName, comment: request?.supervisorComment, decision: null } : null,
     ceo: {
-      label: 'CEO',
+      label: finalStageLabel,
       time: request?.ceoTime || request?.supervisorTime || null,
       actorName: isCeoSupervisor ? (request?.ceoApproverName || request?.supervisorApproverName || request?.hrApproverName) : (request?.ceoApproverName || request?.hrApproverName),
       comment: isCeoSupervisor ? (request?.ceoComment || request?.supervisorComment || request?.hrComment) : (request?.ceoComment || request?.hrComment),

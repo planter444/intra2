@@ -11,6 +11,14 @@ import { fetchLeaveBalances, fetchLeaveRequests } from '../services/leaveService
 import { formatDateRangeDisplay, formatStatusLabel } from '../utils/formatters';
 import { getAvailableBalanceDays } from '../utils/leave';
 
+const formatStatusLabelForCEO = (request) => {
+  // For CEO leave requests going to chairman, show "Pending Chairperson" instead of "Pending CEO"
+  if (request.status === 'pending_supervisor' && (request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson')) {
+    return 'Pending Chairperson';
+  }
+  return formatStatusLabel(request.status);
+};
+
 const accentClasses = [
   'from-blue-600/15 to-blue-100',
   'from-emerald-600/15 to-emerald-100',
@@ -107,7 +115,7 @@ export default function CeoMyLeavePage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status.startsWith('pending') ? 'bg-amber-100 text-amber-700' : request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600'}`}>
-                      {formatStatusLabel(request.status)}
+                      {formatStatusLabelForCEO(request)}
                     </span>
                     <ArrowRight size={16} className="text-slate-400" />
                   </div>
@@ -126,7 +134,7 @@ export default function CeoMyLeavePage() {
           {myRequests.length ? (
             <div className="space-y-4">
               {myRequests.map((request) => (
-                <LeaveStatusTimeline key={request.id} request={request} actingHrLabel="Chairperson" />
+                <LeaveStatusTimeline key={request.id} request={request} />
               ))}
             </div>
           ) : (
