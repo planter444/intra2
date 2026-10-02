@@ -296,6 +296,12 @@ const listRequests = async ({ viewerId, userId, role, status } = {}) => {
     )`);
   }
 
+  if (role === 'chairman' || role === 'chairperson') {
+    // Chairman/Chairperson sees requests where they are the approver (CEO leave requests)
+    params.push(viewerId);
+    clauses.push(`lr.supervisor_approver_id = $${params.length}`);
+  }
+
   clauses.push(`lr.status <> 'cancelled'`);
 
   if (userId && role !== 'employee') {

@@ -206,14 +206,16 @@ export default function LeavesPage() {
         ) : null}
 
         <SectionCard
-          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' ? 'Leaves' : 'Leave status tracker'}
+          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' ? 'Leaves' : user?.role === 'chairman' || user?.role === 'chairperson' ? 'CEO Leave Requests' : 'Leave status tracker'}
           subtitle={user?.role === 'supervisor'
             ? 'Leave requests from employees who report to you.'
             : user?.role === 'ceo' || user?.role === 'admin'
               ? 'Company leave requests currently visible to you.'
-              : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
+              : user?.role === 'chairman' || user?.role === 'chairperson'
+                ? 'Leave requests from the CEO pending your approval.'
+                : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
         >
-          {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin') ? (
+          {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson') ? (
             visibleLeaveRequests.length ? (
               <div className="space-y-3">
                 {visibleLeaveRequests.map((request) => {
