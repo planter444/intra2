@@ -205,11 +205,12 @@ export default function LeavesPage() {
         </SectionCard>
         ) : null}
 
+        {!isChairman && (
         <SectionCard
-          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' ? 'Leaves' : 'Leave status tracker'}
+          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' ? 'Leaves' : 'Leave status tracker'}
           subtitle={user?.role === 'supervisor'
             ? 'Leave requests from employees who report to you.'
-            : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair'
+            : user?.role === 'ceo' || user?.role === 'admin'
               ? 'Company leave requests currently visible to you.'
               : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
         >
@@ -269,6 +270,50 @@ export default function LeavesPage() {
             <EmptyState title="No tracked leave requests" description="Once you submit a leave request, its workflow progress will appear here." />
           )}
         </SectionCard>
+        )}
+
+        {isChairman && (
+        <SectionCard
+          title="Leaves"
+          subtitle="Company leave requests currently visible to you."
+        >
+          {visibleLeaveRequests.length ? (
+            <div className="space-y-3">
+              {visibleLeaveRequests.map((request) => {
+                const isPending = reviewRequests.some((entry) => entry.id === request.id);
+
+                return (
+                  <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
+                    isPending ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
+                    'border-slate-200 bg-white'
+                  }`}>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-slate-900">{request.employeeName}</p>
+                          {isPending ? <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Needs your approval</span> : null}
+                        </div>
+                        <p className="mt-1 text-sm text-slate-500">{request.leaveTypeLabel} · {formatDateRangeDisplay(request.startDate, request.endDate)} ({request.daysRequested} day(s))</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-100 text-rose-700' : request.status.startsWith('pending') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {formatStatusLabel(request.status)}
+                        </span>
+                        <button type="button" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600" onClick={() => navigate(`/leaves/${request.id}`)}>
+                          <Eye size={16} />View
+                        </button>
+                      </div>
+                      <LeaveStatusTimeline request={request} compact />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState title="No leave requests" description="Company leave requests will appear here." />
+          )}
+        </SectionCard>
+        )}
       </div>
 
       {!balances.length && !myRequests.length && !visibleLeaveRequests.length ? <EmptyState title="No leave records yet" description="Leave balances and request history will appear here when available." /> : null}
