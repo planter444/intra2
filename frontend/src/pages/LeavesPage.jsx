@@ -262,6 +262,7 @@ export default function LeavesPage() {
                           </button>
                         </div>
                       </div>
+                      <LeaveStatusTimeline request={request} compact />
                     </div>
                   );
                 })}
