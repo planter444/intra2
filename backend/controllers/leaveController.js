@@ -225,7 +225,7 @@ const filterGenderRestrictedItems = (items, gender) => {
 };
 
 const canAccessRequest = (currentUser, request) => {
-  if (canViewOversightLeaveData(currentUser.role)) {
+  if (canViewOversightLeaveData(currentUser.role) || isChairmanRole(currentUser)) {
     return true;
   }
 
