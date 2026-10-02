@@ -22,13 +22,13 @@ router.use(authenticate);
 router.get('/types', listLeaveTypes);
 router.get('/balances', getBalances);
 router.get('/requests', listRequests);
-router.get('/overview', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance'), getLeaveOverview);
+router.get('/overview', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair'), getLeaveOverview);
 router.get('/requests/:id', getRequest);
 router.get('/requests/:id/supporting-document', downloadSupportingDocument);
 router.post('/requests', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance'), upload.single('supportingDocument'), createRequest);
 router.put('/requests/:id', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance'), upload.single('supportingDocument'), updateRequest);
 router.patch('/requests/:id/cancel', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance'), cancelRequest);
-router.patch('/requests/:id/decision', authorize('employee', 'supervisor', 'admin', 'ceo'), decideRequest);
+router.patch('/requests/:id/decision', authorize('employee', 'supervisor', 'admin', 'ceo', 'chairman', 'chairperson', 'chair'), decideRequest);
 router.delete('/requests/:id', authorize('admin'), deleteRequestPermanently);
 
 module.exports = router;
