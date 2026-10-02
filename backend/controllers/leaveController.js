@@ -669,6 +669,90 @@ const decideRequest = async (req, res, next) => {
 
     const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
 
+    // CEO leave requests go to Chairman for approval instead of CEO self-approval
+    if (request.userId === req.user.id && req.user.role === 'ceo' && request.status === 'pending_supervisor') {
+      // CEO leave request - skip CEO self-approval, go to Chairman
+      const chairman = await userModel.findOne({ role: 'chairman', isActive: true, isDeleted: false });
+      if (!chairman) {
+        return res.status(400).json({ message: 'No active Chairman found to approve CEO leave requests. Please create a Chairman role in the Executive Office department.' });
+      }
+
+      const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
+      const updatedRequest = await leaveModel.updateRequestStatus({
+        id,
+        status: nextStatus,
+        supervisorApproverId: chairman.id,
+        supervisorComment: normalizedComment || null
+      });
+
+      if (nextStatus === 'approved') {
+        await leaveModel.applyApprovedDaysToBalance({
+          userId: request.userId,
+          leaveTypeId: request.leaveTypeId,
+          daysRequested: request.daysRequested
+        });
+      }
+
+      await logAction({
+        actorUserId: req.user.id,
+        actorRole: req.user.role,
+        action: decision === 'approve' ? 'LEAVE_CHAIRMAN_APPROVE' : 'LEAVE_CHAIRMAN_REJECT',
+        entityType: 'leave_request',
+        entityId: String(id),
+        description: `${req.user.fullName} ${decision}d CEO leave request ${id} with Chairman acting as approver.`,
+        metadata: { comment: normalizedComment, nextStatus },
+        ipAddress: req.ip
+      });
+
+      sendLeaveDecisionNotification({
+        request: updatedRequest,
+        status: nextStatus,
+        reviewerName: `${chairman.firstName} ${chairman.lastName} (Chairman)`,
+        comment: normalizedComment
+      }).catch((error) => console.error('Unable to send leave decision email.', error.message));
+
+      return res.json({ request: updatedRequest });
+    }
+
+    // Chairman can approve CEO leave requests
+    if (req.user.role === 'chairman' && request.status === 'pending_supervisor' && request.userId === req.user.id) {
+      const nextStatus = decision === 'approve' ? 'approved' : 'rejected';
+      const updatedRequest = await leaveModel.updateRequestStatus({
+        id,
+        status: nextStatus,
+        supervisorApproverId: req.user.id,
+        supervisorComment: normalizedComment || null
+      });
+
+      if (nextStatus === 'approved') {
+        await leaveModel.applyApprovedDaysToBalance({
+          userId: request.userId,
+          leaveTypeId: request.leaveTypeId,
+          daysRequested: request.daysRequested
+        });
+      }
+
+      await logAction({
+        actorUserId: req.user.id,
+        actorRole: req.user.role,
+        action: decision === 'approve' ? 'LEAVE_CHAIRMAN_APPROVE' : 'LEAVE_CHAIRMAN_REJECT',
+        entityType: 'leave_request',
+        entityId: String(id),
+        description: `${req.user.fullName} ${decision}d CEO leave request ${id} as Chairman.`,
+        metadata: { comment: normalizedComment, nextStatus },
+        ipAddress: req.ip
+      });
+
+      sendLeaveDecisionNotification({
+        request: updatedRequest,
+        status: nextStatus,
+        reviewerName: req.user.fullName,
+        comment: normalizedComment
+      }).catch((error) => console.error('Unable to send leave decision email.', error.message));
+
+      return res.json({ request: updatedRequest });
+    }
+
     if (request.status === 'pending_supervisor') {
       if (String(request.supervisorApproverId) !== String(req.user.id)) {
         return res.status(403).json({ message: 'Only the assigned supervisor can action this request.' });
