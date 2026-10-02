@@ -87,9 +87,8 @@ export default function AppLayout({ children }) {
   const redesignedTheme = redesignedActive ? getRedesignedTheme(settings) : null;
   const roleDisplay = user?.role === 'admin' ? 'IT Officer'
     : user?.role === 'finance' ? 'Finance Officer'
-    : (user?.role === 'chairman' || user?.role === 'chairperson') ? 'Chairman'
     : (user?.role === 'hr' || user?.role === 'ceo') ? 'CEO'
-    : user?.role?.toUpperCase();
+    : user?.roleTitle || user?.role?.toUpperCase();
   const mobileMenuOpenStyle = {
     backgroundColor: settings?.branding?.mobileMenuOpenBackgroundColor || '#ffffff',
     color: settings?.branding?.mobileMenuOpenTextColor || '#475569',

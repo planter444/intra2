@@ -293,10 +293,20 @@ const validateLeaveInputs = async ({ user, leaveTypeCode, startDate, endDate, ha
 const buildLeaveRouting = async (user) => {
   // CEO leave requests go to Chairman for approval
   if (user.role === 'ceo') {
-    const chairman = await userModel.findOne({ role: 'chairman', isActive: true, isDeleted: false });
+    const { query } = require('../config/db');
+    const chairmanResult = await query(
+      `SELECT id FROM users WHERE role = $1 AND is_active = true AND is_deleted = false LIMIT 1`,
+      ['chairman']
+    );
+    let chairman = chairmanResult.rows[0];
+
     if (!chairman) {
       // Try chairperson as fallback
-      const chairperson = await userModel.findOne({ role: 'chairperson', isActive: true, isDeleted: false });
+      const chairpersonResult = await query(
+        `SELECT id FROM users WHERE role = $1 AND is_active = true AND is_deleted = false LIMIT 1`,
+        ['chairperson']
+      );
+      const chairperson = chairpersonResult.rows[0];
       if (chairperson) {
         return {
           requiresSupervisorReview: true,
@@ -701,7 +711,12 @@ const decideRequest = async (req, res, next) => {
     // CEO leave requests go to Chairman for approval instead of CEO self-approval
     if (request.userId === req.user.id && req.user.role === 'ceo' && request.status === 'pending_supervisor') {
       // CEO leave request - skip CEO self-approval, go to Chairman
-      const chairman = await userModel.findOne({ role: 'chairman', isActive: true, isDeleted: false });
+      const { query } = require('../config/db');
+      const chairmanResult = await query(
+        `SELECT id, first_name, last_name FROM users WHERE role = $1 AND is_active = true AND is_deleted = false LIMIT 1`,
+        ['chairman']
+      );
+      const chairman = chairmanResult.rows[0];
       if (!chairman) {
         return res.status(400).json({ message: 'No active Chairman found to approve CEO leave requests. Please create a Chairman role in the Executive Office department.' });
       }
@@ -736,7 +751,7 @@ const decideRequest = async (req, res, next) => {
       sendLeaveDecisionNotification({
         request: updatedRequest,
         status: nextStatus,
-        reviewerName: `${chairman.firstName} ${chairman.lastName} (Chairman)`,
+        reviewerName: `${chairman.first_name} ${chairman.last_name} (Chairman)`,
         comment: normalizedComment
       }).catch((error) => console.error('Unable to send leave decision email.', error.message));
 
