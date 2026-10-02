@@ -261,7 +261,7 @@ export default function LeavesPage() {
                           <Eye size={16} />View
                         </button>
                       </div>
-                      <LeaveStatusTimeline request={request} compact />
+                      <LeaveStatusTimeline request={request} compact isChairmanViewing={isChairman} isCeoRequest={isCeoRequest} />
                     </div>
                   </div>
                   );
@@ -327,7 +327,7 @@ export default function LeavesPage() {
                           <Eye size={16} />View
                         </button>
                       </div>
-                      <LeaveStatusTimeline request={request} compact />
+                      <LeaveStatusTimeline request={request} compact isChairmanViewing={isChairman} isCeoRequest={isCeoRequest} />
                     </div>
                   </div>
                 );
