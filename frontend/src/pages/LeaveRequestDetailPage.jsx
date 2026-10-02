@@ -215,21 +215,11 @@ export default function LeaveRequestDetailPage() {
 
   // For CEO viewing their own leave request, show Chairperson instead of CEO
   const isCeoViewingOwnRequest = user?.role === 'ceo' && isRequestOwner;
-  const isChairmanViewingCeoRequest = (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair'))
+  const isChairmanViewingCeoRequest = request
+    && (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair'))
     && (request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo'));
   const finalStageLabel = isCeoViewingOwnRequest || isChairmanViewingCeoRequest ? 'Chairperson' : 'CEO';
-  
-  const timeline = request?.timeline || {
-    submitted: { label: 'Applied', time: request?.createdAt, actorName: request?.employeeName },
-    supervisor: visibleSupervisorStage ? { label: 'Supervisor', time: null, actorName: request?.supervisorApproverName, comment: request?.supervisorComment, decision: null } : null,
-    ceo: {
-      label: finalStageLabel,
-      time: request?.ceoTime || request?.supervisorTime || null,
-      actorName: isCeoSupervisor ? (request?.ceoApproverName || request?.supervisorApproverName || request?.hrApproverName) : (request?.ceoApproverName || request?.hrApproverName),
-      comment: isCeoSupervisor ? (request?.ceoComment || request?.supervisorComment || request?.hrComment) : (request?.ceoComment || request?.hrComment),
-      decision: null
-    }
-  };
+
   const hasUnsavedChanges = useMemo(
     () => editing && (
       form.leaveTypeCode !== (request?.leaveTypeCode || '')
@@ -356,6 +346,18 @@ export default function LeaveRequestDetailPage() {
   if (!request) {
     return <EmptyState title="Leave request not found" description="The selected leave request could not be found or is no longer available." />;
   }
+
+  const timeline = request?.timeline || {
+    submitted: { label: 'Applied', time: request?.createdAt, actorName: request?.employeeName },
+    supervisor: visibleSupervisorStage ? { label: 'Supervisor', time: null, actorName: request?.supervisorApproverName, comment: request?.supervisorComment, decision: null } : null,
+    ceo: {
+      label: finalStageLabel,
+      time: request?.ceoTime || request?.supervisorTime || null,
+      actorName: isCeoSupervisor ? (request?.ceoApproverName || request?.supervisorApproverName || request?.hrApproverName) : (request?.ceoApproverName || request?.hrApproverName),
+      comment: isCeoSupervisor ? (request?.ceoComment || request?.supervisorComment || request?.hrComment) : (request?.ceoComment || request?.hrComment),
+      decision: null
+    }
+  };
 
   return (
     <div className="space-y-6">
