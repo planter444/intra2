@@ -64,7 +64,8 @@ export default function LeavesPage() {
   const [balances, setBalances] = useState([]);
   const [requests, setRequests] = useState([]);
   const isCeo = user?.role === 'ceo';
-  const canApplyForLeave = true; // CEO can now apply for leave
+  const isChairman = user?.role === 'chairman';
+  const canApplyForLeave = !isChairman; // Chairman cannot apply for leave
   const showPersonalHistory = !isCeo; // CEO sees overview, not personal history
   const leaveCardsOpacity = Number(settings?.interface?.pageExperience?.leave?.leaveCardsOpacity ?? 1) || 1;
 
@@ -108,7 +109,7 @@ export default function LeavesPage() {
       return externalRequests.filter((request) => String(request.employeeSupervisorId) === String(user.id));
     }
 
-    if (user?.role === 'admin' || user?.role === 'ceo') {
+    if (user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'chairman') {
       return externalRequests;
     }
 

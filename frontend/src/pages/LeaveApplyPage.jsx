@@ -102,10 +102,6 @@ export default function LeaveApplyPage() {
   useUnsavedChangesGuard(hasUnsavedChanges && !submitting && !submittedRequestId);
 
   const validate = () => {
-    if (user?.role === 'ceo') {
-      return 'CEO accounts cannot apply for leave.';
-    }
-
     if (!form.leaveTypeCode || !form.startDate || !form.endDate || !form.reason.trim()) {
       return 'Leave type, dates, and reason are required.';
     }
