@@ -55,6 +55,9 @@ const mapTimelineEvents = (request, auditTrail) => {
 
 const oversightRoles = ['admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair'];
 
+const canViewOversightLeaveData = (role) => oversightRoles.includes(role);
+const canAccessLeaveOverview = (role) => ['employee', 'supervisor', ...oversightRoles].includes(role);
+
 const isChairmanRole = (user) => {
   if (!user) return false;
   const role = user.role?.toLowerCase();
@@ -62,9 +65,6 @@ const isChairmanRole = (user) => {
   return role === 'chairman' || role === 'chairperson' || role === 'chair' ||
          roleTitle?.includes('chair') || roleTitle?.includes('chairman') || roleTitle?.includes('chairperson');
 };
-
-const canViewOversightLeaveData = (role) => oversightRoles.includes(role);
-const canAccessLeaveOverview = (role) => ['employee', 'supervisor', ...oversightRoles].includes(role);
 
 const getLeaveOverviewUsers = async (currentUser) => {
   if (canViewOversightLeaveData(currentUser.role)) {
@@ -223,10 +223,10 @@ const filterGenderRestrictedItems = (items, gender) => items.filter((item) => {
   }
 
   return true;
-});
+};
 
 const canAccessRequest = (currentUser, request) => {
-  if (canViewOversightLeaveData(currentUser.role)) {
+  if (canViewOversightLeaveData(currentUser.role) || isChairmanRole(currentUser)) {
     return true;
   }
 

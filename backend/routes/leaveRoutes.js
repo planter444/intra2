@@ -23,7 +23,7 @@ router.get('/types', listLeaveTypes);
 router.get('/balances', getBalances);
 router.get('/requests', listRequests);
 router.get('/overview', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair'), getLeaveOverview);
-router.get('/requests/:id', getRequest);
+router.get('/requests/:id', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair'), getRequest);
 router.get('/requests/:id/supporting-document', downloadSupportingDocument);
 router.post('/requests', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance'), upload.single('supportingDocument'), createRequest);
 router.put('/requests/:id', authorize('employee', 'supervisor', 'admin', 'ceo', 'finance'), upload.single('supportingDocument'), updateRequest);

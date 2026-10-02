@@ -110,8 +110,16 @@ export default function LeavesPage() {
     }
 
     if (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair')) {
-      // Chairman/Chairperson sees all leave requests
-      return externalRequests;
+      // Chairman/Chairperson sees all leave requests, CEO requests at the top
+      const ceoRequests = externalRequests.filter(r => 
+        r.employeeName?.toLowerCase().includes('ceo') || 
+        r.employeePositionTitle?.toLowerCase().includes('ceo')
+      );
+      const otherRequests = externalRequests.filter(r => 
+        !(r.employeeName?.toLowerCase().includes('ceo') || 
+        r.employeePositionTitle?.toLowerCase().includes('ceo'))
+      );
+      return [...ceoRequests, ...otherRequests];
     }
 
     if (user?.role === 'admin' || user?.role === 'ceo') {
