@@ -22,6 +22,9 @@ const mapTimelineEvents = (request, auditTrail) => {
 
   const finalStageLabel = isChairmanSupervisor ? 'Chairperson' : isCeoSupervisor ? 'CEO' : 'CEO';
 
+  // For timeline label, always use Chairperson for chairman supervisor
+  const timelineCeoLabel = isChairmanSupervisor ? 'Chairperson' : finalStageLabel;
+
   const effectiveCeoEvent = isCeoSupervisor && !ceoEvent ? supervisorEvent : ceoEvent;
   const effectiveCeoActorName = isCeoSupervisor
     ? request.ceoApproverName || request.supervisorApproverName || effectiveCeoEvent?.actorName || null
@@ -43,7 +46,7 @@ const mapTimelineEvents = (request, auditTrail) => {
       decision: supervisorEvent?.action?.includes('APPROVE') ? 'approved' : supervisorEvent?.action?.includes('REJECT') ? 'rejected' : null
     } : null,
     ceo: {
-      label: finalStageLabel,
+      label: timelineCeoLabel,
       time: effectiveCeoEvent?.createdAt || null,
       actorName: effectiveCeoActorName,
       comment: effectiveCeoComment,

@@ -240,7 +240,7 @@ export default function LeavesPage() {
 
                   return (
                     <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
-                      isCeoRequest ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
+                      isCeoRequest && request.status.startsWith('pending') ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                       isPending ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                       'border-slate-200 bg-white'
                     }`}>
@@ -306,7 +306,7 @@ export default function LeavesPage() {
 
                 return (
                   <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
-                    isCeoRequest ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
+                    isCeoRequest && request.status.startsWith('pending') ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                     isPending ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                     'border-slate-200 bg-white'
                   }`}>

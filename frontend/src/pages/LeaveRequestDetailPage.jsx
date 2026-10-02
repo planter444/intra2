@@ -509,7 +509,7 @@ export default function LeaveRequestDetailPage() {
               {[timeline.submitted, timeline.supervisor, timeline.ceo].filter(Boolean).map((entry, index) => (
                 <div key={entry.label} className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3">
                   <div>
-                    <p className="font-medium text-slate-900">{(isCeoViewingOwnRequest || isChairmanViewingCeoRequest) && entry.label === 'CEO' ? 'Chairperson' : entry.label}</p>
+                    <p className="font-medium text-slate-900">{(isCeoViewingOwnRequest || isChairmanViewingCeoRequest) && (entry.label === 'CEO' || entry.label === 'Chairman') ? 'Chairperson' : entry.label}</p>
                     <p className="mt-1 text-sm text-slate-500">{formatDateTimeDisplay(entry.time)}</p>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${index === 0 ? 'bg-blue-100 text-blue-700' : getDecisionBadgeClassName(entry.decision)}`}>
@@ -548,7 +548,7 @@ export default function LeaveRequestDetailPage() {
         ) : null}
 
         {timeline.ceo ? (
-          <SectionCard title={`${(isCeoViewingOwnRequest || isChairmanViewingCeoRequest) ? 'Chairperson' : timeline.ceo.label} Review`} subtitle={`Latest ${(isCeoViewingOwnRequest || isChairmanViewingCeoRequest) ? 'Chairperson' : timeline.ceo.label} review details for this leave request.`}>
+          <SectionCard title={`${(isCeoViewingOwnRequest || isChairmanViewingCeoRequest) ? 'Chairperson' : (timeline.ceo.label === 'Chairman' ? 'Chairperson' : timeline.ceo.label)} Review`} subtitle={`Latest ${(isCeoViewingOwnRequest || isChairmanViewingCeoRequest) ? 'Chairperson' : (timeline.ceo.label === 'Chairman' ? 'Chairperson' : timeline.ceo.label)} review details for this leave request.`}>
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div>
