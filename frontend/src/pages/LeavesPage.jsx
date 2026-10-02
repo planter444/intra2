@@ -244,26 +244,26 @@ export default function LeavesPage() {
                       isPending ? 'border-amber-300 bg-amber-100/80 shadow-[0_0_0_1px_rgba(245,158,11,0.18),0_18px_40px_rgba(245,158,11,0.16)]' :
                       'border-slate-200 bg-white'
                     }`}>
-                      <div className="flex flex-wrap items-center justify-between gap-4">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-medium text-slate-900">{request.employeeName}</p>
-                            {isCeoRequest ? <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">CEO Request</span> : null}
-                            {isPending && !isCeoRequest ? <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Needs your approval</span> : null}
-                          </div>
-                          <p className="mt-1 text-sm text-slate-500">{request.leaveTypeLabel} · {formatDateRangeDisplay(request.startDate, request.endDate)} ({request.daysRequested} day(s))</p>
+                    <div className="flex flex-wrap items-center justify-between gap-4">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-slate-900">{request.employeeName}</p>
+                          {isCeoRequest ? <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">CEO Request</span> : null}
+                          {isPending && !isCeoRequest ? <span className="rounded-full bg-amber-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Needs your approval</span> : null}
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-100 text-rose-700' : request.status.startsWith('pending') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                            {formatStatusLabel(request.status)}
-                          </span>
-                          <button type="button" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600" onClick={() => navigate(`/leaves/${request.id}`)}>
-                            <Eye size={16} />View
-                          </button>
-                        </div>
+                        <p className="mt-1 text-sm text-slate-500">{request.leaveTypeLabel} · {formatDateRangeDisplay(request.startDate, request.endDate)} ({request.daysRequested} day(s))</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-100 text-rose-700' : request.status.startsWith('pending') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
+                          {formatStatusLabel(request.status)}
+                        </span>
+                        <button type="button" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600" onClick={() => navigate(`/leaves/${request.id}`)}>
+                          <Eye size={16} />View
+                        </button>
                       </div>
                       <LeaveStatusTimeline request={request} compact />
                     </div>
+                  </div>
                   );
                 })}
               </div>
