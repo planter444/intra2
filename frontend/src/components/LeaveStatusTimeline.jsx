@@ -40,8 +40,8 @@ export default function LeaveStatusTimeline({ request, actingHrLabel = 'CEO', co
   ) && !isCeoSupervisor && !isChairmanSupervisor;
 
   // Determine final stage label based on supervisor role
-  // If chairman is viewing a CEO request, or if it's a CEO request with pending_ceo status, force it to show Chairperson
-  const finalStageLabel = (isChairmanViewing && isCeoRequest) || (isCeoRequest && request?.status === 'pending_ceo') ? 'Chairperson' : isChairmanSupervisor ? 'Chairperson' : isCeoSupervisor ? 'CEO' : actingHrLabel || 'CEO';
+  // If chairman is viewing, always show Chairperson instead of CEO
+  const finalStageLabel = isChairmanViewing ? 'Chairperson' : isChairmanSupervisor ? 'Chairperson' : isCeoSupervisor ? 'CEO' : actingHrLabel || 'CEO';
 
   const stages = [
     { key: 'applied', label: 'Applied' },
