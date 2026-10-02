@@ -109,7 +109,12 @@ export default function LeavesPage() {
       return externalRequests.filter((request) => String(request.employeeSupervisorId) === String(user.id));
     }
 
-    if (user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'chairman' || user?.role === 'chairperson') {
+    if (user?.role === 'chairman' || user?.role === 'chairperson') {
+      // Chairman/Chairperson sees requests where they are the approver (CEO leave requests)
+      return externalRequests.filter((request) => String(request.supervisorApproverId) === String(user.id));
+    }
+
+    if (user?.role === 'admin' || user?.role === 'ceo') {
       return externalRequests;
     }
 

@@ -32,16 +32,20 @@ const getStageStatus = (request, index, totalStages) => {
 
 export default function LeaveStatusTimeline({ request, actingHrLabel = 'CEO', compact = false }) {
   const isCeoSupervisor = request?.supervisorApproverRole === 'ceo';
+  const isChairmanSupervisor = request?.supervisorApproverRole === 'chairman' || request?.supervisorApproverRole === 'chairperson';
   const hasSupervisorStage = Boolean(
     request?.requiresSupervisorReview
     || request?.status === 'pending_supervisor'
     || request?.supervisorApproverId
-  ) && !isCeoSupervisor;
+  ) && !isCeoSupervisor && !isChairmanSupervisor;
+
+  // Determine final stage label based on supervisor role
+  const finalStageLabel = isChairmanSupervisor ? 'Chairperson' : isCeoSupervisor ? 'CEO' : actingHrLabel || 'CEO';
 
   const stages = [
     { key: 'applied', label: 'Applied' },
     ...(hasSupervisorStage ? [{ key: 'supervisor', label: 'Supervisor' }] : []),
-    { key: 'final', label: actingHrLabel || 'CEO' }
+    { key: 'final', label: finalStageLabel }
   ];
 
   return (
