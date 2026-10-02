@@ -9,15 +9,19 @@ const { countKenyaLeaveDays, formatDateOnly, getNextWorkingDate } = require('../
 
 const mapTimelineEvents = (request, auditTrail) => {
   const submittedEvent = auditTrail.find((entry) => entry.action === 'LEAVE_CREATE');
-  const supervisorEvent = [...auditTrail].reverse().find((entry) => ['LEAVE_SUPERVISOR_APPROVE', 'LEAVE_SUPERVISOR_REJECT', 'LEAVE_SUPERVISOR_DECISION_REVISED'].includes(entry.action));
+  const supervisorEvent = [...auditTrail].reverse().find((entry) => ['LEAVE_SUPERVISOR_APPROVE', 'LEAVE_SUPERVISOR_REJECT', 'LEAVE_SUPERVISOR_DECISION_REVISED', 'LEAVE_CHAIRMAN_APPROVE', 'LEAVE_CHAIRMAN_REJECT'].includes(entry.action));
   const ceoEvent = [...auditTrail].reverse().find((entry) => ['LEAVE_CEO_APPROVE', 'LEAVE_CEO_REJECT', 'LEAVE_CEO_DECISION_REVISED', 'LEAVE_HR_APPROVE', 'LEAVE_HR_REJECT'].includes(entry.action) && ['ceo', 'admin'].includes(entry.actorRole));
   const isCeoSupervisor = request.supervisorApproverRole === 'ceo';
+  const isChairmanSupervisor = request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson';
   const hasSupervisorStage = Boolean(
     request.requiresSupervisorReview
     || supervisorEvent
     || request.status === 'pending_supervisor'
     || request.supervisorApproverId
-  ) && !isCeoSupervisor;
+  ) && !isCeoSupervisor && !isChairmanSupervisor;
+
+  // Determine final stage label
+  const finalStageLabel = isChairmanSupervisor ? 'Chairperson' : isCeoSupervisor ? 'CEO' : 'CEO';
 
   const effectiveCeoEvent = isCeoSupervisor && !ceoEvent ? supervisorEvent : ceoEvent;
   const effectiveCeoActorName = isCeoSupervisor
@@ -40,7 +44,7 @@ const mapTimelineEvents = (request, auditTrail) => {
       decision: supervisorEvent?.action?.includes('APPROVE') ? 'approved' : supervisorEvent?.action?.includes('REJECT') ? 'rejected' : null
     } : null,
     ceo: {
-      label: 'CEO',
+      label: finalStageLabel,
       time: effectiveCeoEvent?.createdAt || null,
       actorName: effectiveCeoActorName,
       comment: effectiveCeoComment,

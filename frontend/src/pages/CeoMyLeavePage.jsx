@@ -126,7 +126,7 @@ export default function CeoMyLeavePage() {
           {myRequests.length ? (
             <div className="space-y-4">
               {myRequests.map((request) => (
-                <LeaveStatusTimeline key={request.id} request={request} />
+                <LeaveStatusTimeline key={request.id} request={request} actingHrLabel="Chairperson" />
               ))}
             </div>
           ) : (
