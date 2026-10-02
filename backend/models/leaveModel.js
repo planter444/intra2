@@ -145,7 +145,7 @@ const getBalancesForUser = async (userId) => {
   }));
 };
 
-const createRequest = async ({ userId, leaveTypeId, startDate, endDate, daysRequested, reason, status, requiresSupervisorReview, supervisorApproverId, supportingDocumentName, supportingDocumentStoredName, supportingDocumentMimeType, supportingDocumentSize, supportingDocumentPath }) => {
+const createRequest = async ({ userId, leaveTypeId, startDate, endDate, daysRequested, reason, status, requiresSupervisorReview, supervisorApproverId, supervisorApproverRole, supportingDocumentName, supportingDocumentStoredName, supportingDocumentMimeType, supportingDocumentSize, supportingDocumentPath }) => {
   const result = await query(
     `
       INSERT INTO leave_requests (
@@ -158,13 +158,14 @@ const createRequest = async ({ userId, leaveTypeId, startDate, endDate, daysRequ
         status,
         requires_supervisor_review,
         supervisor_approver_id,
+        supervisor_approver_role,
         supporting_document_name,
         supporting_document_stored_name,
         supporting_document_mime_type,
         supporting_document_size,
         supporting_document_path
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id
     `,
     [
@@ -177,6 +178,7 @@ const createRequest = async ({ userId, leaveTypeId, startDate, endDate, daysRequ
       status,
       requiresSupervisorReview || false,
       supervisorApproverId || null,
+      supervisorApproverRole || null,
       supportingDocumentName || null,
       supportingDocumentStoredName || null,
       supportingDocumentMimeType || null,
@@ -208,6 +210,7 @@ const findRequestById = async (id) => {
         supervisor.first_name AS supervisor_first_name,
         supervisor.last_name AS supervisor_last_name,
         supervisor.role AS supervisor_role,
+        supervisor.role_title AS supervisor_role_title,
         hr.first_name AS hr_first_name,
         hr.last_name AS hr_last_name,
         ceo.first_name AS ceo_first_name,
@@ -257,7 +260,7 @@ const findRequestById = async (id) => {
     status: row.status,
     requiresSupervisorReview: row.requires_supervisor_review,
     supervisorApproverId: row.supervisor_approver_id,
-    supervisorApproverRole: row.supervisor_role,
+    supervisorApproverRole: row.supervisor_approver_role || row.supervisor_role_title || row.supervisor_role,
     hrApproverId: row.hr_approver_id,
     ceoApproverId: row.ceo_approver_id,
     supervisorComment: row.supervisor_comment,

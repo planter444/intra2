@@ -522,6 +522,18 @@ const createRequest = async (req, res, next) => {
     const routing = await buildLeaveRouting(req.user);
     const supportingDocument = await mapSupportingDocumentPayload(req.user.id, req.file);
 
+    // Fetch supervisor role for proper labeling
+    let supervisorApproverRole = null;
+    if (routing.supervisorApproverId) {
+      const { query } = require('../config/db');
+      const supervisorResult = await query(
+        `SELECT role, role_title FROM users WHERE id = $1 LIMIT 1`,
+        [routing.supervisorApproverId]
+      );
+      const supervisor = supervisorResult.rows[0];
+      supervisorApproverRole = supervisor ? (supervisor.role_title || supervisor.role) : null;
+    }
+
     const request = await leaveModel.createRequest({
       userId: req.user.id,
       leaveTypeId: leaveType.id,
@@ -532,6 +544,7 @@ const createRequest = async (req, res, next) => {
       status: routing.initialStatus,
       requiresSupervisorReview: routing.requiresSupervisorReview,
       supervisorApproverId: routing.supervisorApproverId,
+      supervisorApproverRole,
       ...supportingDocument
     });
 
