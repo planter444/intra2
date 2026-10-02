@@ -145,7 +145,11 @@ export default function LeavesPage() {
         title={settings?.labels?.leaveModuleTitle || 'Leave Management'}
         subtitle="Track leave balances, request history, approval progress, and incoming review work from one dashboard."
         actions={[
-          ...(canApplyForLeave ? [
+          ...(isCeo ? [
+            <button key="my-leave" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg" onClick={() => navigate('/leaves/my-leave')}>
+              <span className="inline-flex items-center gap-2"><Plus size={16} />My Leave</span>
+            </button>
+          ] : canApplyForLeave ? [
             <button key="apply" type="button" className="rounded-2xl bg-brand-gradient px-5 py-3 text-sm font-semibold text-white shadow-lg" onClick={() => navigate('/leaves/new')}>
               <span className="inline-flex items-center gap-2"><Plus size={16} />Apply for Leave</span>
             </button>
