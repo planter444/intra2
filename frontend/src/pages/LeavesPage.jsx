@@ -261,7 +261,7 @@ export default function LeavesPage() {
                           <Eye size={16} />View
                         </button>
                       </div>
-                      <LeaveStatusTimeline request={request} compact isChairmanViewing={isChairman} isCeoRequest={isCeoRequest} />
+                      <LeaveStatusTimeline request={request} compact isChairmanViewing={isChairman} isCeoRequest={isCeoRequest} isChairmanSupervisor={isChairmanSupervisor} />
                     </div>
                   </div>
                   );
@@ -302,7 +302,8 @@ export default function LeavesPage() {
             <div className="space-y-3">
               {visibleLeaveRequests.map((request) => {
                 const isPending = reviewRequests.some((entry) => entry.id === request.id);
-                const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo') || (request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' || request.supervisorApproverRole === 'chair');
+                const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo');
+                const isChairmanSupervisor = request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' || request.supervisorApproverRole === 'chair';
 
                 return (
                   <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
@@ -321,13 +322,13 @@ export default function LeavesPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-100 text-rose-700' : request.status.startsWith('pending') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                          {isCeoRequest && request.status === 'pending_ceo' ? 'Pending Chairperson' : formatStatusLabel(request.status)}
+                          {isCeoRequest && isChairmanSupervisor && request.status === 'pending_ceo' ? 'Pending Chairperson' : formatStatusLabel(request.status)}
                         </span>
                         <button type="button" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600" onClick={() => navigate(`/leaves/${request.id}`)}>
                           <Eye size={16} />View
                         </button>
                       </div>
-                      <LeaveStatusTimeline request={request} compact isChairmanViewing={isChairman} isCeoRequest={isCeoRequest} />
+                      <LeaveStatusTimeline request={request} compact isChairmanViewing={isChairman} isCeoRequest={isCeoRequest} isChairmanSupervisor={isChairmanSupervisor} />
                     </div>
                   </div>
                 );

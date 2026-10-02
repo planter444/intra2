@@ -201,9 +201,8 @@ export default function LeaveRequestDetailPage() {
   const canFinalCeoReview = request && !isRequestOwner && user?.role === 'ceo' && request.status === 'pending_ceo';
   const canChairmanReview = request
     && !isRequestOwner
-    && (user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair'))
-    && request.status === 'pending_supervisor'
-    && (request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo'));
+    && isChairmanViewingCeoRequest
+    && request.status === 'pending_supervisor';
   const canReviseSupervisorDecision = request
     && !isRequestOwner
     && user?.role !== 'ceo'
