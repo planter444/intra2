@@ -405,11 +405,13 @@ const getBalances = async (req, res, next) => {
 
 const listRequests = async (req, res, next) => {
   try {
+    const isChairman = isChairmanRole(req.user);
     const requests = await leaveModel.listRequests({
       viewerId: req.user.id,
-      userId: req.user.role === 'employee' ? req.user.id : canViewOversightLeaveData(req.user.role) || isChairmanRole(req.user) ? req.query.userId : undefined,
+      userId: req.user.role === 'employee' && !isChairman ? req.user.id : canViewOversightLeaveData(req.user.role) || isChairman ? req.query.userId : undefined,
       role: req.user.role,
-      status: req.query.status
+      status: req.query.status,
+      isChairman
     });
 
     res.json({ requests });
