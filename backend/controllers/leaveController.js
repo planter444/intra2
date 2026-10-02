@@ -110,7 +110,7 @@ const getLeaveApplicationRecipients = async (request) => {
     const supervisor = await userModel.findById(request.supervisorApproverId);
     return {
       recipients: supervisor && supervisor.isActive && !supervisor.isDeleted ? [supervisor] : [],
-      stageLabel: 'supervisor review'
+      stageLabel: request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' ? 'Chairperson review' : 'supervisor review'
     };
   }
 
