@@ -55,6 +55,14 @@ const mapTimelineEvents = (request, auditTrail) => {
 
 const oversightRoles = ['admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair'];
 
+const isChairmanRole = (user) => {
+  if (!user) return false;
+  const role = user.role?.toLowerCase();
+  const roleTitle = user.roleTitle?.toLowerCase();
+  return role === 'chairman' || role === 'chairperson' || role === 'chair' ||
+         roleTitle?.includes('chair') || roleTitle?.includes('chairman') || roleTitle?.includes('chairperson');
+};
+
 const canViewOversightLeaveData = (role) => oversightRoles.includes(role);
 const canAccessLeaveOverview = (role) => ['employee', 'supervisor', ...oversightRoles].includes(role);
 
@@ -399,7 +407,7 @@ const listRequests = async (req, res, next) => {
   try {
     const requests = await leaveModel.listRequests({
       viewerId: req.user.id,
-      userId: req.user.role === 'employee' ? req.user.id : canViewOversightLeaveData(req.user.role) ? req.query.userId : undefined,
+      userId: req.user.role === 'employee' ? req.user.id : canViewOversightLeaveData(req.user.role) || isChairmanRole(req.user) ? req.query.userId : undefined,
       role: req.user.role,
       status: req.query.status
     });

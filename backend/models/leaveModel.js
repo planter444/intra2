@@ -278,6 +278,9 @@ const listRequests = async ({ viewerId, userId, role, status } = {}) => {
   const clauses = [];
   const params = [];
 
+  // Check if user is chairman based on role
+  const isChairman = role === 'chairman' || role === 'chairperson' || role === 'chair';
+
   if (role === 'employee') {
     params.push(viewerId);
     clauses.push(`lr.user_id = $${params.length}`);
@@ -296,9 +299,10 @@ const listRequests = async ({ viewerId, userId, role, status } = {}) => {
     )`);
   }
 
-  if (role === 'chairman' || role === 'chairperson' || role === 'chair') {
+  if (isChairman) {
     // Chairman/Chairperson sees all leave requests (like admin/ceo)
     // They can only approve CEO's requests
+    // No filter needed - they see everything
   }
 
   clauses.push(`lr.status <> 'cancelled'`);
