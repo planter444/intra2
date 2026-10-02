@@ -297,9 +297,8 @@ const listRequests = async ({ viewerId, userId, role, status } = {}) => {
   }
 
   if (role === 'chairman' || role === 'chairperson') {
-    // Chairman/Chairperson sees requests where they are the approver (CEO leave requests)
-    params.push(viewerId);
-    clauses.push(`lr.supervisor_approver_id = $${params.length}`);
+    // Chairman/Chairperson sees all leave requests (like admin/ceo)
+    // They can only approve CEO's requests
   }
 
   clauses.push(`lr.status <> 'cancelled'`);
