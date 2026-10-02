@@ -65,7 +65,7 @@ export default function LeavesPage() {
   const [requests, setRequests] = useState([]);
   const isCeo = user?.role === 'ceo';
   const canApplyForLeave = true; // CEO can now apply for leave
-  const showPersonalHistory = true; // CEO can see their leave history
+  const showPersonalHistory = !isCeo; // CEO sees overview, not personal history
   const leaveCardsOpacity = Number(settings?.interface?.pageExperience?.leave?.leaveCardsOpacity ?? 1) || 1;
 
   useEffect(() => {
@@ -150,11 +150,6 @@ export default function LeavesPage() {
               <span className="inline-flex items-center gap-2"><Plus size={16} />Apply for Leave</span>
             </button>
           ] : []),
-          ...(isCeo ? [
-            <button key="my-leaves" type="button" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 hover:bg-emerald-100" onClick={() => navigate('/leaves/my-leaves')}>
-              <span className="inline-flex items-center gap-2"><CalendarDays size={16} />Executive Leave Portal</span>
-            </button>
-          ] : []),
           ...(user?.role === 'admin' || user?.role === 'ceo' ? [
             <Link key="report" to="/leave-report" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <span className="inline-flex items-center gap-2"><FileText size={16} />Leave Report</span>
@@ -162,9 +157,17 @@ export default function LeavesPage() {
           ] : [])
         ]}
       />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {balances.map((balance, index) => <LeaveBalanceCard key={balance.id} balance={balance} index={index} myRequests={myRequests} opacity={leaveCardsOpacity} />)}
-      </div>
+      {isCeo ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {(settings?.leaveTypes || []).map((lt, index) => (
+            <CeoLeaveTypeCard key={lt.code || lt.label || index} lt={lt} index={index} opacity={leaveCardsOpacity} />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {balances.map((balance, index) => <LeaveBalanceCard key={balance.id} balance={balance} index={index} myRequests={myRequests} opacity={leaveCardsOpacity} />)}
+        </div>
+      )}
 
       <div className={showPersonalHistory && user?.role !== 'supervisor' ? 'grid gap-6 lg:grid-cols-[minmax(0,1.15fr),minmax(0,1fr)]' : 'space-y-6'}>
         {showPersonalHistory ? (
