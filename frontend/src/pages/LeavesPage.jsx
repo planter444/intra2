@@ -110,11 +110,8 @@ export default function LeavesPage() {
     }
 
     if (user?.role === 'chairman' || user?.role === 'chairperson') {
-      // Chairman/Chairperson sees only CEO leave requests
-      return externalRequests.filter((request) => 
-        request.employeeName?.toLowerCase().includes('ceo') || 
-        request.employeePositionTitle?.toLowerCase().includes('ceo')
-      );
+      // Chairman/Chairperson sees all leave requests
+      return externalRequests;
     }
 
     if (user?.role === 'admin' || user?.role === 'ceo') {
@@ -163,7 +160,7 @@ export default function LeavesPage() {
               <span className="inline-flex items-center gap-2"><Plus size={16} />Apply for Leave</span>
             </button>
           ] : []),
-          ...(user?.role === 'admin' || user?.role === 'ceo' ? [
+          ...(user?.role === 'admin' || user?.role === 'ceo' || user?.role === 'chairman' || user?.role === 'chairperson' ? [
             <Link key="report" to="/leave-report" className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <span className="inline-flex items-center gap-2"><FileText size={16} />Leave Report</span>
             </Link>
@@ -209,14 +206,12 @@ export default function LeavesPage() {
         ) : null}
 
         <SectionCard
-          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' ? 'Leaves' : user?.role === 'chairman' || user?.role === 'chairperson' ? 'CEO Leave Requests' : 'Leave status tracker'}
+          title={user?.role === 'supervisor' ? 'Team Leaves' : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' ? 'Leaves' : 'Leave status tracker'}
           subtitle={user?.role === 'supervisor'
             ? 'Leave requests from employees who report to you.'
-            : user?.role === 'ceo' || user?.role === 'admin'
+            : user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson'
               ? 'Company leave requests currently visible to you.'
-              : user?.role === 'chairman' || user?.role === 'chairperson'
-                ? 'Leave requests from the CEO pending your approval.'
-                : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
+              : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
         >
           {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson') ? (
             visibleLeaveRequests.length ? (

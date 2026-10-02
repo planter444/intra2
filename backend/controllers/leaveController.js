@@ -372,7 +372,10 @@ const mapSupportingDocumentPayload = async (userId, file) => {
 const listLeaveTypes = async (req, res, next) => {
   try {
     const leaveTypes = await leaveModel.listLeaveTypes();
-    const filteredLeaveTypes = filterGenderRestrictedItems(leaveTypes, req.user?.gender);
+    // Chairman/Chairperson sees all leave types regardless of gender
+    const filteredLeaveTypes = (req.user?.role === 'chairman' || req.user?.role === 'chairperson')
+      ? leaveTypes
+      : filterGenderRestrictedItems(leaveTypes, req.user?.gender);
     res.json({ leaveTypes: filteredLeaveTypes });
   } catch (error) {
     next(error);
