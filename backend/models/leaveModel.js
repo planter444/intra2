@@ -296,7 +296,7 @@ const listRequests = async ({ viewerId, userId, role, status } = {}) => {
     )`);
   }
 
-  if (role === 'chairman' || role === 'chairperson') {
+  if (role === 'chairman' || role === 'chairperson' || role === 'chair') {
     // Chairman/Chairperson sees all leave requests (like admin/ceo)
     // They can only approve CEO's requests
   }

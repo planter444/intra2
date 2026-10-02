@@ -53,7 +53,7 @@ const mapTimelineEvents = (request, auditTrail) => {
   };
 };
 
-const oversightRoles = ['admin', 'ceo', 'finance'];
+const oversightRoles = ['admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair'];
 
 const canViewOversightLeaveData = (role) => oversightRoles.includes(role);
 const canAccessLeaveOverview = (role) => ['employee', 'supervisor', ...oversightRoles].includes(role);
