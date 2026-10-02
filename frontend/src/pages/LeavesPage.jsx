@@ -321,7 +321,7 @@ export default function LeavesPage() {
                       </div>
                       <div className="flex items-center gap-3">
                         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${request.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : request.status === 'rejected' ? 'bg-rose-100 text-rose-700' : request.status.startsWith('pending') ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>
-                          {formatStatusLabel(request.status)}
+                          {isCeoRequest && request.status === 'pending_ceo' ? 'Pending Chairperson' : formatStatusLabel(request.status)}
                         </span>
                         <button type="button" className="inline-flex items-center gap-2 text-sm font-medium text-blue-600" onClick={() => navigate(`/leaves/${request.id}`)}>
                           <Eye size={16} />View
