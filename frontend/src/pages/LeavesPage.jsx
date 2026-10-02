@@ -231,7 +231,7 @@ export default function LeavesPage() {
               ? 'Company leave requests currently visible to you.'
               : 'Follow each request from applied to CEO, with supervisor review included when assigned.'}
         >
-          {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin' || user?.role === 'chairman' || user?.role === 'chairperson' || user?.role === 'chair' || user?.roleTitle?.toLowerCase().includes('chair')) ? (
+          {(user?.role === 'supervisor' || user?.role === 'ceo' || user?.role === 'admin') ? (
             visibleLeaveRequests.length ? (
               <div className="space-y-3">
                 {visibleLeaveRequests.map((request) => {
