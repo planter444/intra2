@@ -170,17 +170,17 @@ export default function LeavesPage() {
           ] : [])
         ]}
       />
-      {isCeo ? (
+      {isCeo || isChairman ? (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {(settings?.leaveTypes || []).map((lt, index) => (
             <CeoLeaveTypeCard key={lt.code || lt.label || index} lt={lt} index={index} opacity={leaveCardsOpacity} />
           ))}
         </div>
-      ) : !isChairman ? (
+      ) : (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {balances.map((balance, index) => <LeaveBalanceCard key={balance.id} balance={balance} index={index} myRequests={myRequests} opacity={leaveCardsOpacity} />)}
         </div>
-      ) : null}
+      )}
 
       <div className={showPersonalHistory && user?.role !== 'supervisor' ? 'grid gap-6 lg:grid-cols-[minmax(0,1.15fr),minmax(0,1fr)]' : 'space-y-6'}>
         {showPersonalHistory ? (
