@@ -302,7 +302,7 @@ export default function LeavesPage() {
             <div className="space-y-3">
               {visibleLeaveRequests.map((request) => {
                 const isPending = reviewRequests.some((entry) => entry.id === request.id);
-                const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo');
+                const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo') || (request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' || request.supervisorApproverRole === 'chair');
 
                 return (
                   <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
