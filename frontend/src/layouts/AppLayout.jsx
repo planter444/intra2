@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { BarChart2, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Table, User, Users, X, DollarSign, Plane, Clock } from 'lucide-react';
+import { BarChart2, ClipboardList, FileText, LayoutDashboard, LogOut, Menu, Settings, ShieldCheck, Table, User, Users, X, DollarSign, Plane, Clock, Target } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
@@ -31,6 +31,25 @@ const routeMap = {
   timesheets: '/timesheets'
 };
 
+// Navigation priority order as requested by user
+const navigationPriority = {
+  dashboard: 1,
+  employees: 2,
+  profile: 3,
+  leaves: 4,
+  leave_status: 5,
+  report: 6,
+  documents: 7,
+  travel: 8,
+  timesheets: 9,
+  kpi: 10,
+  kpi_self: 11,
+  performance: 12,
+  settings: 13,
+  audit: 14,
+  payslips: 99 // Put payslips at the end if it exists
+};
+
 const labelKeyMap = {
   dashboard: 'navigationDashboard',
   employees: 'navigationEmployees',
@@ -41,7 +60,9 @@ const labelKeyMap = {
   kpi: 'navigationKpiMatrix',
   kpi_self: 'navigationKpiSelf',
   performance: 'navigationPerformance',
-  report: 'navigationReport'
+  report: 'navigationReport',
+  timesheets: 'navigationTimesheets',
+  travel: 'navigationTravel'
 };
 
 const iconMap = {
@@ -53,7 +74,7 @@ const iconMap = {
   settings: Settings,
   audit: ShieldCheck,
   kpi: Table,
-  kpi_self: User,
+  kpi_self: Target,
   performance: BarChart2,
   leave_status: ClipboardList,
   payslips: DollarSign,
@@ -63,15 +84,15 @@ const iconMap = {
 };
 
 const defaultNavigationByRole = {
-  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel', 'timesheets', 'kpi_self', 'kpi', 'performance'],
-  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'documents', 'payslips', 'travel', 'timesheets', 'kpi_self', 'kpi', 'performance'],
-  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi_self', 'kpi', 'performance'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'audit', 'payslips', 'travel', 'timesheets', 'kpi_self'],
-  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'report', 'leave_status', 'documents', 'settings', 'kpi', 'performance', 'payslips', 'travel', 'timesheets', 'kpi_self'],
-  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'kpi', 'performance', 'settings', 'payslips', 'travel', 'timesheets', 'kpi_self'],
-  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance'],
-  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance'],
-  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'performance']
+  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance'],
+  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
+  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
+  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit']
 };
 
 export default function AppLayout({ children }) {
@@ -106,7 +127,12 @@ export default function AppLayout({ children }) {
     const configuredItems = settings?.navigation?.[user?.role] || [];
     const restrictedItems = user?.role === 'admin' ? [] : ['audit'];
     const navItems = [...new Set([...fallbackItems, ...configuredItems])].filter((key) => !restrictedItems.includes(key));
-    return (navItems || []).map((key) => ({
+    const sortedNavItems = navItems.sort((a, b) => {
+      const priorityA = navigationPriority[a] || 999;
+      const priorityB = navigationPriority[b] || 999;
+      return priorityA - priorityB;
+    });
+    return (sortedNavItems || []).map((key) => ({
       key,
       label: user?.role === 'supervisor' && key === 'employees'
         ? 'My Team'
