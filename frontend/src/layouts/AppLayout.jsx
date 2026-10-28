@@ -42,8 +42,8 @@ const navigationPriority = {
   documents: 7,
   travel: 8,
   timesheets: 9,
-  kpi: 10,
-  kpi_self: 11,
+  kpi: 10, // This will be renamed to "Appraisal Management" in UI
+  kpi_self: 11, // This will be renamed to "My Appraisal" in UI
   performance: 12,
   settings: 13,
   audit: 14,
@@ -84,15 +84,15 @@ const iconMap = {
 };
 
 const defaultNavigationByRole = {
-  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance'],
-  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
-  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance'],
+  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
+  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
   ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
-  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
-  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
-  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
-  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit']
+  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
+  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
+  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
+  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit']
 };
 
 export default function AppLayout({ children }) {
@@ -126,7 +126,17 @@ export default function AppLayout({ children }) {
     const fallbackItems = defaultNavigationByRole[user?.role] || ['dashboard'];
     const configuredItems = settings?.navigation?.[user?.role] || [];
     const restrictedItems = user?.role === 'admin' ? [] : ['audit'];
-    const navItems = [...new Set([...fallbackItems, ...configuredItems])].filter((key) => !restrictedItems.includes(key));
+    const appraisalEditorRoles = settings?.kpi?.appraisalEditorRoles || ['ceo', 'admin', 'finance'];
+    const canEditAppraisal = appraisalEditorRoles.includes(user?.role);
+
+    const navItems = [...new Set([...fallbackItems, ...configuredItems])].filter((key) => {
+      // Hide audit logs for non-admin roles
+      if (restrictedItems.includes(key)) return false;
+      // Hide Appraisal Management (kpi) unless user can edit appraisals
+      if (key === 'kpi' && !canEditAppraisal) return false;
+      return true;
+    });
+
     const sortedNavItems = navItems.sort((a, b) => {
       const priorityA = navigationPriority[a] || 999;
       const priorityB = navigationPriority[b] || 999;

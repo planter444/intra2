@@ -61,7 +61,7 @@ module.exports = {
     navigationDocuments: 'Documents',
     navigationSettings: 'Settings',
     navigationAudit: 'Audit Logs',
-    navigationKpiMatrix: 'KPI Management',
+    navigationKpiMatrix: 'Appraisal Management',
     navigationKpiSelf: 'My Appraisal',
     navigationPerformance: 'Performance'
   },
@@ -165,10 +165,15 @@ module.exports = {
     }
   },
   navigation: {
-    employee: ['dashboard', 'profile', 'leaves', 'documents'],
-    supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'documents'],
-    admin: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'settings', 'audit'],
-    ceo: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'settings']
+    employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance'],
+    supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
+    hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
+    admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
+    ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+    finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
+    chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
+    chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
+    chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit']
   },
   departments: [
     { name: 'Executive Office', description: 'Executive leadership team' },
@@ -236,6 +241,8 @@ module.exports = {
   ],
   kpi: {
     records: {},
+    setupMode: 'one', // 'one' = existing KPI management, 'two' = template-based appraisal
+    appraisalEditorRoles: ['ceo', 'admin', 'finance'], // Roles that can edit appraisals (CEO, IT Officer, Finance Officer)
     performanceBands: {
       pendingLabel: 'Pending',
       outstanding: { label: 'Outstanding', minScore: 85 },
