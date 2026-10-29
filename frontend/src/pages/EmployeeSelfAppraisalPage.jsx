@@ -248,7 +248,7 @@ export default function EmployeeSelfAppraisalPage() {
     });
   };
 
-  const selfScore = calculateAppraisalScore(form, 'self');
+  const selfScore = calculateAppraisalScore(form || {}, 'self');
 
   if (loading) {
     return (

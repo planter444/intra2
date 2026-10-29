@@ -32,9 +32,9 @@ export default function KPIMatrixEmployeePage() {
   );
 
   const average = useMemo(() => getAverageKpiScore(entry), [entry]);
-  const configuredCoreRoles = useMemo(() => entry.coreRoles.filter((role) => String(role || '').trim()), [entry.coreRoles]);
+  const configuredCoreRoles = useMemo(() => Array.isArray(entry.coreRoles) ? entry.coreRoles.filter((role) => String(role || '').trim()) : [], [entry.coreRoles]);
   const configuredIndicators = useMemo(
-    () => entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== ''),
+    () => Array.isArray(entry.indicators) ? entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== '') : [],
     [entry.indicators]
   );
 

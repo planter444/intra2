@@ -31,7 +31,7 @@ export default function PerformanceEmployeePage() {
 
   const average = useMemo(() => getAverageKpiScore(entry), [entry]);
   const configuredIndicators = useMemo(
-    () => entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== ''),
+    () => Array.isArray(entry.indicators) ? entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== '') : [],
     [entry.indicators]
   );
   const performanceBand = useMemo(() => getPerformanceBand(average, settings?.kpi?.performanceBands || {}), [average, settings?.kpi?.performanceBands]);

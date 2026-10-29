@@ -107,7 +107,7 @@ export default function PerformanceDashboard() {
       const entry = getNormalizedKpiEntry(settings?.kpi?.records?.[String(employee.id)] || settings?.kpi?.matrix?.[String(employee.id)] || {});
       const average = averages[String(employee.id)] ?? null;
       const band = getPerformanceBand(average, settings?.kpi?.performanceBands || {});
-      const configuredKpis = entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== '').length;
+      const configuredKpis = Array.isArray(entry.indicators) ? entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== '').length : 0;
       const audit = entry.audit || {};
       
       return [
@@ -213,7 +213,7 @@ export default function PerformanceDashboard() {
             const entry = getNormalizedKpiEntry(settings?.kpi?.records?.[String(employee.id)] || settings?.kpi?.matrix?.[String(employee.id)] || {});
             const average = averages[String(employee.id)] ?? null;
             const band = getPerformanceBand(average, settings?.kpi?.performanceBands || {});
-            const configuredKpis = entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== '').length;
+            const configuredKpis = Array.isArray(entry.indicators) ? entry.indicators.filter((indicator) => String(indicator?.label || '').trim() || indicator?.score !== '').length : 0;
 
             return (
               <Link

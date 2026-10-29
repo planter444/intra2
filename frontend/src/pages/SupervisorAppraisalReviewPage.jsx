@@ -303,8 +303,8 @@ export default function SupervisorAppraisalReviewPage() {
     });
   };
 
-  const selfScore = calculateAppraisalScore(normalizedAppraisal.selfAppraisal, 'self');
-  const supervisorScore = calculateAppraisalScore(form.supervisorReview, 'supervisor');
+  const selfScore = calculateAppraisalScore(normalizedAppraisal.selfAppraisal || {}, 'self');
+  const supervisorScore = calculateAppraisalScore(form.supervisorReview || {}, 'supervisor');
 
   if (loading) {
     return (

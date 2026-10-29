@@ -108,13 +108,14 @@ export const getNormalizedKpiEntry = (entry = {}, options = {}) => {
 
 export const serializeKpiEntry = (entry = {}) => {
   const normalized = getNormalizedKpiEntry(entry);
+  const safeIndicators = Array.isArray(normalized.indicators) ? normalized.indicators : [];
 
-  return normalized.indicators.reduce((accumulator, indicator, index) => {
+  return safeIndicators.reduce((accumulator, indicator, index) => {
     accumulator[`k${index + 1}`] = indicator.score;
     return accumulator;
   }, {
     coreRoles: normalized.coreRoles,
-    indicators: normalized.indicators
+    indicators: safeIndicators
   });
 };
 
@@ -152,7 +153,8 @@ export const getPerformanceBand = (score, bands = {}) => {
 
 export const getAverageKpiScore = (entry = {}) => {
   const normalized = getNormalizedKpiEntry(entry);
-  const scores = normalized.indicators
+  const indicators = Array.isArray(normalized.indicators) ? normalized.indicators : [];
+  const scores = indicators
     .map((indicator) => Number(indicator.score))
     .filter((score) => Number.isFinite(score));
 
@@ -231,18 +233,20 @@ export const getCurrentAppraisal = (settings, employeeId) => {
 
 export const migrateLegacyKpiToAppraisal = (legacyKpi = {}) => {
   const normalized = getNormalizedKpiEntry(legacyKpi);
+  const safeCoreRoles = Array.isArray(normalized.coreRoles) ? normalized.coreRoles : [];
+  const safeIndicators = Array.isArray(normalized.indicators) ? normalized.indicators : [];
   
   return {
     ...createEmptyAppraisal(),
     selfAppraisal: {
-      coreRoles: normalized.coreRoles.map(role => ({
+      coreRoles: safeCoreRoles.map(role => ({
         role: role.role || role,
         selfComment: '',
         supervisorComment: '',
         selfScore: null,
         supervisorScore: null
       })),
-      indicators: normalized.indicators.map(indicator => ({
+      indicators: safeIndicators.map(indicator => ({
         label: indicator.label,
         selfComment: '',
         supervisorComment: '',
@@ -306,8 +310,10 @@ export const normalizeAppraisalData = (appraisal = {}) => {
 };
 
 export const calculateAppraisalScore = (appraisal, reviewType = 'self') => {
-  const reviewData = reviewType === 'self' ? appraisal.selfAppraisal : appraisal.supervisorReview;
-  const indicators = reviewData.indicators || [];
+  const safeAppraisal = appraisal && typeof appraisal === 'object' ? appraisal : {};
+  const reviewData = reviewType === 'self' ? safeAppraisal.selfAppraisal : safeAppraisal.supervisorReview;
+  const safeReviewData = reviewData && typeof reviewData === 'object' ? reviewData : {};
+  const indicators = Array.isArray(safeReviewData.indicators) ? safeReviewData.indicators : [];
   
   const scores = indicators
     .map(indicator => reviewType === 'self' ? indicator.selfScore : indicator.supervisorScore)
@@ -320,16 +326,17 @@ export const calculateAppraisalScore = (appraisal, reviewType = 'self') => {
 };
 
 export const canEditAppraisal = (appraisal, userRole, userId) => {
-  if (!appraisal) return false;
+  const safeAppraisal = appraisal && typeof appraisal === 'object' ? appraisal : {};
+  if (!safeAppraisal) return false;
   
   // CEO can always edit unlocked appraisals
-  if (userRole === 'ceo' && appraisal.status !== APPRAISAL_STATUS.LOCKED) return true;
+  if (userRole === 'ceo' && safeAppraisal.status !== APPRAISAL_STATUS.LOCKED) return true;
   
   // Admin can always edit unlocked appraisals
-  if (userRole === 'admin' && appraisal.status !== APPRAISAL_STATUS.LOCKED) return true;
+  if (userRole === 'admin' && safeAppraisal.status !== APPRAISAL_STATUS.LOCKED) return true;
   
   // Employee can only edit their own draft appraisals
-  if (userRole === 'employee' && appraisal.status === APPRAISAL_STATUS.DRAFT) return true;
+  if (userRole === 'employee' && safeAppraisal.status === APPRAISAL_STATUS.DRAFT) return true;
   
   // Supervisor can edit appraisals that are submitted (for review)
   if (userRole === 'supervisor' && appraisal.status === APPRAISAL_STATUS.SUBMITTED) return true;
@@ -338,7 +345,8 @@ export const canEditAppraisal = (appraisal, userRole, userId) => {
 };
 
 export const canViewGrade = (appraisal, userRole, userId, settings) => {
-  if (!appraisal) return false;
+  const safeAppraisal = appraisal && typeof appraisal === 'object' ? appraisal : {};
+  if (!safeAppraisal) return false;
   
   const gradeVisibility = settings?.kpi?.appraisal?.gradeVisibility || {};
   
@@ -346,7 +354,7 @@ export const canViewGrade = (appraisal, userRole, userId, settings) => {
   if (userRole === 'ceo' || userRole === 'admin') return true;
   
   // Supervisor can see grades they've assigned
-  if (userRole === 'supervisor' && appraisal.supervisorReview?.reviewerId === userId) return true;
+  if (userRole === 'supervisor' && safeAppraisal.supervisorReview?.reviewerId === userId) return true;
   
   // Employee can see their own self-appraisal grades
   if (userRole === 'employee') {
