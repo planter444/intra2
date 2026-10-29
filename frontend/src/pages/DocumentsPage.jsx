@@ -256,7 +256,8 @@ export default function DocumentsPage() {
           totalSize: 0,
           documentCount: 0,
           newCount: 0,
-          documentIds: []
+          documentIds: [],
+          documentTypes: new Set()
         };
       }
 
@@ -264,17 +265,21 @@ export default function DocumentsPage() {
       accumulator[key].documentCount += 1;
       accumulator[key].newCount += document.isNew ? 1 : 0;
       accumulator[key].documentIds.push(String(document.id));
+      accumulator[key].documentTypes.add(getDocumentDisplayLabel(document, folderLabelMap));
       return accumulator;
     }, {});
 
-    return Object.values(grouped).sort((left, right) => {
+    return Object.values(grouped).map((row) => ({
+      ...row,
+      documentTypes: Array.from(row.documentTypes).join(', ')
+    })).sort((left, right) => {
       if (right.newCount !== left.newCount) {
         return right.newCount - left.newCount;
       }
 
       return left.employeeName.localeCompare(right.employeeName);
     });
-  }, [canManageEmployeeDocuments, visibleDocuments]);
+  }, [canManageEmployeeDocuments, visibleDocuments, folderLabelMap]);
 
   const folderRows = useMemo(() => {
     const searchValue = search.trim().toLowerCase();
@@ -561,6 +566,7 @@ export default function DocumentsPage() {
                 },
                 { key: 'totalSize', header: 'Folder Size', render: (row) => formatDocumentSizeMb(row.totalSize) },
                 { key: 'documentCount', header: 'Documents' },
+                { key: 'documentTypes', header: 'Document Types', render: (row) => row.documentTypes || '-' },
                 {
                   key: 'actions',
                   header: 'Actions',
@@ -570,7 +576,6 @@ export default function DocumentsPage() {
                       <div className="flex flex-wrap gap-2">
                         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => {
                           e.stopPropagation();
-                          console.log('View button clicked, userId:', row.userId);
                           setSelectedEmployeeId(String(row.userId));
                         }}>
                           <Eye size={14} />View

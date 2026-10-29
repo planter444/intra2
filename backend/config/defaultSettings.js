@@ -63,7 +63,8 @@ module.exports = {
     navigationAudit: 'Audit Logs',
     navigationKpiMatrix: 'Appraisal Management',
     navigationKpiSelf: 'My Appraisal',
-    navigationPerformance: 'Performance'
+    navigationPerformance: 'Performance',
+    navigationPayslips: 'Payslips'
   },
   interface: {
     dashboardHeroTitle: 'Workforce Management System',
@@ -165,15 +166,15 @@ module.exports = {
     }
   },
   navigation: {
-    employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance'],
-    supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
-    hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
-    admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
-    ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
-    finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
-    chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
-    chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
-    chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit']
+    employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance'],
+    supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings'],
+    hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings'],
+    admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+    ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+    finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi', 'kpi_self', 'performance', 'settings'],
+    chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings', 'audit'],
+    chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings', 'audit'],
+    chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings', 'audit']
   },
   departments: [
     { name: 'Executive Office', description: 'Executive leadership team' },

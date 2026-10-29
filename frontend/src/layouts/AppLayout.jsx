@@ -42,12 +42,12 @@ const navigationPriority = {
   documents: 7,
   travel: 8,
   timesheets: 9,
-  kpi: 10, // This will be renamed to "Appraisal Management" in UI
-  kpi_self: 11, // This will be renamed to "My Appraisal" in UI
-  performance: 12,
-  settings: 13,
-  audit: 14,
-  payslips: 99 // Put payslips at the end if it exists
+  payslips: 10,
+  kpi: 11, // This will be renamed to "Appraisal Management" in UI
+  kpi_self: 12, // This will be renamed to "My Appraisal" in UI
+  performance: 13,
+  settings: 14,
+  audit: 15
 };
 
 const labelKeyMap = {
@@ -84,15 +84,15 @@ const iconMap = {
 };
 
 const defaultNavigationByRole = {
-  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance'],
-  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
-  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings'],
-  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
-  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
-  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi', 'kpi_self', 'performance', 'settings'],
-  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
-  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit'],
-  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'kpi_self', 'performance', 'settings', 'audit']
+  employee: ['dashboard', 'profile', 'leaves', 'leave_status', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance'],
+  supervisor: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings'],
+  hr: ['dashboard', 'employees', 'profile', 'leaves', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings'],
+  admin: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  ceo: ['dashboard', 'employees', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi', 'kpi_self', 'performance', 'settings', 'audit'],
+  finance: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi', 'kpi_self', 'performance', 'settings'],
+  chairman: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings', 'audit'],
+  chairperson: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings', 'audit'],
+  chair: ['dashboard', 'profile', 'leaves', 'leave_status', 'report', 'documents', 'travel', 'timesheets', 'payslips', 'kpi_self', 'performance', 'settings', 'audit']
 };
 
 export default function AppLayout({ children }) {

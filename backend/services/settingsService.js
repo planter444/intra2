@@ -130,6 +130,10 @@ const normalizeLegacyPayload = (payload = {}) => {
     nextPayload.labels.navigationKpiMatrix = defaultSettings.labels.navigationKpiMatrix;
   }
 
+  if (!nextPayload.labels?.navigationPayslips) {
+    nextPayload.labels.navigationPayslips = defaultSettings.labels.navigationPayslips;
+  }
+
   if (nextPayload.labels?.profileSubtitle === 'Employees can update contact details such as phone number. Identity and role information is managed by HR, Admin, or CEO.') {
     nextPayload.labels.profileSubtitle = defaultSettings.labels.profileSubtitle;
   }

@@ -1567,6 +1567,7 @@ export default function SettingsPage() {
                 ['navigationDocuments', 'Documents Label', 'labels', false],
                 ['navigationTravel', 'Travel Label', 'labels', false],
                 ['navigationTimesheets', 'Timesheets Label', 'labels', false],
+                ['navigationPayslips', 'Payslips Label', 'labels', false],
                 ['navigationKpiMatrix', 'Appraisal Management Label', 'labels', false],
                 ['navigationKpiSelf', 'My Appraisal Label', 'labels', false],
                 ['navigationPerformance', 'Performance Label', 'labels', false],
