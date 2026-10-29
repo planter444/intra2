@@ -68,7 +68,12 @@ export default function KPIMatrixPage() {
   );
 
   const selectedEmployee = rows.find((emp) => String(emp.id) === String(selectedEmployeeId));
-  const employeeKpiData = selectedEmployee ? (settings?.kpi?.records?.[String(selectedEmployee.id)] || settings?.kpi?.matrix?.[String(selectedEmployee.id)] || {}) : {};
+  const employeeKpiData = selectedEmployee ? {
+    ...(settings?.kpi?.records?.[String(selectedEmployee.id)] || settings?.kpi?.matrix?.[String(selectedEmployee.id)] || {}),
+    indicators: Array.isArray(settings?.kpi?.records?.[String(selectedEmployee.id)]?.indicators || settings?.kpi?.matrix?.[String(selectedEmployee.id)]?.indicators) 
+      ? settings?.kpi?.records?.[String(selectedEmployee.id)]?.indicators || settings?.kpi?.matrix?.[String(selectedEmployee.id)]?.indicators 
+      : []
+  } : { indicators: [] };
 
   const handleSelectEmployee = (employeeId) => {
     setSelectedEmployeeId(employeeId);
