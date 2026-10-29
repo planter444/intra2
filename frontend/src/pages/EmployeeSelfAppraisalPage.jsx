@@ -22,7 +22,7 @@ export default function EmployeeSelfAppraisalPage() {
   
   // Get current appraisal data for the user
   const currentAppraisal = settings?.kpi?.records?.[String(user.id)] || {};
-  const normalizedAppraisal = normalizeAppraisalData(currentAppraisal);
+  const normalizedAppraisal = normalizeAppraisalData(currentAppraisal && typeof currentAppraisal === 'object' ? currentAppraisal : {});
   
   // Form state for self-appraisal
   const [form, setForm] = useState({

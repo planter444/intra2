@@ -90,13 +90,20 @@ export const getNormalizedKpiEntry = (entry = {}, options = {}) => {
     return { role: '', comment: '' };
   });
 
-  return {
+  const result = {
     coreRoles: normalizedCoreRoles,
     indicators: normalizedIndicators,
-    description: entry?.description || '',
-    assessmentFrequency: entry?.assessmentFrequency || 'monthly',
-    audit: entry?.audit || {}
+    description: safeEntry?.description || '',
+    assessmentFrequency: safeEntry?.assessmentFrequency || 'monthly',
+    audit: safeEntry?.audit || {}
   };
+  
+  // Final defensive check: ensure indicators is always an array
+  if (!Array.isArray(result.indicators)) {
+    result.indicators = [];
+  }
+  
+  return result;
 };
 
 export const serializeKpiEntry = (entry = {}) => {

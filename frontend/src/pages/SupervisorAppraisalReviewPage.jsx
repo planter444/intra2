@@ -25,17 +25,17 @@ export default function SupervisorAppraisalReviewPage() {
   
   // Get current appraisal data for the employee
   const currentAppraisal = settings?.kpi?.records?.[String(employeeId)] || {};
-  const normalizedAppraisal = normalizeAppraisalData(currentAppraisal);
+  const normalizedAppraisal = normalizeAppraisalData(currentAppraisal && typeof currentAppraisal === 'object' ? currentAppraisal : {});
   
-  // Form state for supervisor review
+  // Form state for supervisor review - ensure arrays are always present
   const [form, setForm] = useState({
     supervisorReview: {
-      coreRoles: normalizedAppraisal.supervisorReview.coreRoles || [],
-      indicators: normalizedAppraisal.supervisorReview.indicators || [],
-      overallComment: normalizedAppraisal.supervisorReview.overallComment || ''
+      coreRoles: Array.isArray(normalizedAppraisal?.supervisorReview?.coreRoles) ? normalizedAppraisal.supervisorReview.coreRoles : [],
+      indicators: Array.isArray(normalizedAppraisal?.supervisorReview?.indicators) ? normalizedAppraisal.supervisorReview.indicators : [],
+      overallComment: normalizedAppraisal?.supervisorReview?.overallComment || ''
     },
     ceoReview: {
-      overallComment: normalizedAppraisal.ceoReview.overallComment || ''
+      overallComment: normalizedAppraisal?.ceoReview?.overallComment || ''
     }
   });
 
