@@ -44,7 +44,10 @@ export const getEmptyKpiEntry = ({ coreRoleCount = KPI_COUNT, indicatorCount = K
 });
 
 export const getNormalizedKpiEntry = (entry = {}, options = {}) => {
-  const legacyIndicatorCount = Object.keys(entry || {}).reduce((highest, key) => {
+  // Ensure entry is always an object - never undefined/null
+  const safeEntry = entry && typeof entry === 'object' ? entry : {};
+  
+  const legacyIndicatorCount = Object.keys(safeEntry).reduce((highest, key) => {
     const match = /^k(\d+)$/.exec(String(key || ''));
     if (!match) {
       return highest;
