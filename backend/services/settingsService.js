@@ -56,6 +56,8 @@ const ensureKpiDefaults = (payload = {}) => {
 
   nextPayload.kpi = {
     records: {},
+    setupMode: 'one',
+    appraisalEditorRoles: ['ceo', 'admin', 'finance'],
     performanceBands: JSON.parse(JSON.stringify(defaultSettings.kpi?.performanceBands || {})),
     appraisal: {
       gradeVisibility: {
@@ -68,6 +70,10 @@ const ensureKpiDefaults = (payload = {}) => {
     records: currentKpi.records && typeof currentKpi.records === 'object'
       ? currentKpi.records
       : {},
+    setupMode: currentKpi.setupMode || 'one',
+    appraisalEditorRoles: Array.isArray(currentKpi.appraisalEditorRoles)
+      ? currentKpi.appraisalEditorRoles
+      : ['ceo', 'admin', 'finance'],
     performanceBands: currentKpi.performanceBands && typeof currentKpi.performanceBands === 'object'
       ? {
           ...(defaultSettings.kpi?.performanceBands || {}),
@@ -118,6 +124,10 @@ const normalizeLegacyPayload = (payload = {}) => {
 
   if (nextPayload.labels?.navigationLeaves === 'Leaves') {
     nextPayload.labels.navigationLeaves = defaultSettings.labels.navigationLeaves;
+  }
+
+  if (nextPayload.labels?.navigationKpiMatrix === 'KPI Management') {
+    nextPayload.labels.navigationKpiMatrix = defaultSettings.labels.navigationKpiMatrix;
   }
 
   if (nextPayload.labels?.profileSubtitle === 'Employees can update contact details such as phone number. Identity and role information is managed by HR, Admin, or CEO.') {
@@ -178,6 +188,19 @@ const bootstrapSystem = async ({ ceoSeedEmail, ceoSeedPassword, hashPassword }) 
 
   if (!existingSettings) {
     await settingsModel.upsertGlobal(defaultSettings, null);
+  } else {
+    // Normalize existing settings to ensure appraisal management label and kpi defaults are applied
+    const normalizedPayload = normalizeLegacyPayload(existingSettings?.payload || {});
+    const currentLabels = existingSettings?.payload?.labels || {};
+    const needsUpdate =
+      currentLabels.navigationKpiMatrix !== defaultSettings.labels.navigationKpiMatrix ||
+      currentLabels.navigationKpiSelf !== defaultSettings.labels.navigationKpiSelf ||
+      !existingSettings?.payload?.kpi?.setupMode ||
+      !existingSettings?.payload?.kpi?.appraisalEditorRoles;
+
+    if (needsUpdate) {
+      await settingsModel.upsertGlobal(normalizedPayload, null);
+    }
   }
 
   const settingsSource = existingSettings?.payload || defaultSettings;
