@@ -76,27 +76,27 @@ export default function KPIMatrixPage() {
     const emp = rows.find((e) => String(e.id) === String(employeeId));
     if (emp) {
       const kpiData = settings?.kpi?.records?.[String(employeeId)] || settings?.kpi?.matrix?.[String(employeeId)] || {};
-      
+
       // Migrate old string-based coreRoles to object format
-      const migratedCoreRoles = (kpiData.coreRoles || []).map(role => {
+      const migratedCoreRoles = Array.isArray(kpiData?.coreRoles) ? kpiData.coreRoles.map(role => {
         if (typeof role === 'string') {
           return { role, comment: '' };
         }
         return role;
-      });
-      
+      }) : [];
+
       // Migrate old indicators without comment to include comment field
-      const migratedIndicators = (kpiData.indicators || []).map(indicator => ({
+      const migratedIndicators = Array.isArray(kpiData?.indicators) ? kpiData.indicators.map(indicator => ({
         ...indicator,
         comment: indicator.comment || ''
-      }));
-      
+      })) : [];
+
       setEditForm({
-        description: kpiData.description || '',
+        description: kpiData?.description || '',
         coreRoles: migratedCoreRoles,
         indicators: migratedIndicators,
-        assessmentFrequency: kpiData.assessmentFrequency || 'monthly',
-        locked: kpiData.locked || false
+        assessmentFrequency: kpiData?.assessmentFrequency || 'monthly',
+        locked: kpiData?.locked || false
       });
     }
   };
