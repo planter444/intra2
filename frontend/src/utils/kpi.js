@@ -256,43 +256,44 @@ export const migrateLegacyKpiToAppraisal = (legacyKpi = {}) => {
 
 export const normalizeAppraisalData = (appraisal = {}) => {
   const empty = createEmptyAppraisal();
+  const safeAppraisal = appraisal && typeof appraisal === 'object' ? appraisal : {};
   
   return {
-    status: appraisal.status || empty.status,
+    status: safeAppraisal.status || empty.status,
     period: {
-      startDate: appraisal.period?.startDate || empty.period.startDate,
-      endDate: appraisal.period?.endDate || empty.period.endDate,
-      frequency: appraisal.period?.frequency || empty.period.frequency
+      startDate: safeAppraisal.period?.startDate || empty.period.startDate,
+      endDate: safeAppraisal.period?.endDate || empty.period.endDate,
+      frequency: safeAppraisal.period?.frequency || empty.period.frequency
     },
     selfAppraisal: {
-      coreRoles: Array.isArray(appraisal.selfAppraisal?.coreRoles) 
-        ? appraisal.selfAppraisal.coreRoles 
+      coreRoles: Array.isArray(safeAppraisal.selfAppraisal?.coreRoles) 
+        ? safeAppraisal.selfAppraisal.coreRoles 
         : empty.selfAppraisal.coreRoles,
-      indicators: Array.isArray(appraisal.selfAppraisal?.indicators) 
-        ? appraisal.selfAppraisal.indicators 
+      indicators: Array.isArray(safeAppraisal.selfAppraisal?.indicators) 
+        ? safeAppraisal.selfAppraisal.indicators 
         : empty.selfAppraisal.indicators,
-      overallComment: appraisal.selfAppraisal?.overallComment || '',
-      submittedAt: appraisal.selfAppraisal?.submittedAt || null
+      overallComment: safeAppraisal.selfAppraisal?.overallComment || '',
+      submittedAt: safeAppraisal.selfAppraisal?.submittedAt || null
     },
     supervisorReview: {
-      coreRoles: Array.isArray(appraisal.supervisorReview?.coreRoles) 
-        ? appraisal.supervisorReview.coreRoles 
+      coreRoles: Array.isArray(safeAppraisal.supervisorReview?.coreRoles) 
+        ? safeAppraisal.supervisorReview.coreRoles 
         : empty.supervisorReview.coreRoles,
-      indicators: Array.isArray(appraisal.supervisorReview?.indicators) 
-        ? appraisal.supervisorReview.indicators 
+      indicators: Array.isArray(safeAppraisal.supervisorReview?.indicators) 
+        ? safeAppraisal.supervisorReview.indicators 
         : empty.supervisorReview.indicators,
-      overallComment: appraisal.supervisorReview?.overallComment || '',
-      submittedAt: appraisal.supervisorReview?.submittedAt || null,
-      reviewerId: appraisal.supervisorReview?.reviewerId || null
+      overallComment: safeAppraisal.supervisorReview?.overallComment || '',
+      submittedAt: safeAppraisal.supervisorReview?.submittedAt || null,
+      reviewerId: safeAppraisal.supervisorReview?.reviewerId || null
     },
     ceoReview: {
-      overallComment: appraisal.ceoReview?.overallComment || '',
-      submittedAt: appraisal.ceoReview?.submittedAt || null
+      overallComment: safeAppraisal.ceoReview?.overallComment || '',
+      submittedAt: safeAppraisal.ceoReview?.submittedAt || null
     },
     audit: {
-      createdAt: appraisal.audit?.createdAt || null,
-      lastModifiedAt: appraisal.audit?.lastModifiedAt || null,
-      lastModifiedBy: appraisal.audit?.lastModifiedBy || null
+      createdAt: safeAppraisal.audit?.createdAt || null,
+      lastModifiedAt: safeAppraisal.audit?.lastModifiedAt || null,
+      lastModifiedBy: safeAppraisal.audit?.lastModifiedBy || null
     }
   };
 };
