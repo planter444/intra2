@@ -202,8 +202,8 @@ export default function KPIMatrixPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={isEmployee ? "My KPI Profile" : "KPI Management"}
-        subtitle={isEmployee ? "View your KPI configuration and performance scores." : "Select an employee to view and manage their KPI configuration and scores."}
+        title={isEmployee ? "My Appraisal Profile" : "Appraisal Management"}
+        subtitle={isEmployee ? "View your appraisal configuration and performance scores." : "Select an employee to view and manage their appraisal configuration and scores."}
         actions={canManageKpi ? [
           <Link
             key="settings"
@@ -211,7 +211,7 @@ export default function KPIMatrixPage() {
             state={{ settingsPage: 'kpi' }}
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            <Settings size={16} /> KPI Settings
+            <Settings size={16} /> Appraisal Settings
           </Link>
         ] : isEmployee ? [
           <Link
@@ -225,12 +225,12 @@ export default function KPIMatrixPage() {
       />
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        <StatCard title="Employees" value={rows.length} helper="Active employees available for KPI review" accent="from-emerald-700 to-green-500" />
-        <StatCard title="Configured profiles" value={employeesWithScores} helper="Employees with at least one saved KPI score" accent="from-sky-700 to-cyan-500" />
-        <StatCard title="KPI editing" value="Inline" helper="Edit KPIs directly from this page" accent="from-violet-700 to-fuchsia-500" />
+        <StatCard title="Employees" value={rows.length} helper="Active employees available for appraisal review" accent="from-emerald-700 to-green-500" />
+        <StatCard title="Configured profiles" value={employeesWithScores} helper="Employees with at least one saved appraisal score" accent="from-sky-700 to-cyan-500" />
+        <StatCard title="Appraisal editing" value="Inline" helper="Edit appraisals directly from this page" accent="from-violet-700 to-fuchsia-500" />
       </div>
 
-      <SectionCard title={isEmployee ? "Your Profile" : "Select Employee"} subtitle={isEmployee ? "Your KPI details and performance information." : "Choose an employee to view and manage their KPI details."} style={{ ...cardStyle, ...animationStyle }}>
+      <SectionCard title={isEmployee ? "Your Profile" : "Select Employee"} subtitle={isEmployee ? "Your appraisal details and performance information." : "Choose an employee to view and manage their appraisal details."} style={{ ...cardStyle, ...animationStyle }}>
         {!isEmployee && (
           <div className="mb-6">
             <label className="mb-2 block text-sm font-medium text-slate-700">Select Employee</label>
