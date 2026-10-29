@@ -274,7 +274,8 @@ export default function SupervisorAppraisalReviewPage() {
   };
 
   const handleCoreRoleCommentChange = (index, value) => {
-    const newCoreRoles = [...form.supervisorReview.coreRoles];
+    const currentCoreRoles = Array.isArray(form.supervisorReview.coreRoles) ? form.supervisorReview.coreRoles : [];
+    const newCoreRoles = [...currentCoreRoles];
     newCoreRoles[index] = { ...newCoreRoles[index], supervisorComment: value };
     setForm({
       ...form,
@@ -283,7 +284,8 @@ export default function SupervisorAppraisalReviewPage() {
   };
 
   const handleIndicatorScoreChange = (index, value) => {
-    const newIndicators = [...form.supervisorReview.indicators];
+    const currentIndicators = Array.isArray(form.supervisorReview.indicators) ? form.supervisorReview.indicators : [];
+    const newIndicators = [...currentIndicators];
     newIndicators[index] = { ...newIndicators[index], supervisorScore: Math.min(100, Math.max(0, Number(value) || 0)) };
     setForm({
       ...form,
@@ -292,7 +294,8 @@ export default function SupervisorAppraisalReviewPage() {
   };
 
   const handleIndicatorCommentChange = (index, value) => {
-    const newIndicators = [...form.supervisorReview.indicators];
+    const currentIndicators = Array.isArray(form.supervisorReview.indicators) ? form.supervisorReview.indicators : [];
+    const newIndicators = [...currentIndicators];
     newIndicators[index] = { ...newIndicators[index], supervisorComment: value };
     setForm({
       ...form,
@@ -403,7 +406,7 @@ export default function SupervisorAppraisalReviewPage() {
           {/* KPI Indicators */}
           <div>
             <h4 className="mb-3 text-sm font-semibold text-slate-900">KPI Indicators</h4>
-            {normalizedAppraisal.selfAppraisal.indicators.length === 0 ? (
+            {!Array.isArray(normalizedAppraisal?.selfAppraisal?.indicators) || normalizedAppraisal.selfAppraisal.indicators.length === 0 ? (
               <p className="text-sm text-slate-500">No KPI indicators provided by employee.</p>
             ) : (
               normalizedAppraisal.selfAppraisal.indicators.map((indicator, index) => (
@@ -502,7 +505,7 @@ export default function SupervisorAppraisalReviewPage() {
             {/* KPI Indicators Evaluation */}
             <div>
               <h4 className="mb-3 text-sm font-semibold text-slate-900">KPI Indicators Evaluation</h4>
-              {normalizedAppraisal.selfAppraisal.indicators.length === 0 ? (
+              {!Array.isArray(normalizedAppraisal?.selfAppraisal?.indicators) || normalizedAppraisal.selfAppraisal.indicators.length === 0 ? (
                 <p className="text-sm text-slate-500">No KPI indicators to evaluate.</p>
               ) : (
                 normalizedAppraisal.selfAppraisal.indicators.map((indicator, index) => (
@@ -529,7 +532,7 @@ export default function SupervisorAppraisalReviewPage() {
                           min="0"
                           max="100"
                           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                          value={form.supervisorReview.indicators[index]?.supervisorScore || ''}
+                          value={Array.isArray(form.supervisorReview.indicators) ? form.supervisorReview.indicators[index]?.supervisorScore || '' : ''}
                           onChange={(e) => handleIndicatorScoreChange(index, e.target.value)}
                           placeholder="Enter your score out of 100"
                           disabled={!canEdit}
@@ -540,7 +543,7 @@ export default function SupervisorAppraisalReviewPage() {
                         <textarea
                           rows="2"
                           className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                          value={form.supervisorReview.indicators[index]?.supervisorComment || ''}
+                          value={Array.isArray(form.supervisorReview.indicators) ? form.supervisorReview.indicators[index]?.supervisorComment || '' : ''}
                           onChange={(e) => handleIndicatorCommentChange(index, e.target.value)}
                           placeholder="Add your evaluation comments..."
                           disabled={!canEdit}

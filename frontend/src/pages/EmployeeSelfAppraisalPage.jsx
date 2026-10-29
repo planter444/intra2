@@ -229,7 +229,8 @@ export default function EmployeeSelfAppraisalPage() {
   };
 
   const handleIndicatorScoreChange = (index, value) => {
-    const newIndicators = [...form.selfAppraisal.indicators];
+    const currentIndicators = Array.isArray(form.selfAppraisal.indicators) ? form.selfAppraisal.indicators : [];
+    const newIndicators = [...currentIndicators];
     newIndicators[index] = { ...newIndicators[index], selfScore: Math.min(100, Math.max(0, Number(value) || 0)) };
     setForm({
       ...form,
@@ -238,7 +239,8 @@ export default function EmployeeSelfAppraisalPage() {
   };
 
   const handleIndicatorCommentChange = (index, value) => {
-    const newIndicators = [...form.selfAppraisal.indicators];
+    const currentIndicators = Array.isArray(form.selfAppraisal.indicators) ? form.selfAppraisal.indicators : [];
+    const newIndicators = [...currentIndicators];
     newIndicators[index] = { ...newIndicators[index], selfComment: value };
     setForm({
       ...form,
@@ -417,7 +419,7 @@ export default function EmployeeSelfAppraisalPage() {
       {/* KPI Indicators */}
       <SectionCard title="KPI Indicators" subtitle="Rate your performance on each indicator (out of 100)">
         <div className="space-y-4">
-          {form.selfAppraisal.indicators.length === 0 ? (
+          {!Array.isArray(form.selfAppraisal.indicators) || form.selfAppraisal.indicators.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-sm text-slate-500">
               No KPI indicators have been configured for your appraisal yet. Please contact your supervisor.
             </div>
