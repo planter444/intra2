@@ -39,6 +39,20 @@ export default function SupervisorAppraisalReviewPage() {
     }
   });
 
+  // Sync form when normalizedAppraisal changes
+  useEffect(() => {
+    setForm({
+      supervisorReview: {
+        coreRoles: Array.isArray(normalizedAppraisal?.supervisorReview?.coreRoles) ? normalizedAppraisal.supervisorReview.coreRoles : [],
+        indicators: Array.isArray(normalizedAppraisal?.supervisorReview?.indicators) ? normalizedAppraisal.supervisorReview.indicators : [],
+        overallComment: normalizedAppraisal?.supervisorReview?.overallComment || ''
+      },
+      ceoReview: {
+        overallComment: normalizedAppraisal?.ceoReview?.overallComment || ''
+      }
+    });
+  }, [normalizedAppraisal]);
+
   const canEdit = canEditAppraisal(normalizedAppraisal, user.role, user.id);
   const isLocked = normalizedAppraisal.status === APPRAISAL_STATUS.LOCKED;
   const statusLabel = getAppraisalStatusLabel(normalizedAppraisal.status);

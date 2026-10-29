@@ -38,6 +38,22 @@ export default function EmployeeSelfAppraisalPage() {
     }
   });
 
+  // Sync form when normalizedAppraisal changes
+  useEffect(() => {
+    setForm({
+      period: {
+        startDate: normalizedAppraisal.period.startDate || '',
+        endDate: normalizedAppraisal.period.endDate || '',
+        frequency: normalizedAppraisal.period.frequency || 'quarterly'
+      },
+      selfAppraisal: {
+        coreRoles: normalizedAppraisal.selfAppraisal.coreRoles || [],
+        indicators: normalizedAppraisal.selfAppraisal.indicators || [],
+        overallComment: normalizedAppraisal.selfAppraisal.overallComment || ''
+      }
+    });
+  }, [normalizedAppraisal]);
+
   const canEdit = canEditAppraisal(normalizedAppraisal, user.role, user.id);
   const isLocked = normalizedAppraisal.status === APPRAISAL_STATUS.LOCKED;
   const statusLabel = getAppraisalStatusLabel(normalizedAppraisal.status);
