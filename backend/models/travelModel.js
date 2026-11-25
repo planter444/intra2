@@ -59,16 +59,24 @@ const generateReferenceNumber = async () => {
   const year = new Date().getFullYear();
   const result = await query(
     `
-      SELECT COUNT(*) as count
+      SELECT reference_number
       FROM travel_requests
-      WHERE EXTRACT(YEAR FROM created_at) = $1
+      WHERE reference_number LIKE $1
+      ORDER BY reference_number DESC
+      LIMIT 1
     `,
-    [year]
+    [`KEREA-TRV-${year}-%`]
   );
   
-  const count = (result.rows[0]?.count || 0) + 1;
-  const sequence = String(count).padStart(4, '0');
-  return `KEREA-TRV-${year}-${sequence}`;
+  let sequence = 1;
+  if (result.rows.length > 0) {
+    const lastRef = result.rows[0].reference_number;
+    const lastSequence = parseInt(lastRef.split('-').pop(), 10);
+    sequence = lastSequence + 1;
+  }
+  
+  const sequenceStr = String(sequence).padStart(4, '0');
+  return `KEREA-TRV-${year}-${sequenceStr}`;
 };
 
 const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent }) => {
