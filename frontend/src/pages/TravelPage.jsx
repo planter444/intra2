@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Calendar, MapPin, DollarSign, FileText, CheckCircle, XCircle, Clock, AlertCircle, Users, Eye, Search, ArrowUpDown, User, Trash2 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
