@@ -25,9 +25,9 @@ const statusConfig = {
 const getStatusConfig = (request, user) => {
   const baseConfig = statusConfig[request.status] || statusConfig.pending;
   
-  // For finance, admin, and administrator_and_membership_officer: unsettled requests get amber background
-  const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
-  if (canSettleRoles.includes(user.role) && !request.settled) {
+  // For finance, admin, administrator, administrator_and_membership_officer: unsettled requests get amber background
+  const canSettleRoles = ['admin', 'finance', 'administrator', 'administrator_and_membership_officer'];
+  if ((canSettleRoles.includes(user.role) || user.positionTitle === 'Administration') && !request.settled) {
     return {
       ...baseConfig,
       bgColor: 'bg-amber-50',
