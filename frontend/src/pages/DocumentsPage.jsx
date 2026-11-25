@@ -675,7 +675,7 @@ export default function DocumentsPage() {
                     />
                   </div>
                 );
-              )}
+              })}
             </div>
           )}
         </SectionCard>
