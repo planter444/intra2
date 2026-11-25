@@ -1251,6 +1251,23 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         WHERE status = 'pending_ceo'
       `
     );
+  } else if (userRole === 'admin' || userRole === 'supervisor') {
+    // Admin (IT Officer) and supervisors can only see pending requests from employees they are designated approvers for
+    try {
+      result = await query(
+        `
+          SELECT COUNT(*) as count
+          FROM travel_requests tr
+          INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
+          WHERE tr.status = 'pending' AND ter.approver_id = $1
+        `,
+        [userId]
+      );
+    } catch (error) {
+      console.warn('Failed to get approver pending count:', error.message);
+      // Fallback: return 0 if query fails
+      result = { rows: [{ count: 0 }] };
+    }
   } else if (userRole === 'finance') {
     // Finance can see all pending requests
     result = await query(
@@ -1269,7 +1286,7 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         WHERE status = 'approved'
       `
     );
-  } else if (userRole === 'admin' || userRole === 'supervisor') {
+  } else {
     // Admin (IT Officer) and supervisors can only see pending requests from employees they are designated approvers for
     try {
       result = await query(
@@ -1289,17 +1306,6 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
   } else {
     // Regular employees should not see any pending count
     result = { rows: [{ count: 0 }] };
-  }
-    // Regular employees can only see requests where they are one of the designated approvers
-    result = await query(
-      `
-        SELECT COUNT(*) as count
-        FROM travel_requests tr
-        INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
-        WHERE tr.status = 'pending' AND ter.approver_id = $1
-      `,
-      [userId]
-    );
   }
 
   return parseInt(result.rows[0].count, 10);
