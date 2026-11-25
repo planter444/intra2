@@ -498,7 +498,9 @@ export default function AppLayout({ children }) {
                       <span className="relative flex items-center gap-2">
                         {item.key === 'leaves' && pendingReviewCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
-                        ) : item.key === 'travel' && unsettledTravelCount > 0 ? (
+                        ) : item.key === 'travel' && user.role === 'ceo' && pendingTravelCount > 0 ? (
+                          <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
+                        ) : item.key === 'travel' && user.role !== 'ceo' && unsettledTravelCount > 0 ? (
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>

@@ -843,6 +843,15 @@ export default function TravelPage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            // Check if request is approved before showing modal
+                            if (request.status !== 'approved') {
+                              setNotice({
+                                open: true,
+                                title: 'Unable to Settle',
+                                description: 'Cannot settle an unapproved travel request.'
+                              });
+                              return;
+                            }
                             setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
                           }}
                           className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
