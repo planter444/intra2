@@ -42,16 +42,13 @@ export const deleteTimesheet = async (id) => {
 
 export const getPendingTimesheetCount = async (userId, userRole) => {
   try {
-    // Only supervisors and admin should see pending timesheet counts
-    if (userRole !== 'supervisor' && userRole !== 'admin') {
+    // Only supervisors should see pending timesheet counts
+    if (userRole !== 'supervisor') {
       return 0;
     }
 
     // For supervisors, only count timesheets where they are the supervisor
-    const params = { status: 'submitted' };
-    if (userRole === 'supervisor') {
-      params.supervisorId = userId;
-    }
+    const params = { status: 'submitted', supervisorId: userId };
 
     const { data: response } = await api.get('/timesheets', { params });
     return (response.timesheets || []).length;

@@ -204,7 +204,7 @@ export default function AppLayout({ children }) {
   }, [user]);
 
   useEffect(() => {
-    if (!['supervisor', 'admin'].includes(user?.role)) {
+    if (!['supervisor'].includes(user?.role)) {
       setPendingTimesheetCount(0);
       return;
     }

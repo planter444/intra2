@@ -1069,7 +1069,7 @@ const updateTravelRequestSettled = async (req, res, next) => {
 
 const getPendingTravelRequestCount = async (req, res, next) => {
   try {
-    const count = await travelModel.getPendingTravelRequestCountForUserExcludingViewed(req.user.id, req.user.role, req.user.positionTitle);
+    const count = await travelModel.getPendingTravelRequestCountForUser(req.user.id, req.user.role);
     res.json({ count });
   } catch (error) {
     next(error);
