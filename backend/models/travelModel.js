@@ -1287,6 +1287,9 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
       result = { rows: [{ count: 0 }] };
     }
   } else {
+    // Regular employees should not see any pending count
+    result = { rows: [{ count: 0 }] };
+  }
     // Regular employees can only see requests where they are one of the designated approvers
     result = await query(
       `
