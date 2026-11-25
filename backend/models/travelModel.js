@@ -1287,23 +1287,6 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
       `
     );
   } else {
-    // Admin (IT Officer) and supervisors can only see pending requests from employees they are designated approvers for
-    try {
-      result = await query(
-        `
-          SELECT COUNT(*) as count
-          FROM travel_requests tr
-          INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
-          WHERE tr.status = 'pending' AND ter.approver_id = $1
-        `,
-        [userId]
-      );
-    } catch (error) {
-      console.warn('Failed to get approver pending count:', error.message);
-      // Fallback: return 0 if query fails
-      result = { rows: [{ count: 0 }] };
-    }
-  } else {
     // Regular employees should not see any pending count
     result = { rows: [{ count: 0 }] };
   }
