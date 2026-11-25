@@ -527,14 +527,27 @@ const buildTravelReportPdf = async (payload) => {
 
     y3 -= 40;
 
-    // Table header with better spacing
+    // Table header with better spacing and Reimbursement column
     page3.drawText('Category', { x: 50, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('DSA', { x: 170, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Accommodation', { x: 290, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Other Costs', { x: 410, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Total', { x: 530, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('DSA', { x: 140, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Accommodation', { x: 240, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Other Costs', { x: 340, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Reimbursement', { x: 440, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Total', { x: 540, y: y3, size: 10, font: fontBold, color: primaryColor });
 
     y3 -= 15;
+
+    // Draw table header border
+    page3.drawRectangle({
+      x: 45,
+      y: y3 - 2,
+      width: 540,
+      height: 17,
+      borderColor: primaryColor,
+      borderWidth: 1,
+    });
+
+    y3 -= 20;
 
     // Function to format currency amounts - show multiple currencies
     const formatCurrencyAmounts = (amounts) => {
@@ -545,7 +558,7 @@ const buildTravelReportPdf = async (payload) => {
     };
 
     // Function to calculate total by currency
-    const calculateTotalByCurrency = (dsa, accommodation, other) => {
+    const calculateTotalByCurrency = (dsa, accommodation, other, reimbursement) => {
       const totalsByCurrency = {};
       
       Object.entries(dsa || {}).forEach(([currency, amount]) => {
@@ -555,6 +568,9 @@ const buildTravelReportPdf = async (payload) => {
         totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
       });
       Object.entries(other || {}).forEach(([currency, amount]) => {
+        totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+      });
+      Object.entries(reimbursement || {}).forEach(([currency, amount]) => {
         totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
       });
       
@@ -572,50 +588,65 @@ const buildTravelReportPdf = async (payload) => {
     const categories = ['Within Kenya', 'East Africa', 'International', 'Local Movement'];
 
     categories.forEach((category, index) => {
-      const catData = travelSummary?.byCategory?.[category] || { dsa: {}, accommodation: {}, other: {} };
-      const totalByCurrency = calculateTotalByCurrency(catData.dsa, catData.accommodation, catData.other);
+      const catData = travelSummary?.byCategory?.[category] || { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+      const totalByCurrency = calculateTotalByCurrency(catData.dsa, catData.accommodation, catData.other, catData.reimbursement);
 
-      // Alternating row highlight
+      // Alternating row highlight with increased height
       if (index % 2 === 0) {
         page3.drawRectangle({
           x: 45,
-          y: y3 - 5,
-          width: 520,
-          height: 14,
+          y: y3 - 8,
+          width: 540,
+          height: 22,
           color: lightGray,
         });
       }
 
-      page3.drawText(category, { x: 50, y: y3, size: 9, font: font, color: textColor });
-      page3.drawText(formatCurrencyAmounts(catData.dsa), { x: 170, y: y3, size: 8, font: font, color: textColor });
-      page3.drawText((category === 'Within Kenya' || category === 'Local Movement') ? '-' : formatCurrencyAmounts(catData.accommodation), { x: 290, y: y3, size: 8, font: font, color: textColor });
-      page3.drawText(formatCurrencyAmounts(catData.other), { x: 410, y: y3, size: 8, font: font, color: textColor });
-      page3.drawText(formatTotalByCurrency(totalByCurrency), { x: 530, y: y3, size: 8, font: fontBold, color: textColor });
+      // Draw row border
+      page3.drawRectangle({
+        x: 45,
+        y: y3 - 8,
+        width: 540,
+        height: 22,
+        borderColor: textColor,
+        borderWidth: 0.5,
+      });
 
-      y3 -= 14;
+      page3.drawText(category, { x: 50, y: y3, size: 9, font: font, color: textColor });
+      page3.drawText(formatCurrencyAmounts(catData.dsa), { x: 140, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText((category === 'Within Kenya' || category === 'Local Movement') ? '-' : formatCurrencyAmounts(catData.accommodation), { x: 240, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText(formatCurrencyAmounts(catData.other), { x: 340, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText(formatCurrencyAmounts(catData.reimbursement), { x: 440, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText(formatTotalByCurrency(totalByCurrency), { x: 540, y: y3, size: 8, font: fontBold, color: textColor });
+
+      y3 -= 22;
     });
 
     y3 -= 10;
 
-    // Footer row with grand total
+    // Footer row with grand total - increased height
     page3.drawRectangle({
       x: 45,
-      y: y3 - 15,
-      width: 520,
-      height: 20,
+      y: y3 - 20,
+      width: 540,
+      height: 25,
       color: emeraldColor,
+      borderColor: primaryColor,
+      borderWidth: 1,
     });
 
     const totalDSA = travelSummary?.totals?.dsa || {};
     const totalAccommodation = travelSummary?.totals?.accommodation || {};
     const totalOther = travelSummary?.totals?.other || {};
-    const grandTotalByCurrency = calculateTotalByCurrency(totalDSA, totalAccommodation, totalOther);
+    const totalReimbursement = travelSummary?.totals?.reimbursement || {};
+    const grandTotalByCurrency = calculateTotalByCurrency(totalDSA, totalAccommodation, totalOther, totalReimbursement);
 
-    page3.drawText('Total Money Spent on Travels', { x: 50, y: y3, size: 10, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalDSA), { x: 170, y: y3, size: 9, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalAccommodation), { x: 290, y: y3, size: 9, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalOther), { x: 410, y: y3, size: 9, font: fontBold, color: white });
-    page3.drawText(formatTotalByCurrency(grandTotalByCurrency), { x: 530, y: y3, size: 10, font: fontBold, color: white });
+    page3.drawText('Total Money Spent on Travels', { x: 50, y: y3, size: 11, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalDSA), { x: 140, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalAccommodation), { x: 240, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalOther), { x: 340, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalReimbursement), { x: 440, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatTotalByCurrency(grandTotalByCurrency), { x: 540, y: y3, size: 11, font: fontBold, color: white });
 
     // Footer for page 3
     page3.drawText('KEREA HRMS - Confidential Document', {

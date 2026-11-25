@@ -429,19 +429,20 @@ export default function TravelReportPage() {
           {reportData.travelSummary && (
             <SectionCard title="Travel Summary Statistics" subtitle="Financial breakdown by travel category.">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px] text-sm">
+                <table className="w-full min-w-[800px] text-sm">
                   <thead>
                     <tr className="border-b-2 border-slate-300 bg-slate-50">
                       <th className="px-4 py-3 text-left font-semibold text-slate-700">Category</th>
                       <th className="px-4 py-3 text-right font-semibold text-slate-700">DSA</th>
                       <th className="px-4 py-3 text-right font-semibold text-slate-700">Accommodation</th>
                       <th className="px-4 py-3 text-right font-semibold text-slate-700">Other Costs</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-700">Reimbursement</th>
                       <th className="px-4 py-3 text-right font-semibold text-slate-700">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {['Within Kenya', 'East Africa', 'International', 'Local Movement'].map((category, index) => {
-                      const catData = reportData.travelSummary.byCategory[category] || { dsa: {}, accommodation: {}, other: {} };
+                      const catData = reportData.travelSummary.byCategory[category] || { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
                       
                       const formatCurrency = (amounts) => {
                         if (!amounts || Object.keys(amounts).length === 0) return '-';
@@ -450,7 +451,7 @@ export default function TravelReportPage() {
                         ).join(' + ');
                       };
 
-                      const calculateTotalByCurrency = (dsa, accommodation, other) => {
+                      const calculateTotalByCurrency = (dsa, accommodation, other, reimbursement) => {
                         const totalsByCurrency = {};
                         Object.entries(dsa || {}).forEach(([currency, amount]) => {
                           totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
@@ -459,6 +460,9 @@ export default function TravelReportPage() {
                           totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
                         });
                         Object.entries(other || {}).forEach(([currency, amount]) => {
+                          totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+                        });
+                        Object.entries(reimbursement || {}).forEach(([currency, amount]) => {
                           totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
                         });
                         return totalsByCurrency;
@@ -471,7 +475,7 @@ export default function TravelReportPage() {
                         ).join(' + ');
                       };
 
-                      const totalByCurrency = calculateTotalByCurrency(catData.dsa, catData.accommodation, catData.other);
+                      const totalByCurrency = calculateTotalByCurrency(catData.dsa, catData.accommodation, catData.other, catData.reimbursement);
 
                       return (
                         <tr key={category} className={`border-b border-slate-100 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
@@ -479,6 +483,7 @@ export default function TravelReportPage() {
                           <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.dsa)}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{category === 'Within Kenya' || category === 'Local Movement' ? '-' : formatCurrency(catData.accommodation)}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.other)}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.reimbursement)}</td>
                           <td className="px-4 py-3 text-right font-bold text-slate-900">{formatTotalByCurrency(totalByCurrency)}</td>
                         </tr>
                       );
@@ -514,11 +519,21 @@ export default function TravelReportPage() {
                           ).join(' + ');
                         })()}
                       </td>
+                      <td className="px-4 py-3 text-right font-bold text-slate-900">
+                        {(() => {
+                          const totals = reportData.travelSummary.totals?.reimbursement || {};
+                          if (!totals || Object.keys(totals).length === 0) return '-';
+                          return Object.entries(totals).map(([currency, amount]) => 
+                            `${Math.round(amount).toLocaleString()} ${currency}`
+                          ).join(' + ');
+                        })()}
+                      </td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-700 text-lg">
                         {(() => {
                           const totalDSA = reportData.travelSummary.totals?.dsa || {};
                           const totalAccommodation = reportData.travelSummary.totals?.accommodation || {};
                           const totalOther = reportData.travelSummary.totals?.other || {};
+                          const totalReimbursement = reportData.travelSummary.totals?.reimbursement || {};
                           
                           const grandTotalByCurrency = {};
                           Object.entries(totalDSA).forEach(([currency, amount]) => {
@@ -528,6 +543,9 @@ export default function TravelReportPage() {
                             grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
                           });
                           Object.entries(totalOther).forEach(([currency, amount]) => {
+                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
+                          });
+                          Object.entries(totalReimbursement).forEach(([currency, amount]) => {
                             grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
                           });
                           
