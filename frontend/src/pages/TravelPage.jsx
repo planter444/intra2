@@ -113,6 +113,7 @@ export default function TravelPage() {
   const [users, setUsers] = useState([]);
   const [canEditSettled, setCanEditSettled] = useState(false);
   const [isNotificationRecipient, setIsNotificationRecipient] = useState(false);
+  const [showMoreOwnRequests, setShowMoreOwnRequests] = useState(false);
 
   const loadRequests = async () => {
     try {
@@ -324,8 +325,8 @@ export default function TravelPage() {
       if (aPendingCEO && !bPendingCEO) return -1;
       if (!aPendingCEO && bPendingCEO) return 1;
     } else {
-      // Finance, admin, administrator_and_membership_officer, IT Officer: unsettled requests first
-      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
+      // Finance, admin, administrator_and_membership_officer: unsettled requests first
+      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
       if (canSettleRoles.includes(user.role)) {
         const aUnsettled = !a.settled;
         const bUnsettled = !b.settled;
@@ -357,6 +358,13 @@ export default function TravelPage() {
     
     return sortOrder === 'asc' ? comparison : -comparison;
   });
+
+  // Separate own requests from other requests
+  const ownRequests = filteredRequests.filter(r => String(r.userId) === String(user.id));
+  const otherRequests = filteredRequests.filter(r => String(r.userId) !== String(user.id));
+
+  // Show only 2 own requests initially, rest on "Show More"
+  const displayedOwnRequests = showMoreOwnRequests ? ownRequests : ownRequests.slice(0, 2);
 
   const teamRequests = requests.filter((request) => {
     if (user.role === 'supervisor') {
@@ -461,21 +469,21 @@ export default function TravelPage() {
           />
         ) : (
           <>
-            {/* My Travel Requests Section - for finance officers and supervisors */}
-            {(user.role === 'finance' || user.role === 'supervisor') && (
+            {/* My Travel Requests Section - for finance, admin, administrator_and_membership_officer */}
+            {(['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) && (
               <>
                 <div className="border-b border-slate-200 pb-3 mb-4">
                   <h3 className="text-lg font-semibold text-slate-900">My Travel Requests</h3>
                   <p className="text-sm text-slate-500">Your own travel requests</p>
                 </div>
-                {filteredRequests.filter(r => String(r.userId) === String(user.id)).length === 0 ? (
+                {displayedOwnRequests.length === 0 ? (
                   <EmptyState
                     title="No travel requests found"
                     description="You have not submitted any travel requests yet."
                   />
                 ) : (
                   <div className="space-y-4 mb-6">
-                    {filteredRequests.filter(r => String(r.userId) === String(user.id)).map((request) => {
+                    {displayedOwnRequests.map((request) => {
                       const config = getStatusConfig(request, user);
                       const StatusIcon = config.icon;
                       const shouldHighlightForRequester = !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
@@ -654,25 +662,34 @@ export default function TravelPage() {
                     })}
                   </div>
                 )}
+                {ownRequests.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowMoreOwnRequests(!showMoreOwnRequests)}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700 mb-6"
+                  >
+                    {showMoreOwnRequests ? 'Show Less' : `Show More (${ownRequests.length - 2} more)`}
+                  </button>
+                )}
               </>
             )}
 
             {/* Other Travel Requests Section */}
-            {(user.role === 'finance' || user.role === 'supervisor') && (
+            {(['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) && (
               <div className="border-b border-slate-200 pb-3 mb-4">
                 <h3 className="text-lg font-semibold text-slate-900">Other Travel Requests</h3>
                 <p className="text-sm text-slate-500">Travel requests from other staff members</p>
               </div>
             )}
 
-            {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).length === 0 ? (
+            {otherRequests.length === 0 ? (
               <EmptyState
                 title="No travel requests found"
                 description={user.role === 'employee' ? 'You have not submitted any travel requests yet.' : 'No travel requests have been submitted yet.'}
               />
             ) : (
               <div className="space-y-4">
-                {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).map((request) => {
+                {otherRequests.map((request) => {
                   const config = getStatusConfig(request, user);
                   const StatusIcon = config.icon;
                   // Highlight pending requests for supervisors (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)

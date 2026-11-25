@@ -1304,12 +1304,12 @@ const getUnsettledTravelRequestCountForUser = async (userId, userRole) => {
     return 0;
   }
 
-  // Count all requests that are not yet settled (regardless of approval status)
+  // Count approved requests that are not yet settled
   result = await query(
     `
       SELECT COUNT(*) as count
       FROM travel_requests
-      WHERE settled = false AND status != 'cancelled' AND status != 'rejected'
+      WHERE status = 'approved' AND settled = false
     `
   );
 

@@ -187,13 +187,18 @@ export default function AppLayout({ children }) {
     }
 
     const refreshPendingTravelCount = () => {
-      getPendingTravelRequestCount()
-        .then((count) => setPendingTravelCount(count))
-        .catch((error) => {
-          if (error.response?.status !== 429) {
-            setPendingTravelCount(0);
-          }
-        });
+      // CEO counts pending_ceo, others count pending
+      if (user.role === 'ceo') {
+        getPendingTravelRequestCount()
+          .then((count) => setPendingTravelCount(count))
+          .catch((error) => {
+            if (error.response?.status !== 429) {
+              setPendingTravelCount(0);
+            }
+          });
+      } else {
+        setPendingTravelCount(0);
+      }
     };
 
     const refreshUnsettledTravelCount = () => {
