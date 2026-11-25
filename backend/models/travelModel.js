@@ -330,8 +330,8 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
-  // Admin and membership officer always have view-all access
-  const hasAutomaticViewAll = role === 'admin' || role === 'administrator_and_membership_officer' || positionTitle === 'Administration';
+  // Admin, finance, and membership officer always have view-all access
+  const hasAutomaticViewAll = role === 'admin' || role === 'finance' || role === 'administrator_and_membership_officer' || positionTitle === 'Administration';
 
   console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'positionTitle:', positionTitle, 'canViewAll:', canViewAll, 'hasAutomaticViewAll:', hasAutomaticViewAll);
 
@@ -401,13 +401,9 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
     params.push(viewerId);
     clauses.push(`tr.user_id = $${params.length}`);
   } else if (role === 'finance' || role === 'admin' || positionTitle === 'Administration') {
-    // Finance and admin should see all requests (unless they have view-all access)
+    // Finance and admin should see all requests (no user filter)
     // No status filter - they see pending, approved, etc.
-    if (!canViewAll && !hasAutomaticViewAll) {
-      // Only see their own requests if they don't have view-all access
-      params.push(viewerId);
-      clauses.push(`tr.user_id = $${params.length}`);
-    }
+    // No changes needed - they already have automatic view-all access via hasAutomaticViewAll
   }
   // For oversight roles (admin, finance, it_officer), membership officer, administrator, and users with view-all access, no user filter - they see all
 

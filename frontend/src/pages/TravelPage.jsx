@@ -13,12 +13,12 @@ import { formatDateOnly } from '../utils/leaveCalendar';
 const statusConfig = {
   pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: true },
-  approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
+  approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-white', borderColor: 'border-slate-200', highlight: false },
   approved_unsettled: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', highlight: false },
   in_progress: { label: 'In Progress', icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: false },
-  completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false }
+  completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-white', borderColor: 'border-slate-200', highlight: false }
 };
 
 // Get status config with unsettled override
