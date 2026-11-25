@@ -635,30 +635,33 @@ export default function DocumentsPage() {
                   {
                     key: 'actions',
                     header: 'Actions',
-                    render: (row) => (
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(event) => {
-                          event.stopPropagation();
-                          handlePreviewRow(row);
-                        }}>
-                          Preview
-                        </button>
-                        <button type="button" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700" onClick={(event) => {
-                          event.stopPropagation();
-                          handleDownload(row.id);
-                        }}>
-                          Download
-                        </button>
-                        {(canManageEmployeeDocuments || (row.userId && String(row.userId) === String(user.id) && (!isRestrictedDocument(row) || canManageRestrictedDocuments))) ? (
-                          <button type="button" className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700" onClick={(event) => {
+                    render: (row) => {
+                      if (!row) return null;
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" className="rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(event) => {
                             event.stopPropagation();
-                            handleDelete(row);
+                            handlePreviewRow(row);
                           }}>
-                            <Trash2 size={12} />Delete
+                            Preview
                           </button>
-                        ) : null}
-                      </div>
-                    )
+                          <button type="button" className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700" onClick={(event) => {
+                            event.stopPropagation();
+                            handleDownload(row.id);
+                          }}>
+                            Download
+                          </button>
+                          {(canManageEmployeeDocuments || (row.userId && String(row.userId) === String(user.id) && (!isRestrictedDocument(row) || canManageRestrictedDocuments))) ? (
+                            <button type="button" className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700" onClick={(event) => {
+                              event.stopPropagation();
+                              handleDelete(row);
+                            }}>
+                              <Trash2 size={12} />Delete
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    }
                   }
                 ]}
                 rows={canManageEmployeeDocuments ? selectedFolderDocuments : visibleDocuments}

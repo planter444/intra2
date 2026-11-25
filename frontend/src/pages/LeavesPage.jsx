@@ -237,6 +237,7 @@ export default function LeavesPage() {
                 {visibleLeaveRequests.map((request) => {
                   const isPending = reviewRequests.some((entry) => entry.id === request.id);
                   const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo');
+                  const isChairmanSupervisor = request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' || request.supervisorApproverRole === 'chair';
 
                   return (
                     <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
@@ -303,7 +304,7 @@ export default function LeavesPage() {
               {visibleLeaveRequests.map((request) => {
                 const isPending = reviewRequests.some((entry) => entry.id === request.id);
                 const isCeoRequest = request.employeeName?.toLowerCase().includes('ceo') || request.employeePositionTitle?.toLowerCase().includes('ceo');
-                const isChairmanSupervisor = request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' || request.supervisorApproverRole === 'chair' || request.supervisorApproverRole === 'chair';
+                const isChairmanSupervisor = request.supervisorApproverRole === 'chairman' || request.supervisorApproverRole === 'chairperson' || request.supervisorApproverRole === 'chair';
 
                 return (
                   <div key={request.id} className={`rounded-2xl border px-4 py-4 transition ${
