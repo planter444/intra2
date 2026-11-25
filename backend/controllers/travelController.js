@@ -1103,7 +1103,7 @@ const getPendingTravelRequestCount = async (req, res, next) => {
 
 const getUnsettledTravelRequestCount = async (req, res, next) => {
   try {
-    const count = await travelModel.getUnsettledTravelRequestCountForUser(req.user.id, req.user.role);
+    const count = await travelModel.getUnsettledTravelRequestCountForUser(req.user.id, req.user.role, req.user.positionTitle);
     res.json({ count });
   } catch (error) {
     next(error);

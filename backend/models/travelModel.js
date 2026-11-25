@@ -1327,13 +1327,13 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
   return parseInt(result.rows[0].count, 10);
 };
 
-const getUnsettledTravelRequestCountForUser = async (userId, userRole) => {
+const getUnsettledTravelRequestCountForUser = async (userId, userRole, userPositionTitle) => {
   let result;
 
   // Finance, admin, administrator, administrator_and_membership_officer, it_officer should see unsettled counts
   const canSettleRoles = ['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'it_officer'];
   
-  if (!canSettleRoles.includes(userRole)) {
+  if (!canSettleRoles.includes(userRole) && userPositionTitle !== 'Administration') {
     return 0;
   }
 
