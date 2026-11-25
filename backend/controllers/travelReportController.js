@@ -839,9 +839,9 @@ const getTravelReportData = async (req, res, next) => {
         tr.travel_category,
         tr.currency,
         COALESCE(SUM(tr.dsa_amount), 0) as total_dsa,
-        COALESCE(SUM(tr.accommodation_cost), 0) as total_accommodation,
-        COALESCE(SUM(tr.other_cost), 0) as total_other,
-        COALESCE(SUM(tr.reimbursement_amount), 0) as total_reimbursement
+        COALESCE(SUM(tr.accommodation_amount), 0) as total_accommodation,
+        COALESCE(SUM(tr.transportation_cost), 0) as total_other,
+        0 as total_reimbursement
       FROM travel_requests tr
       INNER JOIN users u ON u.id = tr.user_id AND u.is_deleted = FALSE
       ${whereClause}
