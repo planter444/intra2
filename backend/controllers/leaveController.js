@@ -469,7 +469,7 @@ const getLeaveOverview = async (req, res, next) => {
         fullName: `${user.first_name} ${user.last_name}`,
         department: user.department_name,
         totalDaysTaken,
-        currentStatus,
+        currentStatus: currentLeaveStatus,
         currentLeave: currentLeave ? {
           id: currentLeave.id,
           leaveTypeLabel: currentLeave.leaveTypeLabel,
