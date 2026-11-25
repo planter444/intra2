@@ -212,22 +212,6 @@ export default function AppLayout({ children }) {
         });
     };
 
-    const refreshUnsettledTravelCount = () => {
-      // Finance, admin, administrator_and_membership_officer, and IT Officer see unsettled count
-      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
-      if (!canSettleRoles.includes(user.role)) {
-        setUnsettledTravelCount(0);
-        return;
-      }
-      getUnsettledTravelRequestCount()
-        .then((count) => setUnsettledTravelCount(count))
-        .catch((error) => {
-          if (error.response?.status !== 429) {
-            setUnsettledTravelCount(0);
-          }
-        });
-    };
-
     refreshPendingTravelCount();
     refreshUnsettledTravelCount();
     const intervalId = window.setInterval(() => {
