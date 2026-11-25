@@ -369,6 +369,23 @@ export default function TravelPage() {
   const ownRequests = filteredRequests.filter(r => String(r.userId) === String(user.id));
   const otherRequests = filteredRequests.filter(r => String(r.userId) !== String(user.id));
 
+  // Sort other requests: unsettled approved requests first, then by date
+  const sortedOtherRequests = useMemo(() => {
+    return [...otherRequests].sort((a, b) => {
+      // Prioritize unsettled approved requests for admin/finance/administrator_and_membership_officer
+      if (['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) {
+        const aUnsettled = a.status === 'approved' && !a.settled;
+        const bUnsettled = b.status === 'approved' && !b.settled;
+        
+        if (aUnsettled && !bUnsettled) return -1;
+        if (!aUnsettled && bUnsettled) return 1;
+      }
+      
+      // Then sort by date (newest first)
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [otherRequests, user.role]);
+
   // Show only 2 own requests initially, rest on "Show More"
   const displayedOwnRequests = showMoreOwnRequests ? ownRequests : ownRequests.slice(0, 2);
 
@@ -702,14 +719,14 @@ export default function TravelPage() {
               </div>
             )}
 
-            {otherRequests.length === 0 ? (
+            {sortedOtherRequests.length === 0 ? (
               <EmptyState
                 title="No travel requests found"
                 description={user.role === 'employee' ? 'You have not submitted any travel requests yet.' : 'No travel requests have been submitted yet.'}
               />
             ) : (
               <div className="space-y-4">
-                {otherRequests.map((request) => {
+                {sortedOtherRequests.map((request) => {
                   const config = getStatusConfig(request, user);
                   const StatusIcon = config.icon;
                   // Highlight pending requests for supervisors (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
