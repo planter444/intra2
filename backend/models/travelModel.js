@@ -1251,13 +1251,22 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         WHERE status = 'pending_ceo'
       `
     );
-  } else if (userRole === 'finance' || isNotificationRecipient) {
-    // Finance and notification recipients can see all pending requests
+  } else if (userRole === 'finance') {
+    // Finance can see all pending requests
     result = await query(
       `
         SELECT COUNT(*) as count
         FROM travel_requests
         WHERE status = 'pending'
+      `
+    );
+  } else if (isNotificationRecipient) {
+    // Notification recipients count approved requests (not pending)
+    result = await query(
+      `
+        SELECT COUNT(*) as count
+        FROM travel_requests
+        WHERE status = 'approved'
       `
     );
   } else if (userRole === 'admin' || userRole === 'supervisor') {
