@@ -271,10 +271,14 @@ export default function DocumentsPage() {
       if (!doc) return;
       const key = doc.folderType || 'other';
       if (!map.has(key)) map.set(key, []);
-      map.get(key).push(doc);
+      // Add employee name if viewing employee documents
+      const docWithEmployee = canManageEmployeeDocuments && selectedFolder 
+        ? { ...doc, employeeName: selectedFolder.employeeName }
+        : doc;
+      map.get(key).push(docWithEmployee);
     });
     return map;
-  }, [selectedFolderDocuments, visibleDocuments, canManageEmployeeDocuments]);
+  }, [selectedFolderDocuments, visibleDocuments, canManageEmployeeDocuments, selectedFolder]);
 
   // Group current user's documents by category as well
   const myDocumentsByCategory = useMemo(() => {
@@ -565,6 +569,15 @@ export default function DocumentsPage() {
                     <h3 className="mb-3 text-lg font-semibold text-slate-900">{folderTitle}</h3>
                     <DataTable
                       columns={[
+                        ...(canManageEmployeeDocuments && selectedFolder ? [{
+                          key: 'employeeName',
+                          header: 'Employee Name',
+                          render: (row) => (
+                            <div>
+                              <p className="font-medium text-slate-900">{row.employeeName || 'Unknown'}</p>
+                            </div>
+                          )
+                        }] : []),
                         {
                           key: 'label',
                           header: 'Label',
