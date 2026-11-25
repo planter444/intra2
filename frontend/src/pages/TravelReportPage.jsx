@@ -427,186 +427,74 @@ export default function TravelReportPage() {
           </SectionCard>
 
           {reportData.travelSummary && (
-            <SectionCard title="Travel Summary Statistics" subtitle="Financial breakdown by travel category and currency.">
-              <div className="space-y-6">
-                {/* Within Kenya */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h3 className="text-base font-semibold text-slate-900 mb-3">Within Kenya</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs text-slate-500">Total DSA</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['Within Kenya']?.dsa || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Other Costs</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['Within Kenya']?.other || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Reimbursement</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['Within Kenya']?.reimbursement || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            <SectionCard title="Travel Summary Statistics" subtitle="Financial breakdown by travel category.">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-sm">
+                  <thead>
+                    <tr className="border-b-2 border-slate-300 bg-slate-50">
+                      <th className="px-4 py-3 text-left font-semibold text-slate-700">Category</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-700">DSA</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-700">Accommodation</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-700">Other Costs</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-700">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {['Within Kenya', 'East Africa', 'International', 'Local Movement'].map((category, index) => {
+                      const catData = reportData.travelSummary.byCategory[category] || { dsa: {}, accommodation: {}, other: {} };
+                      const totalDSA = Object.values(catData.dsa || {}).reduce((sum, amt) => sum + amt, 0);
+                      const totalAccommodation = Object.values(catData.accommodation || {}).reduce((sum, amt) => sum + amt, 0);
+                      const totalOther = Object.values(catData.other || {}).reduce((sum, amt) => sum + amt, 0);
+                      const grandTotal = totalDSA + totalAccommodation + totalOther;
 
-                {/* East Africa */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h3 className="text-base font-semibold text-slate-900 mb-3">East Africa</h3>
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs text-slate-500">Total DSA</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['East Africa']?.dsa || {}).map(([currency, amount]) => 
+                      const formatCurrency = (amounts) => {
+                        if (!amounts || Object.keys(amounts).length === 0) return '-';
+                        return Object.entries(amounts).map(([currency, amount]) => 
                           `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Accommodation</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['East Africa']?.accommodation || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Other Costs</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['East Africa']?.other || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Reimbursement</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['East Africa']?.reimbursement || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                        ).join(' + ');
+                      };
 
-                {/* International */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h3 className="text-base font-semibold text-slate-900 mb-3">International</h3>
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs text-slate-500">Total DSA</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['International']?.dsa || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Accommodation</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['International']?.accommodation || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Other Costs</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['International']?.other || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Reimbursement</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['International']?.reimbursement || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Local Movement */}
-                <div className="rounded-2xl border border-slate-200 bg-white p-4">
-                  <h3 className="text-base font-semibold text-slate-900 mb-3">Local Movement</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs text-slate-500">Total DSA</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['Local Movement']?.dsa || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Other Costs</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['Local Movement']?.other || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Reimbursement</p>
-                      <p className="font-medium text-slate-900">
-                        {Object.entries(reportData.travelSummary.byCategory['Local Movement']?.reimbursement || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grand Totals */}
-                <div className="rounded-2xl border-2 border-slate-300 bg-slate-50 p-4">
-                  <h3 className="text-base font-semibold text-slate-900 mb-3">Grand Totals (by Currency)</h3>
-                  <div className="grid grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs text-slate-500">Total DSA</p>
-                      <p className="font-bold text-slate-900">
-                        {Object.entries(reportData.travelSummary.totals?.dsa || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Total Accommodation</p>
-                      <p className="font-bold text-slate-900">
-                        {Object.entries(reportData.travelSummary.totals?.accommodation || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Total Other Costs</p>
-                      <p className="font-bold text-slate-900">
-                        {Object.entries(reportData.travelSummary.totals?.other || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-500">Total Reimbursement</p>
-                      <p className="font-bold text-slate-900">
-                        {Object.entries(reportData.travelSummary.totals?.reimbursement || {}).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
-                        ).join(' + ') || '0 KES'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                      return (
+                        <tr key={category} className={`border-b border-slate-100 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
+                          <td className="px-4 py-3 font-medium text-slate-900">{category}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.dsa)}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{category === 'Within Kenya' || category === 'Local Movement' ? '-' : formatCurrency(catData.accommodation)}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.other)}</td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-900">{grandTotal > 0 ? `${Math.round(grandTotal).toLocaleString()} KES` : '-'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t-2 border-slate-300 bg-emerald-50">
+                      <td className="px-4 py-3 font-bold text-slate-900">Total Money Spent on Travels</td>
+                      <td className="px-4 py-3 text-right font-bold text-slate-900">
+                        {Object.values(reportData.travelSummary.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0) > 0 
+                          ? `${Math.round(Object.values(reportData.travelSummary.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0)).toLocaleString()} KES` 
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-slate-900">
+                        {Object.values(reportData.travelSummary.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0) > 0 
+                          ? `${Math.round(Object.values(reportData.travelSummary.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0)).toLocaleString()} KES` 
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-slate-900">
+                        {Object.values(reportData.travelSummary.totals?.other || {}).reduce((sum, amt) => sum + amt, 0) > 0 
+                          ? `${Math.round(Object.values(reportData.travelSummary.totals?.other || {}).reduce((sum, amt) => sum + amt, 0)).toLocaleString()} KES` 
+                          : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-bold text-emerald-700 text-lg">
+                        {(() => {
+                          const totalDSA = Object.values(reportData.travelSummary.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0);
+                          const totalAccommodation = Object.values(reportData.travelSummary.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0);
+                          const totalOther = Object.values(reportData.travelSummary.totals?.other || {}).reduce((sum, amt) => sum + amt, 0);
+                          const grandTotal = totalDSA + totalAccommodation + totalOther;
+                          return grandTotal > 0 ? `${Math.round(grandTotal).toLocaleString()} KES` : '0 KES';
+                        })()}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </SectionCard>
           )}
