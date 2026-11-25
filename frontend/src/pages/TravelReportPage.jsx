@@ -457,7 +457,7 @@ export default function TravelReportPage() {
                         }
                         
                         return Object.entries(amounts).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
+                          `${currency} ${Math.round(amount).toLocaleString()}`
                         ).join(' + ');
                       };
 
@@ -519,7 +519,7 @@ export default function TravelReportPage() {
                           
                           let result = '';
                           if (kesDSATotal > 0) {
-                            result += `${Math.round(kesDSATotal).toLocaleString()} KES`;
+                            result += `KES ${Math.round(kesDSATotal).toLocaleString()}`;
                           }
                           if (forcedUSDTotal > 0) {
                             if (result) result += ' + ';
@@ -533,7 +533,7 @@ export default function TravelReportPage() {
                           const totals = reportData.travelSummary.totals?.accommodation || {};
                           if (!totals || Object.keys(totals).length === 0) return '-';
                           return Object.entries(totals).map(([currency, amount]) => 
-                            `${Math.round(amount).toLocaleString()} ${currency}`
+                            `${currency} ${Math.round(amount).toLocaleString()}`
                           ).join(' + ');
                         })()}
                       </td>
@@ -542,7 +542,7 @@ export default function TravelReportPage() {
                           const totals = reportData.travelSummary.totals?.other || {};
                           if (!totals || Object.keys(totals).length === 0) return '-';
                           return Object.entries(totals).map(([currency, amount]) => 
-                            `${Math.round(amount).toLocaleString()} ${currency}`
+                            `${currency} ${Math.round(amount).toLocaleString()}`
                           ).join(' + ');
                         })()}
                       </td>
@@ -551,7 +551,7 @@ export default function TravelReportPage() {
                           const totals = reportData.travelSummary.totals?.reimbursement || {};
                           if (!totals || Object.keys(totals).length === 0) return '-';
                           return Object.entries(totals).map(([currency, amount]) => 
-                            `${Math.round(amount).toLocaleString()} ${currency}`
+                            `${currency} ${Math.round(amount).toLocaleString()}`
                           ).join(' + ');
                         })()}
                       </td>
@@ -578,13 +578,13 @@ export default function TravelReportPage() {
                           
                           let result = '';
                           if (kesTotal > 0) {
-                            result += `${Math.round(kesTotal).toLocaleString()} KES`;
+                            result += `KES ${Math.round(kesTotal).toLocaleString()}`;
                           }
                           if (usdTotal > 0) {
                             if (result) result += ' + ';
                             result += `${Math.round(usdTotal).toLocaleString()} USD`;
                           }
-                          return result || '0 KES';
+                          return result || 'KES 0';
                         })()}
                       </td>
                     </tr>
