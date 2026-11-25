@@ -102,7 +102,6 @@ export default function AppLayout({ children }) {
   const [pendingTravelCount, setPendingTravelCount] = useState(0);
   const [unsettledTravelCount, setUnsettledTravelCount] = useState(0);
   const [pendingTimesheetCount, setPendingTimesheetCount] = useState(0);
-  const [documentNotificationCount, setDocumentNotificationCount] = useState(0);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const location = useLocation();
@@ -504,8 +503,6 @@ export default function AppLayout({ children }) {
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
-                        ) : item.key === 'documents' && documentNotificationCount > 0 && (user.role === 'ceo' || user.role === 'admin') ? (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{documentNotificationCount}</span>
                         ) : null}
                         {redesignedActive ? (
                           <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full border backdrop-blur-sm ${isActive ? 'border-white/70 bg-white/80 text-emerald-900' : 'border-white/20 bg-white/15 text-white group-hover:border-white/40 group-hover:bg-white/20'}`}>

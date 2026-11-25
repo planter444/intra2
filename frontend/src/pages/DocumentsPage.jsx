@@ -11,14 +11,6 @@ import { deleteDocument, downloadDocument, fetchDocumentBlob, fetchDocuments, op
 const SEEN_DOCUMENT_IDS_KEY = 'kerea_hrms_seen_document_ids';
 const getSeenDocumentIdsStorageKey = (userId) => `${SEEN_DOCUMENT_IDS_KEY}_${userId}`;
 
-// Only CEO and IT Officer see document badges
-const shouldShowDocumentBadge = (user) => {
-  return user.role === 'ceo' || user.role === 'admin';
-};
-
-// Get seen employees storage key (per employee, not per document)
-const getSeenEmployeesStorageKey = (userId) => `${SEEN_DOCUMENT_IDS_KEY}_seen_employees_${userId}`;
-
 const getDocumentTypeLabel = (document) => {
   const extension = document.fileName?.split('.').pop()?.trim();
   if (extension) {
@@ -67,8 +59,6 @@ export default function DocumentsPage() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  const [seenDocumentIds, setSeenDocumentIds] = useState([]);
-  const [seenIdsReady, setSeenIdsReady] = useState(user.role !== 'ceo');
   const [previewState, setPreviewState] = useState(createEmptyPreviewState);
   const [isUploading, setIsUploading] = useState(false);
   const canManageEmployeeDocuments = ['ceo', 'admin'].includes(user.role);
@@ -135,27 +125,8 @@ export default function DocumentsPage() {
   }, [canManageEmployeeDocuments]);
 
   useEffect(() => {
-    if (!shouldShowDocumentBadge(user)) {
-      setSeenIdsReady(true);
-      return;
-    }
-
-    const scopedKey = getSeenDocumentIdsStorageKey(user.id);
-    const scopedSeenIds = JSON.parse(localStorage.getItem(scopedKey) || 'null');
-    const legacySeenIds = JSON.parse(localStorage.getItem(SEEN_DOCUMENT_IDS_KEY) || '[]');
-    const nextSeenIds = Array.isArray(scopedSeenIds) ? scopedSeenIds : legacySeenIds;
-    setSeenDocumentIds(nextSeenIds.map(String));
     setSeenIdsReady(true);
   }, [user.id, user.role]);
-
-  useEffect(() => {
-    if (!shouldShowDocumentBadge(user) || !seenIdsReady) {
-      return;
-    }
-
-    localStorage.setItem(getSeenDocumentIdsStorageKey(user.id), JSON.stringify(seenDocumentIds));
-    window.dispatchEvent(new Event('documents-seen-updated'));
-  }, [seenDocumentIds, seenIdsReady, user.id, user.role]);
 
   useEffect(() => () => {
     if (previewState.objectUrl) {
@@ -238,13 +209,8 @@ export default function DocumentsPage() {
   const visibleDocuments = useMemo(
     () => documents
       .filter((doc) => doc && doc.folderType !== 'profile' && doc.folderType !== 'branding' && doc.folderType !== 'travel')
-      .map((document) => ({
-        ...document,
-        isNew: shouldShowDocumentBadge(user)
-          ? seenIdsReady && String(document.uploadedBy) !== String(user.id) && !seenDocumentIds.map(String).includes(String(document.uploadedBy || document.userId))
-          : false
-      })).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
-    [documents, seenDocumentIds, seenIdsReady, user.id, user.role]
+      .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
+    [documents]
   );
 
   const allFolderRows = useMemo(() => {
@@ -266,7 +232,6 @@ export default function DocumentsPage() {
           employeeNo: document.employeeNo || 'N/A',
           totalSize: 0,
           documentCount: 0,
-          newCount: 0,
           documentIds: [],
           documentTypes: new Set()
         };
@@ -274,7 +239,6 @@ export default function DocumentsPage() {
 
       accumulator[key].totalSize += Number(document.fileSize || 0);
       accumulator[key].documentCount += 1;
-      accumulator[key].newCount += document.isNew ? 1 : 0;
       accumulator[key].documentIds.push(String(document.id));
       accumulator[key].documentTypes.add(getDocumentDisplayLabel(document, folderLabelMap));
       return accumulator;
@@ -283,13 +247,7 @@ export default function DocumentsPage() {
     return Object.values(grouped).map((row) => ({
       ...row,
       documentTypes: Array.from(row.documentTypes).join(', ')
-    })).sort((left, right) => {
-      if (right.newCount !== left.newCount) {
-        return right.newCount - left.newCount;
-      }
-
-      return left.employeeName.localeCompare(right.employeeName);
-    });
+    })).sort((left, right) => left.employeeName.localeCompare(right.employeeName));
   }, [canManageEmployeeDocuments, visibleDocuments, folderLabelMap]);
 
   const folderRows = useMemo(() => {
@@ -568,7 +526,6 @@ export default function DocumentsPage() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-slate-900">{row.employeeName}</p>
-                        {row.newCount ? <span className="inline-flex rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-700">+{row.newCount} new</span> : null}
                       </div>
                       <p className="text-xs uppercase tracking-wide text-slate-400">{row.employeeNo}</p>
                     </div>
@@ -585,14 +542,6 @@ export default function DocumentsPage() {
                         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => {
                           e.stopPropagation();
                           setSelectedEmployeeId(String(row.userId));
-                          // Mark employee as seen when CEO or IT Officer views their documents
-                          if (shouldShowDocumentBadge(user)) {
-                            const seenIds = [...seenDocumentIds];
-                            if (!seenIds.includes(String(row.userId))) {
-                              seenIds.push(String(row.userId));
-                              setSeenDocumentIds(seenIds);
-                            }
-                          }
                         }}>
                           <Eye size={14} />View
                         </button>
@@ -612,7 +561,7 @@ export default function DocumentsPage() {
                 </button>
               ) : null}
               
-              {documentsByCategory.map(([folderType, docs]) => {
+              {Array.from(documentsByCategory.entries()).map(([folderType, docs]) => {
                 if (docs.length === 0) return null;
                 const folderTitle = folderType === 'personal' ? 'Personal Documents' : folderLabelMap[folderType] || folderType;
                 return (
@@ -626,7 +575,7 @@ export default function DocumentsPage() {
                           render: (row) => {
                             if (!row) return null;
                             return (
-                              <div className={row.isNew ? `rounded-2xl px-3 py-2 ${isAddendumDocument(row) ? 'bg-rose-50' : 'bg-amber-50'}` : isAddendumDocument(row) ? 'rounded-2xl border border-rose-100 bg-rose-50/70 px-3 py-2' : ''}>
+                              <div className={isAddendumDocument(row) ? 'rounded-2xl border border-rose-100 bg-rose-50/70 px-3 py-2' : ''}>
                                 <p className={`font-medium ${isAddendumDocument(row) ? 'text-rose-700' : 'text-slate-900'}`}>{getDocumentDisplayLabel(row, folderLabelMap)}</p>
                                 <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">{row.fileName}</p>
                               </div>
