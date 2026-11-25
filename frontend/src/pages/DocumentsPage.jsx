@@ -61,8 +61,8 @@ export default function DocumentsPage() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
   const [previewState, setPreviewState] = useState(createEmptyPreviewState);
   const [isUploading, setIsUploading] = useState(false);
-  const canManageEmployeeDocuments = ['ceo', 'admin'].includes(user.role);
-  const canManageRestrictedDocuments = ['ceo', 'admin'].includes(user.role);
+  const canManageEmployeeDocuments = ['ceo', 'admin', 'it_officer'].includes(user.role);
+  const canManageRestrictedDocuments = ['ceo', 'admin', 'it_officer'].includes(user.role);
   const canAddDocumentAddendums = canManageRestrictedDocuments;
   const folderOptions = useMemo(
     () => (settings?.folders || []).filter((folder) => folder?.code && folder?.label),
@@ -349,10 +349,6 @@ export default function DocumentsPage() {
   };
 
   const handlePreview = async (document) => {
-    // Mark this document as seen for CEO when previewing
-    if (user.role === 'ceo') {
-      setSeenDocumentIds((current) => [...new Set([...current.map(String), String(document.id)])]);
-    }
     setPreviewState((current) => {
       if (current.objectUrl) {
         URL.revokeObjectURL(current.objectUrl);
@@ -611,7 +607,7 @@ export default function DocumentsPage() {
                                 }}>
                                   Download
                                 </button>
-                                {(canManageEmployeeDocuments || (row.userId && String(row.userId) === String(user.id) && (!isRestrictedDocument(row) || canManageRestrictedDocuments))) ? (
+                                {canManageEmployeeDocuments ? (
                                   <button type="button" className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-medium text-rose-700" onClick={(event) => {
                                     event.stopPropagation();
                                     handleDelete(row);
