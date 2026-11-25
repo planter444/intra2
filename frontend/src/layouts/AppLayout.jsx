@@ -198,9 +198,9 @@ export default function AppLayout({ children }) {
     };
 
     const refreshUnsettledTravelCount = () => {
-      // Finance, admin, administrator_and_membership_officer, and IT Officer see unsettled count
-      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
-      if (!canSettleRoles.includes(user.role)) {
+      // Finance, admin, administrator, administrator_and_membership_officer, and IT Officer see unsettled count
+      const canSettleRoles = ['admin', 'finance', 'administrator', 'administrator_and_membership_officer'];
+      if (!canSettleRoles.includes(user.role) && !(user.positionTitle && user.positionTitle.toLowerCase().includes('administration'))) {
         setUnsettledTravelCount(0);
         return;
       }
