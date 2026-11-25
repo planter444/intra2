@@ -197,8 +197,8 @@ export default function AppLayout({ children }) {
     };
 
     const refreshUnsettledTravelCount = () => {
-      // Only finance, admin, and administrator_and_membership_officer see unsettled count
-      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
+      // Finance, admin, administrator_and_membership_officer, and IT Officer see unsettled count
+      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
       if (!canSettleRoles.includes(user.role)) {
         setUnsettledTravelCount(0);
         return;
