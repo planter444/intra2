@@ -24,7 +24,7 @@ const sendRemoteDocument = async ({ res, url, mimeType, fileName, disposition })
 };
 
 const canAccessUserDocuments = (currentUser, targetUserId) => {
-  if (['ceo', 'admin', 'finance'].includes(currentUser.role)) {
+  if (['ceo', 'admin', 'finance', 'it_officer'].includes(currentUser.role)) {
     return true;
   }
 
@@ -32,7 +32,7 @@ const canAccessUserDocuments = (currentUser, targetUserId) => {
 };
 
 const restrictedFolderTypes = new Set(['addendum']);
-const canManageRestrictedFolderType = (currentUser) => ['ceo', 'admin'].includes(currentUser.role);
+const canManageRestrictedFolderType = (currentUser) => ['ceo', 'admin', 'it_officer'].includes(currentUser.role);
 
 const getRestrictedFolderTypeCodes = async () => {
   const employmentTypeCodes = await getDocumentCategoryTypeCodes('employment');
