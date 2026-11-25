@@ -74,22 +74,42 @@ const generateReferenceNumber = async () => {
 const createTravelRequest = async ({ userId, travelType, startDate, endDate, origin, destination, reason, estimatedCost, currency, supportingDocumentId, designation, travelCategory, travelTypeDetail, projectProgramme, dsaRate, dsaCurrency, dsaAmount, dsaProvided, accommodationRate, accommodationCurrency, accommodationAmount, accommodationProvided, transportationCost, fullDayEvent }) => {
   const referenceNumber = await generateReferenceNumber();
 
-  // Check if the first approver is the CEO
+  // Check if the user is CEO and use CEO approval routing setting
   let initialStatus = 'pending';
   try {
-    const approvers = await getApproverForEmployee(userId);
-    if (approvers && approvers.length > 0) {
-      const firstApproverId = approvers[0];
-      const approverResult = await query(
-        `SELECT role FROM users WHERE id = $1`,
-        [firstApproverId]
-      );
-      if (approverResult.rows.length > 0 && approverResult.rows[0].role === 'ceo') {
+    const userResult = await query(
+      `SELECT role FROM users WHERE id = $1`,
+      [userId]
+    );
+    
+    if (userResult.rows.length > 0 && userResult.rows[0].role === 'ceo') {
+      // CEO is the applicant - check approval routing setting
+      const notificationSettings = await getTravelNotificationSettings();
+      const ceoApprovalRouting = notificationSettings.ceoApprovalRouting || 'chairman';
+      
+      if (ceoApprovalRouting === 'self') {
+        // CEO approves herself - set to pending_ceo
         initialStatus = 'pending_ceo';
+      } else {
+        // Chairman approves CEO - set to pending (will be routed to chairman)
+        initialStatus = 'pending';
+      }
+    } else {
+      // Non-CEO applicant - check if first approver is CEO
+      const approvers = await getApproverForEmployee(userId);
+      if (approvers && approvers.length > 0) {
+        const firstApproverId = approvers[0];
+        const approverResult = await query(
+          `SELECT role FROM users WHERE id = $1`,
+          [firstApproverId]
+        );
+        if (approverResult.rows.length > 0 && approverResult.rows[0].role === 'ceo') {
+          initialStatus = 'pending_ceo';
+        }
       }
     }
   } catch (error) {
-    console.warn('Failed to check first approver, defaulting to pending:', error.message);
+    console.warn('Failed to check approver, defaulting to pending:', error.message);
   }
 
   // Helper to normalize numeric values
@@ -794,7 +814,8 @@ const getTravelNotificationSettings = async () => {
       id: null,
       recipientIds: [],
       viewAllTravelRequestsIds: [],
-      settledEditorIds: []
+      settledEditorIds: [],
+      ceoApprovalRouting: 'chairman'
     };
   }
 
@@ -803,13 +824,14 @@ const getTravelNotificationSettings = async () => {
     id: row.id,
     recipientIds: row.recipient_ids || [],
     viewAllTravelRequestsIds: row.view_all_travel_requests_ids || [],
-    settledEditorIds: row.settled_editor_ids || []
+    settledEditorIds: row.settled_editor_ids || [],
+    ceoApprovalRouting: row.ceo_approval_routing || 'chairman'
   };
   console.log('getTravelNotificationSettings - Settings loaded:', settings);
   return settings;
 };
 
-const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelRequestsIds, settledEditorIds, updatedBy }) => {
+const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelRequestsIds, settledEditorIds, ceoApprovalRouting, updatedBy }) => {
   const existing = await query(`SELECT id FROM travel_notification_settings LIMIT 1`);
 
   if (existing.rows.length > 0) {
@@ -820,11 +842,12 @@ const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelReq
           recipient_ids = $2,
           view_all_travel_requests_ids = $3,
           settled_editor_ids = $4,
-          updated_by = $5,
+          ceo_approval_routing = $5,
+          updated_by = $6,
           updated_at = NOW()
         WHERE id = $1
       `,
-      [existing.rows[0].id, recipientIds || [], viewAllTravelRequestsIds || [], settledEditorIds || [], updatedBy]
+      [existing.rows[0].id, recipientIds || [], viewAllTravelRequestsIds || [], settledEditorIds || [], ceoApprovalRouting || 'chairman', updatedBy]
     );
   } else {
     await query(
@@ -833,11 +856,12 @@ const updateTravelNotificationSettings = async ({ recipientIds, viewAllTravelReq
           recipient_ids,
           view_all_travel_requests_ids,
           settled_editor_ids,
+          ceo_approval_routing,
           updated_by
         )
-        VALUES ($1, $2, $3, $4)
+        VALUES ($1, $2, $3, $4, $5)
       `,
-      [recipientIds || [], viewAllTravelRequestsIds || [], settledEditorIds || [], updatedBy]
+      [recipientIds || [], viewAllTravelRequestsIds || [], settledEditorIds || [], ceoApprovalRouting || 'chairman', updatedBy]
     );
   }
 

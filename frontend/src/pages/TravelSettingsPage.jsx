@@ -13,7 +13,8 @@ export default function TravelSettingsPage() {
   const [notificationSettings, setNotificationSettings] = useState({
     recipientIds: [],
     viewAllTravelRequestsIds: [],
-    settledEditorIds: []
+    settledEditorIds: [],
+    ceoApprovalRouting: 'chairman'
   });
   const [employeeRouting, setEmployeeRouting] = useState([]);
   const [users, setUsers] = useState([]);
@@ -100,6 +101,10 @@ export default function TravelSettingsPage() {
       setSelectedNotificationRecipients(notificationData.recipientIds || []);
       setSelectedViewAllTravelRequests(notificationData.viewAllTravelRequestsIds || []);
       setSelectedSettledEditors(notificationData.settledEditorIds || []);
+      setNotificationSettings({
+        ...notificationSettings,
+        ceoApprovalRouting: notificationData.ceoApprovalRouting || 'chairman'
+      });
     } catch (error) {
       setNotice({
         open: true,
@@ -117,7 +122,8 @@ export default function TravelSettingsPage() {
       await updateTravelNotificationSettings({
         recipientIds: selectedNotificationRecipients,
         viewAllTravelRequestsIds: selectedViewAllTravelRequests,
-        settledEditorIds: selectedSettledEditors
+        settledEditorIds: selectedSettledEditors,
+        ceoApprovalRouting: notificationSettings.ceoApprovalRouting
       });
       setNotificationSettings({
         ...notificationSettings,
@@ -694,6 +700,41 @@ export default function TravelSettingsPage() {
               <p className="text-sm text-slate-500">
                 {selectedSettledEditors.length} employee(s) selected to edit settled status
               </p>
+            </div>
+          </SectionCard>
+
+          <SectionCard title="CEO Approval Routing" subtitle="Configure who approves CEO travel requests.">
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="ceoApprovalRouting"
+                    value="self"
+                    checked={notificationSettings.ceoApprovalRouting === 'self'}
+                    onChange={() => setNotificationSettings({ ...notificationSettings, ceoApprovalRouting: 'self' })}
+                    className="h-5 w-5 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">CEO Approves Herself</p>
+                    <p className="text-sm text-slate-500">CEO can approve her own travel requests. Email notifications are sent only after she approves.</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 cursor-pointer hover:bg-slate-50">
+                  <input
+                    type="radio"
+                    name="ceoApprovalRouting"
+                    value="chairman"
+                    checked={notificationSettings.ceoApprovalRouting === 'chairman'}
+                    onChange={() => setNotificationSettings({ ...notificationSettings, ceoApprovalRouting: 'chairman' })}
+                    className="h-5 w-5 border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-900">Chairman Approves CEO Requests</p>
+                    <p className="text-sm text-slate-500">Chairman/Chairperson approves CEO travel requests. Email notifications sent after chairman approval.</p>
+                  </div>
+                </label>
+              </div>
             </div>
           </SectionCard>
         </>
