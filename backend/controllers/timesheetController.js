@@ -431,6 +431,7 @@ const listTimesheets = async (req, res, next) => {
     // Otherwise, apply role-based filtering
     let filterStatus = status;
     let filterUserId;
+    let filterSupervisorId;
     
     if (userId) {
       // Respect the explicitly provided userId
@@ -438,6 +439,11 @@ const listTimesheets = async (req, res, next) => {
     } else {
       // Apply role-based filtering
       filterUserId = req.user.role === 'admin' || req.user.role === 'ceo' ? undefined : req.user.id;
+      
+      // For supervisors, filter by their supervisorId
+      if (req.user.role === 'supervisor') {
+        filterSupervisorId = req.user.id;
+      }
       
       // For approvers without status filter, show only submitted, approved, rejected (hide drafts)
       if ((req.user.role === 'admin' || req.user.role === 'ceo') && !status) {
@@ -454,7 +460,7 @@ const listTimesheets = async (req, res, next) => {
       status: filterStatus,
       month,
       year,
-      supervisorId
+      supervisorId: supervisorId || filterSupervisorId
     });
 
     // Sort timesheets: submitted first, approved last, rejected in between
