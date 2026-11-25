@@ -365,20 +365,24 @@ export default function LeaveReportPage() {
 
           <SectionCard title="Leave by Department" subtitle="Leave utilization across departments.">
             <div className="space-y-3">
-              {reportData.leaveByDepartment.map((item) => (
-                <div key={item.department} className="flex items-center gap-4">
-                  <div className="w-48 text-sm font-medium text-slate-700">{item.department}</div>
-                  <div className="flex-1 h-8 rounded-full bg-slate-100 overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 transition-all"
-                      style={{
-                        width: `${(item.days_taken / Math.max(...reportData.leaveByDepartment.map(d => d.days_taken), 1)) * 100}%`
-                      }}
-                    />
+              {(() => {
+                const filteredDepartments = reportData.leaveByDepartment.filter(item => !(item.department || '').toLowerCase().includes('chair'));
+                const maxDays = Math.max(...filteredDepartments.map(d => d.days_taken), 1);
+                return filteredDepartments.map((item) => (
+                  <div key={item.department} className="flex items-center gap-4">
+                    <div className="w-48 text-sm font-medium text-slate-700">{item.department}</div>
+                    <div className="flex-1 h-8 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full bg-blue-500 transition-all"
+                        style={{
+                          width: `${(item.days_taken / maxDays) * 100}%`
+                        }}
+                      />
+                    </div>
+                    <div className="w-24 text-right text-sm font-semibold text-slate-900">{Math.round(item.days_taken)} days</div>
                   </div>
-                  <div className="w-24 text-right text-sm font-semibold text-slate-900">{Math.round(item.days_taken)} days</div>
-                </div>
-              ))}
+                ));
+              })()}
             </div>
           </SectionCard>
 
