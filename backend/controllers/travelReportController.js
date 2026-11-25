@@ -527,20 +527,20 @@ const buildTravelReportPdf = async (payload) => {
 
     y3 -= 40;
 
-    // Table header with better spacing and Reimbursement column
+    // Table header with better spacing and Reimbursement column - adjusted positions
     page3.drawText('Category', { x: 50, y: y3, size: 10, font: fontBold, color: primaryColor });
     page3.drawText('DSA', { x: 140, y: y3, size: 10, font: fontBold, color: primaryColor });
     page3.drawText('Accommodation', { x: 240, y: y3, size: 10, font: fontBold, color: primaryColor });
     page3.drawText('Other Costs', { x: 340, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Reimbursement', { x: 440, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Total', { x: 540, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Reimbursement', { x: 430, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Total', { x: 520, y: y3, size: 10, font: fontBold, color: primaryColor });
 
     y3 -= 15;
 
     // Draw table header border (only bottom line)
     page3.drawLine({
       start: { x: 45, y: y3 - 2 },
-      end: { x: 585, y: y3 - 2 },
+      end: { x: 565, y: y3 - 2 },
       thickness: 1,
       color: primaryColor,
     });
@@ -586,10 +586,27 @@ const buildTravelReportPdf = async (payload) => {
     };
 
     // Function to format total with multiple currencies
-    const formatTotalByCurrency = (totalsByCurrency) => {
+    const formatTotalByCurrency = (totalsByCurrency, category) => {
       if (!totalsByCurrency || Object.keys(totalsByCurrency).length === 0) return '-';
+      
+      // For East Africa and International, show KES first then USD separately
+      if (category === 'East Africa' || category === 'International') {
+        const kesAmount = totalsByCurrency['KES'] || 0;
+        const usdAmount = totalsByCurrency['USD'] || 0;
+        
+        let result = '';
+        if (kesAmount > 0) {
+          result += `KES ${Math.round(kesAmount).toLocaleString()}`;
+        }
+        if (usdAmount > 0) {
+          if (result) result += ' + ';
+          result += `${Math.round(usdAmount).toLocaleString()} USD`;
+        }
+        return result || '-';
+      }
+      
       return Object.entries(totalsByCurrency).map(([currency, amount]) => 
-        `${Math.round(amount).toLocaleString()} ${currency}`
+        `${currency} ${Math.round(amount).toLocaleString()}`
       ).join(' + ');
     };
 
@@ -604,7 +621,7 @@ const buildTravelReportPdf = async (payload) => {
         page3.drawRectangle({
           x: 45,
           y: y3 - 8,
-          width: 540,
+          width: 520,
           height: 22,
           color: lightGray,
         });
@@ -614,8 +631,8 @@ const buildTravelReportPdf = async (payload) => {
       page3.drawText(formatCurrencyAmounts(catData.dsa, category, 'dsa'), { x: 140, y: y3, size: 8, font: font, color: textColor });
       page3.drawText((category === 'Within Kenya' || category === 'Local Movement') ? '-' : formatCurrencyAmounts(catData.accommodation, category, 'accommodation'), { x: 240, y: y3, size: 8, font: font, color: textColor });
       page3.drawText(formatCurrencyAmounts(catData.other, category, 'other'), { x: 340, y: y3, size: 8, font: font, color: textColor });
-      page3.drawText(formatCurrencyAmounts(catData.reimbursement, category, 'reimbursement'), { x: 440, y: y3, size: 8, font: font, color: textColor });
-      page3.drawText(formatTotalByCurrency(totalByCurrency), { x: 540, y: y3, size: 8, font: fontBold, color: textColor });
+      page3.drawText(formatCurrencyAmounts(catData.reimbursement, category, 'reimbursement'), { x: 430, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText(formatTotalByCurrency(totalByCurrency, category), { x: 520, y: y3, size: 8, font: fontBold, color: textColor });
 
       y3 -= 22;
     });
@@ -626,7 +643,7 @@ const buildTravelReportPdf = async (payload) => {
     page3.drawRectangle({
       x: 45,
       y: y3 - 30,
-      width: 540,
+      width: 520,
       height: 40,
       color: emeraldColor,
     });
@@ -660,29 +677,58 @@ const buildTravelReportPdf = async (payload) => {
     }
     if (!dsaTotalText) dsaTotalText = '-';
 
-    // Calculate grand total with KES first, then USD
-    const kesTotal = (totalDSA['KES'] || 0) + (totalAccommodation['KES'] || 0) + 
-                     (totalOther['KES'] || 0) + (totalReimbursement['KES'] || 0);
-    const usdTotal = forcedUSDTotal + (totalAccommodation['USD'] || 0) + 
-                     (totalOther['USD'] || 0) + (totalReimbursement['USD'] || 0);
+    // Calculate grand total from row components (not column totals)
+    // Sum all category totals to get the true grand total
+    let grandKesTotal = 0;
+    let grandUsdTotal = 0;
+    
+    categories.forEach(category => {
+      const catData = travelSummary?.byCategory?.[category] || { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+      
+      // For East Africa and International, DSA is forced to USD
+      if (category === 'East Africa' || category === 'International') {
+        grandUsdTotal += Object.values(catData.dsa || {}).reduce((sum, amt) => sum + amt, 0);
+        grandKesTotal += (catData.accommodation['KES'] || 0) + (catData.other['KES'] || 0) + (catData.reimbursement['KES'] || 0);
+        grandUsdTotal += (catData.accommodation['USD'] || 0) + (catData.other['USD'] || 0) + (catData.reimbursement['USD'] || 0);
+      } else {
+        grandKesTotal += Object.values(catData.dsa || {}).reduce((sum, amt) => sum + amt, 0);
+        grandKesTotal += (catData.accommodation['KES'] || 0) + (catData.other['KES'] || 0) + (catData.reimbursement['KES'] || 0);
+        grandUsdTotal += (catData.accommodation['USD'] || 0) + (catData.other['USD'] || 0) + (catData.reimbursement['USD'] || 0);
+      }
+    });
     
     let grandTotalText = '';
-    if (kesTotal > 0) {
-      grandTotalText += `KES ${Math.round(kesTotal).toLocaleString()}`;
+    if (grandKesTotal > 0) {
+      grandTotalText += `KES ${Math.round(grandKesTotal).toLocaleString()}`;
     }
-    if (usdTotal > 0) {
+    if (grandUsdTotal > 0) {
       if (grandTotalText) grandTotalText += ' + ';
-      grandTotalText += `${Math.round(usdTotal).toLocaleString()} USD`;
+      grandTotalText += `${Math.round(grandUsdTotal).toLocaleString()} USD`;
     }
     if (!grandTotalText) grandTotalText = 'KES 0';
 
-    page3.drawText('Total Money Spent', { x: 50, y: y3, size: 8, font: fontBold, color: white });
-    page3.drawText('on Travels', { x: 50, y: y3 - 10, size: 8, font: fontBold, color: white });
-    page3.drawText(dsaTotalText, { x: 140, y: y3 - 5, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalAccommodation, null, null), { x: 240, y: y3 - 5, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalOther, null, null), { x: 340, y: y3 - 5, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalReimbursement, null, null), { x: 440, y: y3 - 5, size: 7, font: fontBold, color: white });
-    page3.drawText(grandTotalText, { x: 540, y: y3 - 5, size: 8, font: fontBold, color: white });
+    // Move wordings down by 30% (from y/y-10 to y-3/y-13)
+    page3.drawText('Total Money Spent', { x: 50, y: y3 - 3, size: 8, font: fontBold, color: white });
+    page3.drawText('on Travels', { x: 50, y: y3 - 13, size: 8, font: fontBold, color: white });
+    page3.drawText(dsaTotalText, { x: 140, y: y3 - 8, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalAccommodation, null, null), { x: 240, y: y3 - 8, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalOther, null, null), { x: 340, y: y3 - 8, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalReimbursement, null, null), { x: 430, y: y3 - 8, size: 7, font: fontBold, color: white });
+    
+    // Grand total with KES on one line, USD on next
+    const kesLine = grandKesTotal > 0 ? `KES ${Math.round(grandKesTotal).toLocaleString()}` : '';
+    const usdLine = grandUsdTotal > 0 ? `${Math.round(grandUsdTotal).toLocaleString()} USD` : '';
+    
+    if (kesLine && usdLine) {
+      page3.drawText(kesLine, { x: 520, y: y3 - 5, size: 7, font: fontBold, color: white });
+      page3.drawText(usdLine, { x: 520, y: y3 - 15, size: 7, font: fontBold, color: white });
+    } else if (kesLine) {
+      page3.drawText(kesLine, { x: 520, y: y3 - 8, size: 8, font: fontBold, color: white });
+    } else if (usdLine) {
+      page3.drawText(usdLine, { x: 520, y: y3 - 8, size: 8, font: fontBold, color: white });
+    } else {
+      page3.drawText('KES 0', { x: 520, y: y3 - 8, size: 8, font: fontBold, color: white });
+    }
 
     // Footer for page 3
     page3.drawText('KEREA HRMS - Confidential Document', {

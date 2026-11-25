@@ -478,10 +478,27 @@ export default function TravelReportPage() {
                         return totalsByCurrency;
                       };
 
-                      const formatTotalByCurrency = (totalsByCurrency) => {
+                      const formatTotalByCurrency = (totalsByCurrency, category) => {
                         if (!totalsByCurrency || Object.keys(totalsByCurrency).length === 0) return '-';
+                        
+                        // For East Africa and International, show KES first then USD separately
+                        if (category === 'East Africa' || category === 'International') {
+                          const kesAmount = totalsByCurrency['KES'] || 0;
+                          const usdAmount = totalsByCurrency['USD'] || 0;
+                          
+                          let result = '';
+                          if (kesAmount > 0) {
+                            result += `KES ${Math.round(kesAmount).toLocaleString()}`;
+                          }
+                          if (usdAmount > 0) {
+                            if (result) result += ' + ';
+                            result += `${Math.round(usdAmount).toLocaleString()} USD`;
+                          }
+                          return result || '-';
+                        }
+                        
                         return Object.entries(totalsByCurrency).map(([currency, amount]) => 
-                          `${Math.round(amount).toLocaleString()} ${currency}`
+                          `${currency} ${Math.round(amount).toLocaleString()}`
                         ).join(' + ');
                       };
 
@@ -494,7 +511,7 @@ export default function TravelReportPage() {
                           <td className="px-4 py-3 text-right text-slate-700">{category === 'Within Kenya' || category === 'Local Movement' ? '-' : formatCurrency(catData.accommodation, 'accommodation')}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.other, 'other')}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.reimbursement, 'reimbursement')}</td>
-                          <td className="px-4 py-3 text-right font-bold text-slate-900">{formatTotalByCurrency(totalByCurrency)}</td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-900">{formatTotalByCurrency(totalByCurrency, category)}</td>
                         </tr>
                       );
                     })}
@@ -557,34 +574,42 @@ export default function TravelReportPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-700 text-lg">
                         {(() => {
-                          const totalDSA = reportData.travelSummary.totals?.dsa || {};
-                          const totalAccommodation = reportData.travelSummary.totals?.accommodation || {};
-                          const totalOther = reportData.travelSummary.totals?.other || {};
-                          const totalReimbursement = reportData.travelSummary.totals?.reimbursement || {};
+                          // Calculate grand total from row components (not column totals)
+                          let grandKesTotal = 0;
+                          let grandUsdTotal = 0;
                           
-                          // Calculate USD-forced DSA from East Africa and International
-                          const eastAfricaDSA = reportData.travelSummary.byCategory?.['East Africa']?.dsa || {};
-                          const internationalDSA = reportData.travelSummary.byCategory?.['International']?.dsa || {};
-                          const forcedUSDTotal = Object.values(eastAfricaDSA).reduce((sum, amt) => sum + amt, 0) + 
-                                                Object.values(internationalDSA).reduce((sum, amt) => sum + amt, 0);
+                          ['Within Kenya', 'East Africa', 'International', 'Local Movement'].forEach(category => {
+                            const catData = reportData.travelSummary.byCategory?.[category] || { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+                            
+                            // For East Africa and International, DSA is forced to USD
+                            if (category === 'East Africa' || category === 'International') {
+                              grandUsdTotal += Object.values(catData.dsa || {}).reduce((sum, amt) => sum + amt, 0);
+                              grandKesTotal += (catData.accommodation['KES'] || 0) + (catData.other['KES'] || 0) + (catData.reimbursement['KES'] || 0);
+                              grandUsdTotal += (catData.accommodation['USD'] || 0) + (catData.other['USD'] || 0) + (catData.reimbursement['USD'] || 0);
+                            } else {
+                              grandKesTotal += Object.values(catData.dsa || {}).reduce((sum, amt) => sum + amt, 0);
+                              grandKesTotal += (catData.accommodation['KES'] || 0) + (catData.other['KES'] || 0) + (catData.reimbursement['KES'] || 0);
+                              grandUsdTotal += (catData.accommodation['USD'] || 0) + (catData.other['USD'] || 0) + (catData.reimbursement['USD'] || 0);
+                            }
+                          });
                           
-                          // Calculate KES total (excluding USD-forced DSA)
-                          const kesTotal = (totalDSA['KES'] || 0) + (totalAccommodation['KES'] || 0) + 
-                                           (totalOther['KES'] || 0) + (totalReimbursement['KES'] || 0);
+                          // Format with KES on one line, USD on next
+                          const kesLine = grandKesTotal > 0 ? `KES ${Math.round(grandKesTotal).toLocaleString()}` : '';
+                          const usdLine = grandUsdTotal > 0 ? `${Math.round(grandUsdTotal).toLocaleString()} USD` : '';
                           
-                          // Calculate USD total (including USD-forced DSA)
-                          const usdTotal = forcedUSDTotal + (totalAccommodation['USD'] || 0) + 
-                                           (totalOther['USD'] || 0) + (totalReimbursement['USD'] || 0);
-                          
-                          let result = '';
-                          if (kesTotal > 0) {
-                            result += `KES ${Math.round(kesTotal).toLocaleString()}`;
+                          if (kesLine && usdLine) {
+                            return (
+                              <div>
+                                <div>{kesLine}</div>
+                                <div>{usdLine}</div>
+                              </div>
+                            );
+                          } else if (kesLine) {
+                            return kesLine;
+                          } else if (usdLine) {
+                            return usdLine;
                           }
-                          if (usdTotal > 0) {
-                            if (result) result += ' + ';
-                            result += `${Math.round(usdTotal).toLocaleString()} USD`;
-                          }
-                          return result || 'KES 0';
+                          return 'KES 0';
                         })()}
                       </td>
                     </tr>
