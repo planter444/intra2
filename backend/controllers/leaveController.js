@@ -525,7 +525,7 @@ const createRequest = async (req, res, next) => {
       leaveTypeCode,
       startDate,
       endDate,
-      hasSupportingDocument: Boolean(req.file || request.supportingDocumentPath)
+      hasSupportingDocument: Boolean(req.file)
     });
 
     if (validation.status) {
