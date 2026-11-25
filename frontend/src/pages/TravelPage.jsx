@@ -25,8 +25,8 @@ const statusConfig = {
 const getStatusConfig = (request, user) => {
   const baseConfig = statusConfig[request.status] || statusConfig.pending;
   
-  // For finance, admin, IT officer, and administrator_and_membership_officer: unsettled requests get amber background
-  const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
+  // For finance, admin, and administrator_and_membership_officer: unsettled requests get amber background
+  const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
   if (canSettleRoles.includes(user.role) && !request.settled) {
     return {
       ...baseConfig,
@@ -495,7 +495,7 @@ export default function TravelPage() {
                         <div
                           key={request.id}
                           className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
-                            shouldHighlightForRequester ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
+                            shouldHighlightForRequester ? 'border-amber-400 bg-amber-50' : `${config.borderColor} ${config.bgColor}`
                           }`}
                           onClick={() => navigate(`/travel/${request.id}`)}
                         >
@@ -708,7 +708,7 @@ export default function TravelPage() {
                     <div
                       key={request.id}
                       className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
-                        shouldHighlight ? 'border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
+                        shouldHighlight ? 'border-amber-400 bg-amber-50' : `${config.borderColor} ${config.bgColor}`
                       }`}
                       onClick={() => navigate(`/travel/${request.id}`)}
                     >
@@ -926,7 +926,7 @@ export default function TravelPage() {
               return (
                 <div
                   key={request.id}
-                  className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 transition-shadow hover:shadow-md"
+                  className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${config.borderColor} ${config.bgColor}`}
                   onClick={() => navigate(`/travel/${request.id}`)}
                 >
                   <div className="flex items-start justify-between gap-4">
