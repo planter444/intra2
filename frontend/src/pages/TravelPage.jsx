@@ -14,7 +14,7 @@ const statusConfig = {
   pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: true },
   approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
-  approved_unsettled: { label: 'Approved (Unsettled)', icon: AlertCircle, color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', highlight: true },
+  approved_unsettled: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', highlight: false },
   in_progress: { label: 'In Progress', icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: false },
@@ -306,11 +306,11 @@ export default function TravelPage() {
       if (aPendingCEO && !bPendingCEO) return -1;
       if (!aPendingCEO && bPendingCEO) return 1;
     } else {
-      // Finance, admin, administrator_and_membership_officer: unsettled requests first
-      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
+      // Finance, admin, administrator_and_membership_officer, IT Officer: unsettled requests first
+      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
       if (canSettleRoles.includes(user.role)) {
-        const aUnsettled = a.status === 'approved' && !a.settled;
-        const bUnsettled = b.status === 'approved' && !b.settled;
+        const aUnsettled = !a.settled;
+        const bUnsettled = !b.settled;
         if (aUnsettled && !bUnsettled) return -1;
         if (!aUnsettled && bUnsettled) return 1;
       }

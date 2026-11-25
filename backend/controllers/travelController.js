@@ -1046,6 +1046,11 @@ const updateTravelRequestSettled = async (req, res, next) => {
       return res.status(403).json({ message: 'You do not have permission to edit settled status.' });
     }
 
+    // Prevent settling unapproved travel requests
+    if (settled && request.status !== 'approved') {
+      return res.status(400).json({ message: 'Cannot settle a travel request that has not been approved.' });
+    }
+
     await travelModel.updateTravelRequestSettled(id, settled);
 
     await logAction({
