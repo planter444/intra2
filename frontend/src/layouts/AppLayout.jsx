@@ -198,7 +198,7 @@ export default function AppLayout({ children }) {
 
     const refreshUnsettledTravelCount = () => {
       // Finance, admin, administrator_and_membership_officer, and IT Officer see unsettled count
-      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
+      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
       if (!canSettleRoles.includes(user.role)) {
         setUnsettledTravelCount(0);
         return;
@@ -493,8 +493,8 @@ export default function AppLayout({ children }) {
                       <span className="relative flex items-center gap-2">
                         {item.key === 'leaves' && pendingReviewCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
-                        ) : item.key === 'travel' && pendingTravelCount > 0 ? (
-                          <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
+                        ) : item.key === 'travel' && unsettledTravelCount > 0 ? (
+                          <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
                         ) : item.key === 'documents' && documentNotificationCount > 0 ? (

@@ -634,16 +634,6 @@ export default function TravelPage() {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    // Check if trying to settle (not unsettle)
-                                    if (!request.settled) {
-                                      // Show inline error instead of modal
-                                      setNotice({
-                                        open: true,
-                                        title: 'Cannot Settle',
-                                        description: 'Cannot settle a travel request that has not been approved.'
-                                      });
-                                      return;
-                                    }
                                     setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
                                   }}
                                   className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
@@ -836,16 +826,6 @@ export default function TravelPage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            // Check if trying to settle (not unsettle)
-                            if (!request.settled) {
-                              // Show inline error instead of modal
-                              setNotice({
-                                open: true,
-                                title: 'Cannot Settle',
-                                description: 'Cannot settle a travel request that has not been approved.'
-                              });
-                              return;
-                            }
                             setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
                           }}
                           className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
