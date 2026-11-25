@@ -444,11 +444,11 @@ export default function TravelReportPage() {
                     {['Within Kenya', 'East Africa', 'International', 'Local Movement'].map((category, index) => {
                       const catData = reportData.travelSummary.byCategory[category] || { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
                       
-                      const formatCurrency = (amounts) => {
+                      const formatCurrency = (amounts, field) => {
                         if (!amounts || Object.keys(amounts).length === 0) return '-';
                         
-                        // For East Africa and International, force USD display
-                        if (category === 'East Africa' || category === 'International') {
+                        // For East Africa and International, only DSA is in USD
+                        if ((category === 'East Africa' || category === 'International') && field === 'dsa') {
                           const totalAmount = Object.values(amounts).reduce((sum, amt) => sum + amt, 0);
                           if (totalAmount > 0) {
                             return `${Math.round(totalAmount).toLocaleString()} USD`;
@@ -490,10 +490,10 @@ export default function TravelReportPage() {
                       return (
                         <tr key={category} className={`border-b border-slate-100 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                           <td className="px-4 py-3 font-medium text-slate-900">{category}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.dsa)}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{category === 'Within Kenya' || category === 'Local Movement' ? '-' : formatCurrency(catData.accommodation)}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.other)}</td>
-                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.reimbursement)}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.dsa, 'dsa')}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{category === 'Within Kenya' || category === 'Local Movement' ? '-' : formatCurrency(catData.accommodation, 'accommodation')}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.other, 'other')}</td>
+                          <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.reimbursement, 'reimbursement')}</td>
                           <td className="px-4 py-3 text-right font-bold text-slate-900">{formatTotalByCurrency(totalByCurrency)}</td>
                         </tr>
                       );
