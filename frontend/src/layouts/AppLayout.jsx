@@ -467,7 +467,7 @@ export default function AppLayout({ children }) {
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
                         ) : item.key === 'travel' && user.role === 'ceo' && pendingTravelCount > 0 ? (
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
-                        ) : item.key === 'travel' && ['admin', 'finance', 'it_officer', 'administrator', 'administrator_and_membership_officer'].includes(user.role) && unsettledTravelCount > 0 ? (
+                        ) : item.key === 'travel' && (['admin', 'finance', 'it_officer', 'administrator', 'administrator_and_membership_officer'].includes(user.role) || user.positionTitle === 'Administration') && unsettledTravelCount > 0 ? (
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
