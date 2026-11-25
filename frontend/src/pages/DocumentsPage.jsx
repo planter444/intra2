@@ -522,7 +522,7 @@ export default function DocumentsPage() {
                 {
                   key: 'employeeName',
                   header: 'Employee Name',
-                  render: (row) => (
+                  render: (value, row) => (
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium text-slate-900">{row.employeeName}</p>
@@ -535,7 +535,7 @@ export default function DocumentsPage() {
                 {
                   key: 'actions',
                   header: 'Actions',
-                  render: (row) => {
+                  render: (value, row) => {
                     if (!row || !row.userId) return null;
                     return (
                       <div className="flex flex-wrap gap-2">
@@ -572,7 +572,7 @@ export default function DocumentsPage() {
                         ...(canManageEmployeeDocuments && selectedFolder ? [{
                           key: 'employeeName',
                           header: 'Employee Name',
-                          render: (row) => (
+                          render: (value, row) => (
                             <div>
                               <p className="font-medium text-slate-900">{row.employeeName || 'Unknown'}</p>
                             </div>
@@ -581,7 +581,7 @@ export default function DocumentsPage() {
                         {
                           key: 'label',
                           header: 'Label',
-                          render: (row) => {
+                          render: (value, row) => {
                             if (!row) return null;
                             return (
                               <div className={isAddendumDocument(row) ? 'rounded-2xl border border-rose-100 bg-rose-50/70 px-3 py-2' : ''}>
@@ -591,11 +591,11 @@ export default function DocumentsPage() {
                             );
                           }
                         },
-                        { key: 'fileSize', header: 'Size', render: (row) => formatDocumentSizeMb(row?.fileSize || 0) },
+                        { key: 'fileSize', header: 'Size', render: (value, row) => formatDocumentSizeMb(row?.fileSize || 0) },
                         {
                           key: 'actions',
                           header: 'Actions',
-                          render: (row) => {
+                          render: (value, row) => {
                             if (!row) return null;
                             return (
                               <div className="flex flex-wrap gap-2">
