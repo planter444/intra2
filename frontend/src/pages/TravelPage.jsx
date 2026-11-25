@@ -21,6 +21,24 @@ const statusConfig = {
   completed: { label: 'Completed', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false }
 };
 
+// Get status config with unsettled override
+const getStatusConfig = (request, user) => {
+  const baseConfig = statusConfig[request.status] || statusConfig.pending;
+  
+  // For finance, admin, IT officer, and administrator_and_membership_officer: unsettled requests get amber background
+  const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer', 'it_officer'];
+  if (canSettleRoles.includes(user.role) && !request.settled) {
+    return {
+      ...baseConfig,
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-200',
+      highlight: true
+    };
+  }
+  
+  return baseConfig;
+};
+
 // Helper function to determine if a request is local movement
 const isLocalMovement = (request) => {
   // Check travel_category with case-insensitive comparison
@@ -458,9 +476,7 @@ export default function TravelPage() {
                 ) : (
                   <div className="space-y-4 mb-6">
                     {filteredRequests.filter(r => String(r.userId) === String(user.id)).map((request) => {
-                      const config = (request.status === 'approved' && !request.settled) 
-                        ? statusConfig.approved_unsettled 
-                        : statusConfig[request.status] || statusConfig.pending;
+                      const config = getStatusConfig(request, user);
                       const StatusIcon = config.icon;
                       const shouldHighlightForRequester = !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
                       // For requester: if status is pending_ceo, it means CEO is the approver, so show "Pending CEO Approval"
@@ -618,6 +634,16 @@ export default function TravelPage() {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    // Check if trying to settle (not unsettle)
+                                    if (!request.settled) {
+                                      // Show inline error instead of modal
+                                      setNotice({
+                                        open: true,
+                                        title: 'Cannot Settle',
+                                        description: 'Cannot settle a travel request that has not been approved.'
+                                      });
+                                      return;
+                                    }
                                     setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
                                   }}
                                   className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
@@ -657,9 +683,7 @@ export default function TravelPage() {
             ) : (
               <div className="space-y-4">
                 {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).map((request) => {
-                  const config = (request.status === 'approved' && !request.settled) 
-                    ? statusConfig.approved_unsettled 
-                    : statusConfig[request.status] || statusConfig.pending;
+                  const config = getStatusConfig(request, user);
                   const StatusIcon = config.icon;
                   // Highlight pending requests for supervisors (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
                   // Highlight pending_ceo requests for CEO (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
@@ -812,6 +836,16 @@ export default function TravelPage() {
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
+                            // Check if trying to settle (not unsettle)
+                            if (!request.settled) {
+                              // Show inline error instead of modal
+                              setNotice({
+                                open: true,
+                                title: 'Cannot Settle',
+                                description: 'Cannot settle a travel request that has not been approved.'
+                              });
+                              return;
+                            }
                             setSettleModal({ open: true, request, action: request.settled ? 'unsettle' : 'settle' });
                           }}
                           className={`flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-colors ${
@@ -881,9 +915,7 @@ export default function TravelPage() {
         >
           <div className="space-y-4">
             {teamRequests.slice(0, 5).map((request) => {
-              const config = (request.status === 'approved' && !request.settled) 
-                ? statusConfig.approved_unsettled 
-                : statusConfig[request.status] || statusConfig.pending;
+              const config = getStatusConfig(request, user);
               const StatusIcon = config.icon;
               return (
                 <div
