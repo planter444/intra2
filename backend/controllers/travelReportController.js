@@ -1047,6 +1047,68 @@ const exportTravelReportPdf = async (req, res, next) => {
       ORDER BY tr.end_date ASC
     `);
 
+    // Get travel summary statistics by category and currency (all approved requests)
+    const travelSummaryResult = await query(`
+      SELECT
+        tr.travel_category,
+        tr.currency,
+        COALESCE(SUM(tr.dsa_amount), 0) as total_dsa,
+        COALESCE(SUM(tr.accommodation_amount), 0) as total_accommodation,
+        COALESCE(SUM(tr.transportation_cost), 0) as total_other,
+        0 as total_reimbursement
+      FROM travel_requests tr
+      INNER JOIN users u ON u.id = tr.user_id AND u.is_deleted = FALSE
+      WHERE tr.status = 'approved'
+      GROUP BY tr.travel_category, tr.currency
+      ORDER BY tr.travel_category, tr.currency
+    `);
+
+    // Group summary by trip type
+    const summaryByCategory = {
+      'Within Kenya': { dsa: {}, accommodation: 0, other: {}, reimbursement: {} },
+      'East Africa': { dsa: {}, accommodation: {}, other: {}, reimbursement: {} },
+      'International': { dsa: {}, accommodation: {}, other: {}, reimbursement: {} },
+      'Local Movement': { dsa: {}, accommodation: 0, other: {}, reimbursement: {} }
+    };
+
+    travelSummaryResult.rows.forEach(row => {
+      const category = row.travel_category || 'Unknown';
+      const currency = row.currency || 'KES';
+      
+      if (!summaryByCategory[category]) {
+        summaryByCategory[category] = { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+      }
+
+      if (category === 'Within Kenya' || category === 'Local Movement') {
+        // No accommodation for these
+        summaryByCategory[category].dsa[currency] = (summaryByCategory[category].dsa[currency] || 0) + parseFloat(row.total_dsa || 0);
+        summaryByCategory[category].other[currency] = (summaryByCategory[category].other[currency] || 0) + parseFloat(row.total_other || 0);
+        summaryByCategory[category].reimbursement[currency] = (summaryByCategory[category].reimbursement[currency] || 0) + parseFloat(row.total_reimbursement || 0);
+      } else {
+        summaryByCategory[category].dsa[currency] = (summaryByCategory[category].dsa[currency] || 0) + parseFloat(row.total_dsa || 0);
+        summaryByCategory[category].accommodation[currency] = (summaryByCategory[category].accommodation[currency] || 0) + parseFloat(row.total_accommodation || 0);
+        summaryByCategory[category].other[currency] = (summaryByCategory[category].other[currency] || 0) + parseFloat(row.total_other || 0);
+        summaryByCategory[category].reimbursement[currency] = (summaryByCategory[category].reimbursement[currency] || 0) + parseFloat(row.total_reimbursement || 0);
+      }
+    });
+
+    // Calculate totals by currency
+    const totalsByCurrency = { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+    Object.values(summaryByCategory).forEach(category => {
+      Object.entries(category.dsa || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.dsa[currency] = (totalsByCurrency.dsa[currency] || 0) + amount;
+      });
+      Object.entries(category.accommodation || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.accommodation[currency] = (totalsByCurrency.accommodation[currency] || 0) + amount;
+      });
+      Object.entries(category.other || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.other[currency] = (totalsByCurrency.other[currency] || 0) + amount;
+      });
+      Object.entries(category.reimbursement || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.reimbursement[currency] = (totalsByCurrency.reimbursement[currency] || 0) + amount;
+      });
+    });
+
     const payload = {
       statistics: {
         totalEmployees: totalEmployees.rows[0]?.count || 0,
@@ -1057,7 +1119,11 @@ const exportTravelReportPdf = async (req, res, next) => {
       travelByCategory: travelByCategoryResult.rows,
       travelByDepartment: travelByDepartmentResult.rows,
       employeeTravelInfo: employeeTravelInfoResult.rows,
-      employeesOnTravel: employeesOnTravelResult.rows
+      employeesOnTravel: employeesOnTravelResult.rows,
+      travelSummary: {
+        byCategory: summaryByCategory,
+        totals: totalsByCurrency
+      }
     };
 
     const pdfBuffer = await buildTravelReportPdf(payload);
