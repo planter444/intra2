@@ -184,7 +184,8 @@ const createTravelRequest = async ({ userId, travelType, startDate, endDate, ori
         toNullableNumber(transportationCost),
         fullDayEvent || false,
         referenceNumber,
-        initialStatus
+        initialStatus,
+        false
       ]
     );
   } catch (error) {
