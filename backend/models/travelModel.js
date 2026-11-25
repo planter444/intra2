@@ -1251,8 +1251,8 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         WHERE status = 'pending_ceo'
       `
     );
-  } else if (userRole === 'admin' || userRole === 'finance' || isNotificationRecipient) {
-    // Admin, finance, and notification recipients can see all pending requests
+  } else if (userRole === 'finance' || isNotificationRecipient) {
+    // Finance and notification recipients can see all pending requests
     result = await query(
       `
         SELECT COUNT(*) as count
@@ -1260,8 +1260,8 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         WHERE status = 'pending'
       `
     );
-  } else if (userRole === 'supervisor') {
-    // Supervisors can see pending requests from employees they are designated approvers for
+  } else if (userRole === 'admin' || userRole === 'supervisor') {
+    // Admin (IT Officer) and supervisors can only see pending requests from employees they are designated approvers for
     try {
       result = await query(
         `
@@ -1273,7 +1273,7 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         [userId]
       );
     } catch (error) {
-      console.warn('Failed to get supervisor pending count:', error.message);
+      console.warn('Failed to get approver pending count:', error.message);
       // Fallback: return 0 if query fails
       result = { rows: [{ count: 0 }] };
     }

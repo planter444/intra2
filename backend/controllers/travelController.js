@@ -587,6 +587,11 @@ const deleteTravelRequestPermanently = async (req, res, next) => {
       return res.status(403).json({ message: 'Only the IT Officer can delete travel requests.' });
     }
 
+    // IT Officer can only delete travel requests that are NOT approved
+    if (request.status === 'approved') {
+      return res.status(403).json({ message: 'Cannot delete approved travel requests.' });
+    }
+
     const receipts = await travelModel.listTravelReceiptsForCleanup(id);
     for (const receipt of receipts) {
       await deleteStoredDocument({

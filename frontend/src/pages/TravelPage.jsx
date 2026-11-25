@@ -72,7 +72,9 @@ const canDecideTravel = (user, request, employeeApprovers) => {
 };
 
 const canDeleteTravel = (user, request) => {
-  return user.role === 'admin' && ['approved', 'rejected'].includes(request.status);
+  // IT Officer can delete travel requests that are NOT approved
+  // This includes: pending, pending_ceo, rejected, cancelled, in_progress, completed
+  return user.role === 'admin' && request.status !== 'approved';
 };
 
 export default function TravelPage() {

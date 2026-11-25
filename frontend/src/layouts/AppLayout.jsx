@@ -204,13 +204,13 @@ export default function AppLayout({ children }) {
   }, [user]);
 
   useEffect(() => {
-    if (!['supervisor', 'admin', 'ceo'].includes(user?.role)) {
+    if (!['supervisor', 'admin'].includes(user?.role)) {
       setPendingTimesheetCount(0);
       return;
     }
 
     const refreshPendingTimesheetCount = () => {
-      getPendingTimesheetCount()
+      getPendingTimesheetCount(user.id, user.role)
         .then((count) => setPendingTimesheetCount(count))
         .catch((error) => {
           if (error.response?.status !== 429) {
