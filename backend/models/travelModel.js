@@ -1330,8 +1330,8 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
 const getUnsettledTravelRequestCountForUser = async (userId, userRole) => {
   let result;
 
-  // Finance, admin, administrator_and_membership_officer should see unsettled counts
-  const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
+  // Finance, admin, administrator, administrator_and_membership_officer, it_officer should see unsettled counts
+  const canSettleRoles = ['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'it_officer'];
   
   if (!canSettleRoles.includes(userRole)) {
     return 0;
