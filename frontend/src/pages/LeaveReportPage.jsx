@@ -389,8 +389,7 @@ export default function LeaveReportPage() {
                   <tr className="border-b border-slate-200">
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Department</th>
-                    <th className="px-4 py-3 text-left font-medium text-slate-700">Type</th>
-                    <th className="px-4 py-3 text-right font-medium text-slate-700">Entitlement</th>
+                    <th className="px-4 py-3 text-left font-medium text-slate-700">Leave Type</th>
                     <th className="px-4 py-3 text-right font-medium text-slate-700">Days Taken</th>
                     <th className="px-4 py-3 text-right font-medium text-slate-700">Remaining</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Status</th>
@@ -406,8 +405,7 @@ export default function LeaveReportPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-slate-600">{emp.department}</td>
-                      <td className="px-4 py-3 text-slate-600 font-medium">{(emp.leave_type || 'N/A').substring(0, 2).toUpperCase()}</td>
-                      <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.leave_entitlement)}</td>
+                      <td className="px-4 py-3 text-slate-600 font-medium">{emp.leave_type || 'N/A'}</td>
                       <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.days_taken)}</td>
                       <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.remaining_days)}</td>
                       <td className="px-4 py-3">
@@ -448,95 +446,69 @@ export default function LeaveReportPage() {
             </SectionCard>
           )}
 
-          <SectionCard title="Employee Leave Summary" subtitle="Summary of leave balances across all leave types for each employee.">
+          <SectionCard title="Employee Leave Summary" subtitle="Summary of annual and sick leave balances for each employee.">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px] text-sm">
+              <table className="w-full min-w-[700px] text-sm">
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Department</th>
-                    {(() => {
-                      const leaveTypes = [...new Set(reportData.employeeLeaveSummary.map(e => e.leave_type))].sort();
-                      return leaveTypes.map(lt => (
-                        <th key={lt} className="px-4 py-3 text-center font-medium text-slate-700">{lt.substring(0, 10)}</th>
-                      ));
-                    })()}
-                    <th className="px-4 py-3 text-right font-medium text-slate-700">Remaining</th>
-                    <th className="px-4 py-3 text-right font-medium text-slate-700">% Taken</th>
+                    <th className="px-4 py-3 text-center font-medium text-slate-700" colSpan="2">Annual</th>
+                    <th className="px-4 py-3 text-center font-medium text-slate-700">Sick</th>
+                    <th className="px-4 py-3 text-right font-medium text-slate-700">Annual %</th>
+                  </tr>
+                  <tr className="border-b border-slate-100">
+                    <th className="px-4 py-2"></th>
+                    <th className="px-4 py-2"></th>
+                    <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Taken</th>
+                    <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Remaining</th>
+                    <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Taken</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">Taken</th>
                   </tr>
                 </thead>
                 <tbody>
                   {(() => {
                     const employeeMap = new Map();
-                    const leaveTypes = [...new Set(reportData.employeeLeaveSummary.map(e => e.leave_type))].sort();
 
                     reportData.employeeLeaveSummary.forEach((emp) => {
                       const empId = emp.employee_id;
-                      const empGender = emp.gender?.toLowerCase() || '';
                       const leaveType = emp.leave_type?.toLowerCase() || '';
-                      
-                      // Skip gender-inappropriate leave types
-                      if (empGender === 'male' && leaveType.includes('maternity')) return;
-                      if (empGender === 'female' && leaveType.includes('paternity')) return;
 
                       if (!employeeMap.has(empId)) {
                         employeeMap.set(empId, {
                           name: emp.employee_name,
-                          gender: emp.gender,
                           department: emp.department,
-                          leaveTypes: {},
-                          totalEntitlement: 0,
-                          totalTaken: 0,
-                          totalRemaining: 0
+                          annual: { taken: 0, remaining: 0, entitlement: 0 },
+                          sick: { taken: 0 }
                         });
                       }
 
                       const empData = employeeMap.get(empId);
-                      const entitlement = parseFloat(emp.leave_entitlement) || 0;
                       const daysTaken = parseFloat(emp.days_taken) || 0;
-                      const calculatedRemaining = Math.max(0, entitlement - daysTaken);
-                      empData.leaveTypes[emp.leave_type] = {
-                        entitlement: entitlement,
-                        taken: daysTaken,
-                        remaining: calculatedRemaining
-                      };
-                      empData.totalEntitlement += entitlement;
-                      empData.totalTaken += daysTaken;
-                      empData.totalRemaining += calculatedRemaining;
+                      const entitlement = parseFloat(emp.leave_entitlement) || 0;
+                      const remaining = Math.max(0, entitlement - daysTaken);
+
+                      if (leaveType.includes('annual')) {
+                        empData.annual.taken = daysTaken;
+                        empData.annual.remaining = remaining;
+                        empData.annual.entitlement = entitlement;
+                      } else if (leaveType.includes('sick')) {
+                        empData.sick.taken = daysTaken;
+                      }
                     });
 
                     return Array.from(employeeMap.values()).slice(0, 30).map((emp, index) => {
-                      const totalPercentage = (emp.totalEntitlement > 0 && !isNaN(emp.totalEntitlement)) 
-                        ? Math.round((emp.totalTaken / emp.totalEntitlement) * 100) 
+                      const annualPercentage = (emp.annual.entitlement > 0 && !isNaN(emp.annual.entitlement))
+                        ? Math.round((emp.annual.taken / emp.annual.entitlement) * 100)
                         : 0;
                       return (
                         <tr key={index} className="border-b border-slate-100">
-                          <td className="px-4 py-3 font-medium text-slate-900">{emp.name.substring(0, 15)}</td>
-                          <td className="px-4 py-3 text-slate-600">{emp.department.substring(0, 10)}</td>
-                          {leaveTypes.map(lt => {
-                            const empGender = emp.gender?.toLowerCase() || '';
-                            const leaveTypeLower = lt.toLowerCase();
-                            
-                            // Show dash for gender-inappropriate leave types
-                            if (empGender === 'male' && leaveTypeLower.includes('maternity')) {
-                              return <td key={lt} className="px-4 py-3 text-center text-slate-400">—</td>;
-                            }
-                            if (empGender === 'female' && leaveTypeLower.includes('paternity')) {
-                              return <td key={lt} className="px-4 py-3 text-center text-slate-400">—</td>;
-                            }
-                            
-                            const ltData = emp.leaveTypes[lt];
-                            if (ltData) {
-                              const taken = Math.round(ltData.taken);
-                              const entitlement = Math.round(ltData.entitlement);
-                              return (
-                                <td key={lt} className="px-4 py-3 text-center text-slate-900">{taken}/{entitlement}</td>
-                              );
-                            }
-                            return <td key={lt} className="px-4 py-3 text-center text-slate-400">-</td>;
-                          })}
-                          <td className="px-4 py-3 text-right text-slate-900">{Math.round(emp.totalRemaining)}</td>
-                          <td className="px-4 py-3 text-right text-slate-900">{totalPercentage}%</td>
+                          <td className="px-4 py-3 font-medium text-slate-900">{emp.name}</td>
+                          <td className="px-4 py-3 text-slate-600">{emp.department}</td>
+                          <td className="px-4 py-3 text-center text-slate-900">{Math.round(emp.annual.taken)}</td>
+                          <td className="px-4 py-3 text-center text-slate-900">{Math.round(emp.annual.remaining)}</td>
+                          <td className="px-4 py-3 text-center text-slate-900">{Math.round(emp.sick.taken)}</td>
+                          <td className="px-4 py-3 text-right text-slate-900">{annualPercentage}%</td>
                         </tr>
                       );
                     });
