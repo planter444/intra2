@@ -620,14 +620,14 @@ const buildTravelReportPdf = async (payload) => {
       y3 -= 22;
     });
 
-    y3 -= 10;
+    y3 -= 15;
 
     // Footer row with grand total - increased height, no border
     page3.drawRectangle({
       x: 45,
-      y: y3 - 25,
+      y: y3 - 30,
       width: 540,
-      height: 35,
+      height: 40,
       color: emeraldColor,
     });
 
@@ -637,12 +637,13 @@ const buildTravelReportPdf = async (payload) => {
     const totalReimbursement = travelSummary?.totals?.reimbursement || {};
     const grandTotalByCurrency = calculateTotalByCurrency(totalDSA, totalAccommodation, totalOther, totalReimbursement);
 
-    page3.drawText('Total Money Spent on Travels', { x: 50, y: y3 + 8, size: 9, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalDSA, 'total', 'dsa'), { x: 140, y: y3 + 8, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalAccommodation, 'total', 'accommodation'), { x: 240, y: y3 + 8, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalOther, 'total', 'other'), { x: 340, y: y3 + 8, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalReimbursement, 'total', 'reimbursement'), { x: 440, y: y3 + 8, size: 7, font: fontBold, color: white });
-    page3.drawText(formatTotalByCurrency(grandTotalByCurrency), { x: 540, y: y3 + 8, size: 9, font: fontBold, color: white });
+    page3.drawText('Total Money Spent', { x: 50, y: y3 + 12, size: 8, font: fontBold, color: white });
+    page3.drawText('on Travels', { x: 50, y: y3 + 2, size: 8, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalDSA, 'total', 'dsa'), { x: 140, y: y3 + 7, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalAccommodation, 'total', 'accommodation'), { x: 240, y: y3 + 7, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalOther, 'total', 'other'), { x: 340, y: y3 + 7, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalReimbursement, 'total', 'reimbursement'), { x: 440, y: y3 + 7, size: 7, font: fontBold, color: white });
+    page3.drawText(formatTotalByCurrency(grandTotalByCurrency), { x: 540, y: y3 + 7, size: 8, font: fontBold, color: white });
 
     // Footer for page 3
     page3.drawText('KEREA HRMS - Confidential Document', {

@@ -501,7 +501,10 @@ export default function TravelReportPage() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t-2 border-slate-300 bg-emerald-50">
-                      <td className="px-4 py-3 font-bold text-slate-900">Total Money Spent on Travels</td>
+                      <td className="px-4 py-3 font-bold text-slate-900">
+                        <div>Total Money Spent</div>
+                        <div>on Travels</div>
+                      </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-900">
                         {(() => {
                           const totals = reportData.travelSummary.totals?.dsa || {};
@@ -560,9 +563,29 @@ export default function TravelReportPage() {
                           });
                           
                           if (!grandTotalByCurrency || Object.keys(grandTotalByCurrency).length === 0) return '0 KES';
-                          return Object.entries(grandTotalByCurrency).map(([currency, amount]) => 
-                            `${Math.round(amount).toLocaleString()} ${currency}`
-                          ).join(' + ');
+                          
+                          // Show KES first, then USD with "plus" format
+                          const kesAmount = grandTotalByCurrency['KES'] || 0;
+                          const usdAmount = grandTotalByCurrency['USD'] || 0;
+                          const otherCurrencies = Object.entries(grandTotalByCurrency)
+                            .filter(([currency]) => currency !== 'KES' && currency !== 'USD')
+                            .map(([currency, amount]) => `${Math.round(amount).toLocaleString()} ${currency}`)
+                            .join(' + ');
+                          
+                          let result = '';
+                          if (kesAmount > 0) {
+                            result += `${Math.round(kesAmount).toLocaleString()} KES`;
+                          }
+                          if (usdAmount > 0) {
+                            if (result) result += ' + ';
+                            result += `${Math.round(usdAmount).toLocaleString()} USD`;
+                          }
+                          if (otherCurrencies) {
+                            if (result) result += ' + ';
+                            result += otherCurrencies;
+                          }
+                          
+                          return result || '0 KES';
                         })()}
                       </td>
                     </tr>
