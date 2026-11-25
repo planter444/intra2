@@ -95,6 +95,12 @@ const canDeleteTravel = (user, request) => {
   return user.role === 'admin';
 };
 
+const canChairmanApprove = (user, request) => {
+  // Chairman can only approve/reject CEO requests
+  const chairmanRoles = ['chairman', 'chairperson', 'chair'];
+  return chairmanRoles.includes(user.role) && request.userId !== user.id && request.status === 'pending_ceo';
+};
+
 export default function TravelPage() {
   const navigate = useNavigate();
   const { user, settings } = useAuth();
@@ -469,8 +475,8 @@ export default function TravelPage() {
           />
         ) : (
           <>
-            {/* My Travel Requests Section - for finance, admin, administrator_and_membership_officer, and CEO */}
-            {(['admin', 'finance', 'administrator_and_membership_officer', 'ceo'].includes(user.role)) && (
+            {/* My Travel Requests Section - for finance, admin, administrator_and_membership_officer, CEO, and chairman */}
+            {(['admin', 'finance', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role)) && (
               <>
                 <div className="border-b-2 border-slate-300 pb-4 mb-6">
                   <h3 className="text-xl font-bold text-slate-900">My Travel Requests</h3>
@@ -689,7 +695,7 @@ export default function TravelPage() {
             )}
 
             {/* Other Travel Requests Section */}
-            {(['admin', 'finance', 'administrator_and_membership_officer', 'ceo'].includes(user.role)) && (
+            {(['admin', 'finance', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role)) && (
               <div className="border-b-2 border-slate-300 pb-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-900">Other Travel Requests</h3>
                 <p className="text-sm text-slate-500">Travel requests from other staff members</p>
@@ -1082,7 +1088,7 @@ export default function TravelPage() {
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {canDecideTravel(user, request, employeeApprovers) && (
+                      {(canDecideTravel(user, request, employeeApprovers) || canChairmanApprove(user, request)) && (
                         <div className="flex w-full sm:w-auto gap-2">
                           <button
                             type="button"

@@ -232,9 +232,27 @@ const createTravelRequest = async (req, res, next) => {
       const recipients = [];
       let isCEOFirstApprover = false;
 
-      // Add only the immediate supervisor (first approver) - not all approvers
-      if (approverIds && approverIds.length > 0) {
-        // Only send to the first approver (immediate supervisor)
+      // Check if applicant is CEO and use CEO approval routing setting
+      if (req.user.role === 'ceo') {
+        const notificationSettings = await travelModel.getTravelNotificationSettings();
+        const ceoApprovalRouting = notificationSettings.ceoApprovalRouting || 'chairman';
+        
+        if (ceoApprovalRouting === 'self') {
+          // CEO approves herself - send email to CEO (unless she's the applicant, which we filter out later)
+          isCEOFirstApprover = true;
+          recipients.push({ id: req.user.id, fullName: req.user.fullName, email: req.user.email, role: req.user.role });
+        } else {
+          // Chairman approves CEO - send email to chairman
+          const chairmanResults = await query(
+            `SELECT id, first_name, last_name, email, role FROM users WHERE role IN ('chairman', 'chairperson', 'chair')`
+          );
+          if (chairmanResults.rows.length > 0) {
+            const chairman = chairmanResults.rows[0];
+            recipients.push({ id: chairman.id, fullName: `${chairman.first_name} ${chairman.last_name}`, email: chairman.email, role: chairman.role });
+          }
+        }
+      } else if (approverIds && approverIds.length > 0) {
+        // Non-CEO applicant - send to first approver
         const firstApproverId = approverIds[0];
         const approverResults = await query(
           `SELECT id, first_name, last_name, email, role FROM users WHERE id = $1`,

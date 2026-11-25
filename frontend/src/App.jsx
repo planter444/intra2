@@ -98,14 +98,14 @@ export default function App() {
       <Route path="/audit-logs" element={<ProtectedRoute allowedRoles={['admin']}><AuditLogsPage /></ProtectedRoute>} />
       <Route path="/payslips" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><PayslipsPage /></ProtectedRoute>} />
       <Route path="/payslip-templates" element={<ProtectedRoute allowedRoles={['admin']}><PayslipTemplatesPage /></ProtectedRoute>} />
-      <Route path="/travel" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson']}><TravelPage /></ProtectedRoute>} />
-      <Route path="/travel/official" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson']}><OfficialTravelPage /></ProtectedRoute>} />
-      <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelApplyPage /></ProtectedRoute>} />
-      <Route path="/travel/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><TravelReimbursementPage /></ProtectedRoute>} />
-      <Route path="/travel/local" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson']}><LocalMovementPage /></ProtectedRoute>} />
-      <Route path="/travel/local/booking" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><LocalMovementBookingPage /></ProtectedRoute>} />
-      <Route path="/travel/local/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance']}><LocalMovementReimbursementPage /></ProtectedRoute>} />
-      <Route path="/travel/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson']}><TravelDetailPage /></ProtectedRoute>} />
+      <Route path="/travel" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><TravelPage /></ProtectedRoute>} />
+      <Route path="/travel/official" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><OfficialTravelPage /></ProtectedRoute>} />
+      <Route path="/travel/apply" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><TravelApplyPage /></ProtectedRoute>} />
+      <Route path="/travel/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><TravelReimbursementPage /></ProtectedRoute>} />
+      <Route path="/travel/local" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><LocalMovementPage /></ProtectedRoute>} />
+      <Route path="/travel/local/booking" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><LocalMovementBookingPage /></ProtectedRoute>} />
+      <Route path="/travel/local/reimbursement" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><LocalMovementReimbursementPage /></ProtectedRoute>} />
+      <Route path="/travel/:id" element={<ProtectedRoute allowedRoles={['employee', 'supervisor', 'admin', 'ceo', 'finance', 'chairman', 'chairperson', 'chair']}><TravelDetailPage /></ProtectedRoute>} />
       <Route path="/travel/settings" element={<ProtectedRoute allowedRoles={['admin']}><TravelSettingsPage /></ProtectedRoute>} />
       <Route path="/report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><ReportPage /></ProtectedRoute>} />
       <Route path="/leave-report" element={<ProtectedRoute allowedRoles={['admin', 'ceo']}><LeaveReportPage /></ProtectedRoute>} />

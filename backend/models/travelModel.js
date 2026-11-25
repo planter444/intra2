@@ -359,8 +359,8 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
   const notificationSettings = await getTravelNotificationSettings();
   const canViewAll = notificationSettings && notificationSettings.viewAllTravelRequestsIds && notificationSettings.viewAllTravelRequestsIds.includes(viewerId);
 
-  // Admin, finance, and membership officer always have view-all access
-  const hasAutomaticViewAll = role === 'admin' || role === 'finance' || role === 'administrator_and_membership_officer' || positionTitle === 'Administration';
+  // Admin, finance, membership officer, and chairman always have view-all access
+  const hasAutomaticViewAll = role === 'admin' || role === 'finance' || role === 'administrator_and_membership_officer' || positionTitle === 'Administration' || role === 'chairman' || role === 'chairperson' || role === 'chair';
 
   console.log('listTravelRequests - viewerId:', viewerId, 'role:', role, 'positionTitle:', positionTitle, 'canViewAll:', canViewAll, 'hasAutomaticViewAll:', hasAutomaticViewAll);
 
@@ -404,8 +404,9 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
   } else if (role === 'ceo') {
     // CEO sees requests that have reached their stage (pending_ceo or beyond)
     // AND pending requests where CEO is the designated approver in routing
+    // AND her own requests regardless of status
     if (!status) {
-      // If no status filter specified, show requests at CEO stage OR pending requests where CEO is approver
+      // If no status filter specified, show requests at CEO stage OR pending requests where CEO is approver OR her own requests
       try {
         const ceoRouting = await query(
           `
@@ -416,12 +417,13 @@ const listTravelRequests = async ({ viewerId, role, userId, status, positionTitl
           [viewerId]
         );
 
-        // CEO only sees requests that have reached their stage (pending_ceo or beyond)
-        // CEO does NOT see pending requests (those are still with supervisors)
-        clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
+        // CEO sees her own requests OR requests at CEO stage
+        clauses.push(`(tr.user_id = $1 OR tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed'))`);
+        params.push(viewerId);
       } catch (error) {
-        // Fallback: only show requests at CEO stage if routing query fails
-        clauses.push(`tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed')`);
+        // Fallback: show CEO's own requests and requests at CEO stage
+        clauses.push(`(tr.user_id = $1 OR tr.status IN ('pending_ceo', 'approved', 'rejected', 'cancelled', 'in_progress', 'completed'))`);
+        params.push(viewerId);
       }
     }
     // If status is specified, use that filter (admin/ceo can filter by any status)
