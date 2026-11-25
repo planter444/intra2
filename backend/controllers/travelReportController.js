@@ -11,6 +11,7 @@ const buildTravelReportPdf = async (payload) => {
     const travelByDepartment = payload.travelByDepartment || [];
     const employeeTravelInfo = payload.employeeTravelInfo || [];
     const employeesOnTravel = payload.employeesOnTravel || [];
+    const travelSummary = payload.travelSummary || null;
 
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([612, 792]);
@@ -502,12 +503,12 @@ const buildTravelReportPdf = async (payload) => {
       color: primaryColor,
     });
 
-    // Add page 3 for Employees Currently on Travel
+    // Add page 3 for Travel Summary Statistics
     const page3 = pdfDoc.addPage([612, 792]);
     let y3 = height - 50;
 
     // Header for page 3
-    page3.drawText('Employees Currently on Travel', {
+    page3.drawText('Travel Summary Statistics', {
       x: 50,
       y: y3,
       size: 24,
@@ -526,6 +527,110 @@ const buildTravelReportPdf = async (payload) => {
 
     y3 -= 40;
 
+    // Function to format currency amounts
+    const formatCurrencyAmounts = (amounts) => {
+      if (!amounts || Object.keys(amounts).length === 0) return '0 KES';
+      return Object.entries(amounts).map(([currency, amount]) => 
+        `${Math.round(amount).toLocaleString()} ${currency}`
+      ).join(' + ');
+    };
+
+    // Within Kenya
+    page3.drawText('Within Kenya', { x: 50, y: y3, size: 12, font: fontBold, color: primaryColor });
+    y3 -= 20;
+    page3.drawText(`Total DSA: ${formatCurrencyAmounts(travelSummary?.byCategory?.['Within Kenya']?.dsa)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Other Costs: ${formatCurrencyAmounts(travelSummary?.byCategory?.['Within Kenya']?.other)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Reimbursement: ${formatCurrencyAmounts(travelSummary?.byCategory?.['Within Kenya']?.reimbursement)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 25;
+
+    // East Africa
+    page3.drawText('East Africa', { x: 50, y: y3, size: 12, font: fontBold, color: primaryColor });
+    y3 -= 20;
+    page3.drawText(`Total DSA: ${formatCurrencyAmounts(travelSummary?.byCategory?.['East Africa']?.dsa)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Accommodation: ${formatCurrencyAmounts(travelSummary?.byCategory?.['East Africa']?.accommodation)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Other Costs: ${formatCurrencyAmounts(travelSummary?.byCategory?.['East Africa']?.other)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Reimbursement: ${formatCurrencyAmounts(travelSummary?.byCategory?.['East Africa']?.reimbursement)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 25;
+
+    // International
+    page3.drawText('International', { x: 50, y: y3, size: 12, font: fontBold, color: primaryColor });
+    y3 -= 20;
+    page3.drawText(`Total DSA: ${formatCurrencyAmounts(travelSummary?.byCategory?.['International']?.dsa)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Accommodation: ${formatCurrencyAmounts(travelSummary?.byCategory?.['International']?.accommodation)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Other Costs: ${formatCurrencyAmounts(travelSummary?.byCategory?.['International']?.other)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Reimbursement: ${formatCurrencyAmounts(travelSummary?.byCategory?.['International']?.reimbursement)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 25;
+
+    // Local Movement
+    page3.drawText('Local Movement', { x: 50, y: y3, size: 12, font: fontBold, color: primaryColor });
+    y3 -= 20;
+    page3.drawText(`Total DSA: ${formatCurrencyAmounts(travelSummary?.byCategory?.['Local Movement']?.dsa)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Other Costs: ${formatCurrencyAmounts(travelSummary?.byCategory?.['Local Movement']?.other)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Reimbursement: ${formatCurrencyAmounts(travelSummary?.byCategory?.['Local Movement']?.reimbursement)}`, { x: 50, y: y3, size: 9, font: font, color: textColor });
+    y3 -= 30;
+
+    // Grand Totals
+    page3.drawRectangle({
+      x: 45,
+      y: y3 - 10,
+      width: 520,
+      height: 80,
+      color: lightGray,
+    });
+
+    page3.drawText('Grand Totals (by Currency)', { x: 50, y: y3, size: 12, font: fontBold, color: primaryColor });
+    y3 -= 20;
+    page3.drawText(`Total DSA: ${formatCurrencyAmounts(travelSummary?.totals?.dsa)}`, { x: 50, y: y3, size: 10, font: fontBold, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Total Accommodation: ${formatCurrencyAmounts(travelSummary?.totals?.accommodation)}`, { x: 50, y: y3, size: 10, font: fontBold, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Total Other Costs: ${formatCurrencyAmounts(travelSummary?.totals?.other)}`, { x: 50, y: y3, size: 10, font: fontBold, color: textColor });
+    y3 -= 12;
+    page3.drawText(`Total Reimbursement: ${formatCurrencyAmounts(travelSummary?.totals?.reimbursement)}`, { x: 50, y: y3, size: 10, font: fontBold, color: textColor });
+
+    // Footer for page 3
+    page3.drawText('KEREA HRMS - Confidential Document', {
+      x: 50,
+      y: 30,
+      size: 10,
+      font: font,
+      color: primaryColor,
+    });
+
+    // Add page 4 for Employees Currently on Travel
+    const page4 = pdfDoc.addPage([612, 792]);
+    let y4 = height - 50;
+
+    // Header for page 4
+    page4.drawText('Employees Currently on Travel', {
+      x: 50,
+      y: y4,
+      size: 24,
+      font: fontBold,
+      color: primaryColor,
+    });
+
+    y4 -= 30;
+    page4.drawText('KEREA', {
+      x: 50,
+      y: y4,
+      size: 14,
+      font: font,
+      color: primaryColor,
+    });
+
+    y4 -= 40;
+
     if (employeesOnTravel && employeesOnTravel.length > 0) {
       employeesOnTravel.forEach((emp) => {
         const empName = emp.employee_name || 'N/A';
@@ -534,36 +639,36 @@ const buildTravelReportPdf = async (payload) => {
         const startDate = emp.start_date ? new Date(emp.start_date).toLocaleDateString() : 'N/A';
         const endDate = emp.end_date ? new Date(emp.end_date).toLocaleDateString() : 'N/A';
 
-        page3.drawText(`${empName} (${empNo})`, {
+        page4.drawText(`${empName} (${empNo})`, {
           x: 50,
-          y: y3,
+          y: y4,
           size: 10,
           font: fontBold,
           color: textColor,
         });
 
-        page3.drawText(`${category}: ${startDate} to ${endDate}`, {
+        page4.drawText(`${category}: ${startDate} to ${endDate}`, {
           x: 50,
-          y: y3 - 12,
+          y: y4 - 12,
           size: 9,
           font: font,
           color: textColor,
         });
 
-        y3 -= 30;
+        y4 -= 30;
       });
     } else {
-      page3.drawText('No employees currently on travel.', {
+      page4.drawText('No employees currently on travel.', {
         x: 50,
-        y: y3,
+        y: y4,
         size: 10,
         font: font,
         color: textColor,
       });
     }
 
-    // Footer for page 3
-    page3.drawText('KEREA HRMS - Confidential Document', {
+    // Footer for page 4
+    page4.drawText('KEREA HRMS - Confidential Document', {
       x: 50,
       y: 30,
       size: 10,
@@ -714,7 +819,7 @@ const getTravelReportData = async (req, res, next) => {
 
     // Get employees currently on travel
     const employeesOnTravelResult = await query(`
-      SELECT 
+      SELECT
         u.first_name || ' ' || u.last_name as employee_name,
         u.employee_no,
         tr.travel_category,
@@ -728,6 +833,68 @@ const getTravelReportData = async (req, res, next) => {
       ORDER BY tr.end_date ASC
     `);
 
+    // Get travel summary statistics by category and currency
+    const travelSummaryResult = await query(`
+      SELECT
+        tr.travel_category,
+        tr.currency,
+        COALESCE(SUM(tr.dsa_amount), 0) as total_dsa,
+        COALESCE(SUM(tr.accommodation_cost), 0) as total_accommodation,
+        COALESCE(SUM(tr.other_cost), 0) as total_other,
+        COALESCE(SUM(tr.reimbursement_amount), 0) as total_reimbursement
+      FROM travel_requests tr
+      INNER JOIN users u ON u.id = tr.user_id AND u.is_deleted = FALSE
+      ${whereClause}
+      GROUP BY tr.travel_category, tr.currency
+      ORDER BY tr.travel_category, tr.currency
+    `, params);
+
+    // Group summary by trip type
+    const summaryByCategory = {
+      'Within Kenya': { dsa: {}, accommodation: 0, other: {}, reimbursement: {} },
+      'East Africa': { dsa: {}, accommodation: {}, other: {}, reimbursement: {} },
+      'International': { dsa: {}, accommodation: {}, other: {}, reimbursement: {} },
+      'Local Movement': { dsa: {}, accommodation: 0, other: {}, reimbursement: {} }
+    };
+
+    travelSummaryResult.rows.forEach(row => {
+      const category = row.travel_category || 'Unknown';
+      const currency = row.currency || 'KES';
+      
+      if (!summaryByCategory[category]) {
+        summaryByCategory[category] = { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+      }
+
+      if (category === 'Within Kenya' || category === 'Local Movement') {
+        // No accommodation for these
+        summaryByCategory[category].dsa[currency] = (summaryByCategory[category].dsa[currency] || 0) + parseFloat(row.total_dsa || 0);
+        summaryByCategory[category].other[currency] = (summaryByCategory[category].other[currency] || 0) + parseFloat(row.total_other || 0);
+        summaryByCategory[category].reimbursement[currency] = (summaryByCategory[category].reimbursement[currency] || 0) + parseFloat(row.total_reimbursement || 0);
+      } else {
+        summaryByCategory[category].dsa[currency] = (summaryByCategory[category].dsa[currency] || 0) + parseFloat(row.total_dsa || 0);
+        summaryByCategory[category].accommodation[currency] = (summaryByCategory[category].accommodation[currency] || 0) + parseFloat(row.total_accommodation || 0);
+        summaryByCategory[category].other[currency] = (summaryByCategory[category].other[currency] || 0) + parseFloat(row.total_other || 0);
+        summaryByCategory[category].reimbursement[currency] = (summaryByCategory[category].reimbursement[currency] || 0) + parseFloat(row.total_reimbursement || 0);
+      }
+    });
+
+    // Calculate totals by currency
+    const totalsByCurrency = { dsa: {}, accommodation: {}, other: {}, reimbursement: {} };
+    Object.values(summaryByCategory).forEach(category => {
+      Object.entries(category.dsa || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.dsa[currency] = (totalsByCurrency.dsa[currency] || 0) + amount;
+      });
+      Object.entries(category.accommodation || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.accommodation[currency] = (totalsByCurrency.accommodation[currency] || 0) + amount;
+      });
+      Object.entries(category.other || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.other[currency] = (totalsByCurrency.other[currency] || 0) + amount;
+      });
+      Object.entries(category.reimbursement || {}).forEach(([currency, amount]) => {
+        totalsByCurrency.reimbursement[currency] = (totalsByCurrency.reimbursement[currency] || 0) + amount;
+      });
+    });
+
     res.json({
       statistics: {
         totalEmployees: totalEmployees.rows[0]?.count || 0,
@@ -738,7 +905,11 @@ const getTravelReportData = async (req, res, next) => {
       travelByCategory: travelByCategoryResult.rows,
       travelByDepartment: travelByDepartmentResult.rows,
       employeeTravelInfo: employeeTravelInfoResult.rows,
-      employeesOnTravel: employeesOnTravelResult.rows
+      employeesOnTravel: employeesOnTravelResult.rows,
+      travelSummary: {
+        byCategory: summaryByCategory,
+        totals: totalsByCurrency
+      }
     });
   } catch (error) {
     next(error);
