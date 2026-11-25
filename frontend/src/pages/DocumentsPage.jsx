@@ -124,10 +124,6 @@ export default function DocumentsPage() {
       .catch(console.error);
   }, [canManageEmployeeDocuments]);
 
-  useEffect(() => {
-    setSeenIdsReady(true);
-  }, [user.id, user.role]);
-
   useEffect(() => () => {
     if (previewState.objectUrl) {
       URL.revokeObjectURL(previewState.objectUrl);

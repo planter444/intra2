@@ -10,9 +10,6 @@ import { getPendingReviewCount } from '../utils/leave';
 import { getRedesignedTheme, isRedesignedActive, resolvePagePresentationKey, withOpacity } from '../hooks/usePagePresentation';
 import { getPendingTimesheetCount } from '../services/timesheetService';
 
-const SEEN_DOCUMENT_IDS_KEY = 'kerea_hrms_seen_document_ids';
-const getSeenDocumentIdsStorageKey = (userId) => `${SEEN_DOCUMENT_IDS_KEY}_${userId}`;
-
 const routeMap = {
   dashboard: '/dashboard',
   profile: '/profile',
@@ -257,35 +254,6 @@ export default function AppLayout({ children }) {
       window.removeEventListener('focus', refreshPendingTimesheetCount);
     };
   }, [user]);
-
-  useEffect(() => {
-    if (user?.role !== 'ceo') {
-      setDocumentNotificationCount(0);
-      return;
-    }
-
-    const refreshDocumentNotifications = () => {
-      fetchDocuments()
-        .then((documents) => {
-          const scopedSeenIds = JSON.parse(localStorage.getItem(getSeenDocumentIdsStorageKey(user?.id)) || 'null');
-          const legacySeenIds = JSON.parse(localStorage.getItem(SEEN_DOCUMENT_IDS_KEY) || '[]');
-          const seenDocumentIds = new Set((Array.isArray(scopedSeenIds) ? scopedSeenIds : legacySeenIds).map(String));
-          setDocumentNotificationCount(
-            (documents || []).filter((document) => document.folderType !== 'branding' && document.folderType !== 'profile')
-              .filter((document) => String(document.uploadedBy) !== String(user?.id) && !seenDocumentIds.has(String(document.id))).length
-          );
-        })
-        .catch((error) => {
-          if (error.response?.status !== 429) {
-            setDocumentNotificationCount(0);
-          }
-        });
-    };
-
-    refreshDocumentNotifications();
-    window.addEventListener('documents-seen-updated', refreshDocumentNotifications);
-    return () => window.removeEventListener('documents-seen-updated', refreshDocumentNotifications);
-  }, [user?.id, user?.role]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 768px)');
