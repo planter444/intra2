@@ -11,6 +11,14 @@ import { deleteDocument, downloadDocument, fetchDocumentBlob, fetchDocuments, op
 const SEEN_DOCUMENT_IDS_KEY = 'kerea_hrms_seen_document_ids';
 const getSeenDocumentIdsStorageKey = (userId) => `${SEEN_DOCUMENT_IDS_KEY}_${userId}`;
 
+// Only CEO and IT Officer see document badges
+const shouldShowDocumentBadge = (user) => {
+  return user.role === 'ceo' || user.role === 'admin';
+};
+
+// Get seen employees storage key (per employee, not per document)
+const getSeenEmployeesStorageKey = (userId) => `${SEEN_DOCUMENT_IDS_KEY}_seen_employees_${userId}`;
+
 const getDocumentTypeLabel = (document) => {
   const extension = document.fileName?.split('.').pop()?.trim();
   if (extension) {
@@ -127,7 +135,7 @@ export default function DocumentsPage() {
   }, [canManageEmployeeDocuments]);
 
   useEffect(() => {
-    if (user.role !== 'ceo') {
+    if (!shouldShowDocumentBadge(user)) {
       setSeenIdsReady(true);
       return;
     }
@@ -141,7 +149,7 @@ export default function DocumentsPage() {
   }, [user.id, user.role]);
 
   useEffect(() => {
-    if (user.role !== 'ceo' || !seenIdsReady) {
+    if (!shouldShowDocumentBadge(user) || !seenIdsReady) {
       return;
     }
 
@@ -232,8 +240,8 @@ export default function DocumentsPage() {
       .filter((doc) => doc && doc.folderType !== 'profile' && doc.folderType !== 'branding' && doc.folderType !== 'travel')
       .map((document) => ({
         ...document,
-        isNew: user.role === 'ceo'
-          ? seenIdsReady && String(document.uploadedBy) !== String(user.id) && !seenDocumentIds.map(String).includes(String(document.id))
+        isNew: shouldShowDocumentBadge(user)
+          ? seenIdsReady && String(document.uploadedBy) !== String(user.id) && !seenDocumentIds.map(String).includes(String(document.uploadedBy || document.userId))
           : false
       })).sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()),
     [documents, seenDocumentIds, seenIdsReady, user.id, user.role]
@@ -245,6 +253,9 @@ export default function DocumentsPage() {
     }
 
     const grouped = visibleDocuments.reduce((accumulator, document) => {
+      // Skip documents without proper data
+      if (!document || !document.id) return accumulator;
+      
       // Use uploadedBy as fallback if userId is missing
       const key = String(document.userId || document.uploadedBy || document.id);
       if (!accumulator[key]) {
@@ -577,6 +588,14 @@ export default function DocumentsPage() {
                         <button type="button" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700" onClick={(e) => {
                           e.stopPropagation();
                           setSelectedEmployeeId(String(row.userId));
+                          // Mark employee as seen when CEO or IT Officer views their documents
+                          if (shouldShowDocumentBadge(user)) {
+                            const seenIds = [...seenDocumentIds];
+                            if (!seenIds.includes(String(row.userId))) {
+                              seenIds.push(String(row.userId));
+                              setSeenDocumentIds(seenIds);
+                            }
+                          }
                         }}>
                           <Eye size={14} />View
                         </button>

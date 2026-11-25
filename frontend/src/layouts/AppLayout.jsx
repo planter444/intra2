@@ -504,7 +504,7 @@ export default function AppLayout({ children }) {
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
-                        ) : item.key === 'documents' && documentNotificationCount > 0 ? (
+                        ) : item.key === 'documents' && documentNotificationCount > 0 && (user.role === 'ceo' || user.role === 'admin') ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{documentNotificationCount}</span>
                         ) : null}
                         {redesignedActive ? (
