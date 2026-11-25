@@ -250,9 +250,12 @@ const createTravelRequest = async (req, res, next) => {
         console.log('No approvers found for employee:', req.user.id);
       }
 
-      if (recipients.length > 0) {
+      // Filter out the applicant from recipients to avoid sending email to themselves
+      const filteredRecipients = recipients.filter(r => String(r.id) !== String(req.user.id));
+      
+      if (filteredRecipients.length > 0) {
         await sendTravelRequestSubmittedEmail({
-          recipients,
+          recipients: filteredRecipients,
           travelRequest: request,
           applicantName: req.user.fullName,
           isCEOApprover: isCEOFirstApprover

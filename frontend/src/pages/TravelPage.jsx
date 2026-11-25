@@ -469,8 +469,8 @@ export default function TravelPage() {
           />
         ) : (
           <>
-            {/* My Travel Requests Section - for finance, admin, administrator_and_membership_officer */}
-            {(['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) && (
+            {/* My Travel Requests Section - for finance, admin, administrator_and_membership_officer, and CEO */}
+            {(['admin', 'finance', 'administrator_and_membership_officer', 'ceo'].includes(user.role)) && (
               <>
                 <div className="border-b-2 border-slate-300 pb-4 mb-6">
                   <h3 className="text-xl font-bold text-slate-900">My Travel Requests</h3>
@@ -655,6 +655,20 @@ export default function TravelPage() {
                                   {request.settled ? 'Settled' : 'Settle'}
                                 </button>
                               )}
+                              {/* IT Officer (admin) can delete any travel request */}
+                              {user.role === 'admin' && (
+                                <button
+                                  type="button"
+                                  className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50 flex-shrink-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteModal({ open: true, request });
+                                  }}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -675,7 +689,7 @@ export default function TravelPage() {
             )}
 
             {/* Other Travel Requests Section */}
-            {(['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) && (
+            {(['admin', 'finance', 'administrator_and_membership_officer', 'ceo'].includes(user.role)) && (
               <div className="border-b-2 border-slate-300 pb-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-900">Other Travel Requests</h3>
                 <p className="text-sm text-slate-500">Travel requests from other staff members</p>
@@ -886,6 +900,20 @@ export default function TravelPage() {
                         </button>
                       )}
                       {canDeleteTravel(user, request) && (
+                        <button
+                          type="button"
+                          className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50 flex-shrink-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteModal({ open: true, request });
+                          }}
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                      {/* IT Officer (admin) can delete any travel request */}
+                      {user.role === 'admin' && !canDeleteTravel(user, request) && (
                         <button
                           type="button"
                           className="rounded-lg border border-rose-200 p-1.5 text-rose-600 hover:bg-rose-50 flex-shrink-0"
