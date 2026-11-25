@@ -446,6 +446,16 @@ export default function TravelReportPage() {
                       
                       const formatCurrency = (amounts) => {
                         if (!amounts || Object.keys(amounts).length === 0) return '-';
+                        
+                        // For East Africa and International, force USD display
+                        if (category === 'East Africa' || category === 'International') {
+                          const totalAmount = Object.values(amounts).reduce((sum, amt) => sum + amt, 0);
+                          if (totalAmount > 0) {
+                            return `${Math.round(totalAmount).toLocaleString()} USD`;
+                          }
+                          return '-';
+                        }
+                        
                         return Object.entries(amounts).map(([currency, amount]) => 
                           `${Math.round(amount).toLocaleString()} ${currency}`
                         ).join(' + ');
