@@ -1359,12 +1359,14 @@ const getPendingTravelRequestCountForUserExcludingViewed = async (userId, userRo
         [userId]
       );
     } else {
-      // Admin, membership officer, administrator, and users with view-all access can see all pending requests
+      // Admin (IT Officer) can only see pending requests from employees they are designated approvers for
       result = await query(
         `
           SELECT COUNT(*) as count
           FROM travel_requests tr
+          INNER JOIN travel_employee_routing ter ON ter.employee_id = tr.user_id
           WHERE tr.status = 'pending'
+          AND ter.approver_id = $1
           AND tr.id NOT IN (
             SELECT travel_request_id FROM travel_request_views WHERE user_id = $1
           )
