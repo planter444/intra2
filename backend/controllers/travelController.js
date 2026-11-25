@@ -1112,10 +1112,11 @@ module.exports = {
   getTravelRoutingSettings,
   updateTravelRoutingSettings,
   getAllEmployeeRouting,
+  getPendingTravelRequestCount,
+  getUnsettledTravelRequestCount,
   getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting,
-  getPendingTravelRequestCount,
   markTravelRequestAsViewed,
   updateTravelRequestSettled
 };
