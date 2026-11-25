@@ -1294,6 +1294,28 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
   return parseInt(result.rows[0].count, 10);
 };
 
+const getUnsettledTravelRequestCountForUser = async (userId, userRole) => {
+  let result;
+
+  // Only finance, admin, and administrator_and_membership_officer should see unsettled counts
+  const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
+  
+  if (!canSettleRoles.includes(userRole)) {
+    return 0;
+  }
+
+  // Count approved requests that are not yet settled
+  result = await query(
+    `
+      SELECT COUNT(*) as count
+      FROM travel_requests
+      WHERE status = 'approved' AND settled = false
+    `
+  );
+
+  return parseInt(result.rows[0].count, 10);
+};
+
 const markTravelRequestAsViewed = async (travelRequestId, userId) => {
   await query(
     `
@@ -1445,6 +1467,8 @@ module.exports = {
   getTravelRoutingSettings,
   updateTravelRoutingSettings,
   getAllEmployeeRouting,
+  getPendingTravelRequestCountForUser,
+  getUnsettledTravelRequestCountForUser,
   getApproverForEmployee,
   addEmployeeRouting,
   removeEmployeeRouting,

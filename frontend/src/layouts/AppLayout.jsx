@@ -5,7 +5,7 @@ import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { fetchDocuments, getDocumentUrl } from '../services/documentService';
 import { fetchLeaveRequests } from '../services/leaveService';
-import { getPendingTravelRequestCount } from '../services/travelService';
+import { getPendingTravelRequestCount, getUnsettledTravelRequestCount } from '../services/travelService';
 import { getPendingReviewCount } from '../utils/leave';
 import { getRedesignedTheme, isRedesignedActive, resolvePagePresentationKey, withOpacity } from '../hooks/usePagePresentation';
 import { getPendingTimesheetCount } from '../services/timesheetService';
@@ -100,6 +100,7 @@ export default function AppLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [pendingTravelCount, setPendingTravelCount] = useState(0);
+  const [unsettledTravelCount, setUnsettledTravelCount] = useState(0);
   const [pendingTimesheetCount, setPendingTimesheetCount] = useState(0);
   const [documentNotificationCount, setDocumentNotificationCount] = useState(0);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
@@ -181,6 +182,7 @@ export default function AppLayout({ children }) {
   useEffect(() => {
     if (!user) {
       setPendingTravelCount(0);
+      setUnsettledTravelCount(0);
       return;
     }
 
@@ -194,12 +196,36 @@ export default function AppLayout({ children }) {
         });
     };
 
+    const refreshUnsettledTravelCount = () => {
+      // Only finance, admin, and administrator_and_membership_officer see unsettled count
+      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
+      if (!canSettleRoles.includes(user.role)) {
+        setUnsettledTravelCount(0);
+        return;
+      }
+      getUnsettledTravelRequestCount()
+        .then((count) => setUnsettledTravelCount(count))
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            setUnsettledTravelCount(0);
+          }
+        });
+    };
+
     refreshPendingTravelCount();
-    const intervalId = window.setInterval(refreshPendingTravelCount, 60000);
-    window.addEventListener('focus', refreshPendingTravelCount);
+    refreshUnsettledTravelCount();
+    const intervalId = window.setInterval(() => {
+      refreshPendingTravelCount();
+      refreshUnsettledTravelCount();
+    }, 60000);
+    window.addEventListener('focus', () => {
+      refreshPendingTravelCount();
+      refreshUnsettledTravelCount();
+    });
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', refreshPendingTravelCount);
+      window.removeEventListener('focus', refreshUnsettledTravelCount);
     };
   }, [user]);
 
@@ -467,8 +493,8 @@ export default function AppLayout({ children }) {
                       <span className="relative flex items-center gap-2">
                         {item.key === 'leaves' && pendingReviewCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingReviewCount}</span>
-                        ) : item.key === 'travel' && pendingTravelCount > 0 ? (
-                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
+                        ) : item.key === 'travel' && unsettledTravelCount > 0 ? (
+                          <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
                         ) : item.key === 'documents' && documentNotificationCount > 0 ? (

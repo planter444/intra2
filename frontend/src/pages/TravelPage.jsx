@@ -14,6 +14,7 @@ const statusConfig = {
   pending: { label: 'Pending Supervisor Approval', icon: Clock, color: 'text-amber-600', bgColor: 'bg-amber-50', borderColor: 'border-amber-200', highlight: true },
   pending_ceo: { label: 'Pending CEO Approval', icon: Clock, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: true },
   approved: { label: 'Approved', icon: CheckCircle, color: 'text-emerald-600', bgColor: 'bg-emerald-50', borderColor: 'border-emerald-200', highlight: false },
+  approved_unsettled: { label: 'Approved (Unsettled)', icon: AlertCircle, color: 'text-orange-600', bgColor: 'bg-orange-50', borderColor: 'border-orange-200', highlight: true },
   rejected: { label: 'Rejected', icon: XCircle, color: 'text-rose-600', bgColor: 'bg-rose-50', borderColor: 'border-rose-200', highlight: false },
   cancelled: { label: 'Cancelled', icon: XCircle, color: 'text-slate-600', bgColor: 'bg-slate-50', borderColor: 'border-slate-200', highlight: false },
   in_progress: { label: 'In Progress', icon: Calendar, color: 'text-blue-600', bgColor: 'bg-blue-50', borderColor: 'border-blue-200', highlight: false },
@@ -72,9 +73,8 @@ const canDecideTravel = (user, request, employeeApprovers) => {
 };
 
 const canDeleteTravel = (user, request) => {
-  // IT Officer can delete travel requests that are NOT approved
-  // This includes: pending, pending_ceo, rejected, cancelled, in_progress, completed
-  return user.role === 'admin' && request.status !== 'approved';
+  // IT Officer can delete ALL travel requests including approved ones
+  return user.role === 'admin';
 };
 
 export default function TravelPage() {
@@ -298,6 +298,25 @@ export default function TravelPage() {
     // Sorting logic
     let comparison = 0;
     
+    // Priority sorting based on user role
+    if (user.role === 'ceo') {
+      // CEO: pending_ceo requests first
+      const aPendingCEO = a.status === 'pending_ceo';
+      const bPendingCEO = b.status === 'pending_ceo';
+      if (aPendingCEO && !bPendingCEO) return -1;
+      if (!aPendingCEO && bPendingCEO) return 1;
+    } else {
+      // Finance, admin, administrator_and_membership_officer: unsettled requests first
+      const canSettleRoles = ['admin', 'finance', 'administrator_and_membership_officer'];
+      if (canSettleRoles.includes(user.role)) {
+        const aUnsettled = a.status === 'approved' && !a.settled;
+        const bUnsettled = b.status === 'approved' && !b.settled;
+        if (aUnsettled && !bUnsettled) return -1;
+        if (!aUnsettled && bUnsettled) return 1;
+      }
+    }
+    
+    // Then sort by the selected field
     switch (sortBy) {
       case 'date':
         comparison = new Date(a.createdAt) - new Date(b.createdAt);
@@ -439,7 +458,9 @@ export default function TravelPage() {
                 ) : (
                   <div className="space-y-4 mb-6">
                     {filteredRequests.filter(r => String(r.userId) === String(user.id)).map((request) => {
-                      const config = statusConfig[request.status] || statusConfig.pending;
+                      const config = (request.status === 'approved' && !request.settled) 
+                        ? statusConfig.approved_unsettled 
+                        : statusConfig[request.status] || statusConfig.pending;
                       const StatusIcon = config.icon;
                       const shouldHighlightForRequester = !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
                       // For requester: if status is pending_ceo, it means CEO is the approver, so show "Pending CEO Approval"
@@ -636,7 +657,9 @@ export default function TravelPage() {
             ) : (
               <div className="space-y-4">
                 {((user.role === 'finance' || user.role === 'supervisor') ? filteredRequests.filter(r => String(r.userId) !== String(user.id)) : filteredRequests).map((request) => {
-                  const config = statusConfig[request.status] || statusConfig.pending;
+                  const config = (request.status === 'approved' && !request.settled) 
+                    ? statusConfig.approved_unsettled 
+                    : statusConfig[request.status] || statusConfig.pending;
                   const StatusIcon = config.icon;
                   // Highlight pending requests for supervisors (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
                   // Highlight pending_ceo requests for CEO (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
@@ -858,7 +881,9 @@ export default function TravelPage() {
         >
           <div className="space-y-4">
             {teamRequests.slice(0, 5).map((request) => {
-              const config = statusConfig[request.status] || statusConfig.pending;
+              const config = (request.status === 'approved' && !request.settled) 
+                ? statusConfig.approved_unsettled 
+                : statusConfig[request.status] || statusConfig.pending;
               const StatusIcon = config.icon;
               return (
                 <div

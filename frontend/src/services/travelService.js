@@ -124,6 +124,11 @@ export const getPendingTravelRequestCount = async () => {
   return response.data.count;
 };
 
+export const getUnsettledTravelRequestCount = async () => {
+  const response = await api.get('/travel/unsettled-count');
+  return response.data.count;
+};
+
 export const markTravelRequestAsViewed = async (id) => {
   const response = await api.post(`/travel/requests/${id}/viewed`);
   return response.data;

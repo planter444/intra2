@@ -22,6 +22,7 @@ const {
   addEmployeeRouting,
   removeEmployeeRouting,
   getPendingTravelRequestCount,
+  getUnsettledTravelRequestCount,
   markTravelRequestAsViewed,
   updateTravelRequestSettled
 } = require('../controllers/travelController');
@@ -69,6 +70,9 @@ router.delete('/employee-routing/:id', authorize('admin'), removeEmployeeRouting
 
 // Pending count route
 router.get('/pending-count', getPendingTravelRequestCount);
+
+// Unsettled count route
+router.get('/unsettled-count', getUnsettledTravelRequestCount);
 
 // Mark travel request as viewed
 router.post('/requests/:id/viewed', markTravelRequestAsViewed);

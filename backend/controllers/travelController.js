@@ -587,10 +587,8 @@ const deleteTravelRequestPermanently = async (req, res, next) => {
       return res.status(403).json({ message: 'Only the IT Officer can delete travel requests.' });
     }
 
-    // IT Officer can only delete travel requests that are NOT approved
-    if (request.status === 'approved') {
-      return res.status(403).json({ message: 'Cannot delete approved travel requests.' });
-    }
+    // IT Officer can delete ALL travel requests including approved ones
+    // No status restriction
 
     const receipts = await travelModel.listTravelReceiptsForCleanup(id);
     for (const receipt of receipts) {
@@ -1070,6 +1068,15 @@ const updateTravelRequestSettled = async (req, res, next) => {
 const getPendingTravelRequestCount = async (req, res, next) => {
   try {
     const count = await travelModel.getPendingTravelRequestCountForUser(req.user.id, req.user.role);
+    res.json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getUnsettledTravelRequestCount = async (req, res, next) => {
+  try {
+    const count = await travelModel.getUnsettledTravelRequestCountForUser(req.user.id, req.user.role);
     res.json({ count });
   } catch (error) {
     next(error);
