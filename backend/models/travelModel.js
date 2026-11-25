@@ -1260,8 +1260,8 @@ const getPendingTravelRequestCountForUser = async (userId, userRole) => {
         WHERE status = 'pending'
       `
     );
-  } else if (userRole === 'it_officer' || userRole === 'admin' || userRole === 'supervisor') {
-    // IT Officer, admin, and supervisors can only see pending requests from employees they are designated approvers for
+  } else if (userRole === 'admin' || userRole === 'supervisor') {
+    // Admin (IT Officer) and supervisors can only see pending requests from employees they are designated approvers for
     try {
       result = await query(
         `
