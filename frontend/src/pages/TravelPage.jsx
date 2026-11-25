@@ -472,8 +472,8 @@ export default function TravelPage() {
             {/* My Travel Requests Section - for finance, admin, administrator_and_membership_officer */}
             {(['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) && (
               <>
-                <div className="border-b border-slate-200 pb-3 mb-4">
-                  <h3 className="text-lg font-semibold text-slate-900">My Travel Requests</h3>
+                <div className="border-b-2 border-slate-300 pb-4 mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">My Travel Requests</h3>
                   <p className="text-sm text-slate-500">Your own travel requests</p>
                 </div>
                 {displayedOwnRequests.length === 0 ? (
@@ -676,8 +676,8 @@ export default function TravelPage() {
 
             {/* Other Travel Requests Section */}
             {(['admin', 'finance', 'administrator_and_membership_officer'].includes(user.role)) && (
-              <div className="border-b border-slate-200 pb-3 mb-4">
-                <h3 className="text-lg font-semibold text-slate-900">Other Travel Requests</h3>
+              <div className="border-b-2 border-slate-300 pb-4 mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Other Travel Requests</h3>
                 <p className="text-sm text-slate-500">Travel requests from other staff members</p>
               </div>
             )}
@@ -838,7 +838,7 @@ export default function TravelPage() {
                     </div>
                     <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full sm:w-auto justify-end">
                       {/* Settled toggle for users with edit permission */}
-                      {canEditSettled ? (
+                      {canEditSettled && request.status !== 'rejected' ? (
                         <button
                           type="button"
                           onClick={(e) => {
