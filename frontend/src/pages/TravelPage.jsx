@@ -27,7 +27,7 @@ const getStatusConfig = (request, user) => {
   
   // For finance, admin, administrator, administrator_and_membership_officer: unsettled requests get amber background
   const canSettleRoles = ['admin', 'finance', 'administrator', 'administrator_and_membership_officer'];
-  if ((canSettleRoles.includes(user.role) || user.positionTitle === 'Administration') && !request.settled) {
+  if ((canSettleRoles.includes(user.role) || (user.positionTitle && user.positionTitle.toLowerCase().includes('administration'))) && !request.settled) {
     return {
       ...baseConfig,
       bgColor: 'bg-amber-50',
@@ -373,7 +373,7 @@ export default function TravelPage() {
   const sortedOtherRequests = useMemo(() => {
     return [...otherRequests].sort((a, b) => {
       // Prioritize unsettled approved requests for admin/finance/administrator/administrator_and_membership_officer
-      if (['admin', 'finance', 'administrator', 'administrator_and_membership_officer'].includes(user.role) || user.positionTitle === 'Administration') {
+      if (['admin', 'finance', 'administrator', 'administrator_and_membership_officer'].includes(user.role) || (user.positionTitle && user.positionTitle.toLowerCase().includes('administration'))) {
         const aUnsettled = a.status === 'approved' && !a.settled;
         const bUnsettled = b.status === 'approved' && !b.settled;
         
@@ -493,7 +493,7 @@ export default function TravelPage() {
         ) : (
           <>
             {/* My Travel Requests Section - for finance, admin, administrator, administrator_and_membership_officer, CEO, and chairman */}
-            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role) || user.positionTitle === 'Administration') && (
+            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role) || (user.positionTitle && user.positionTitle.toLowerCase().includes('administration'))) && (
               <>
                 <div className="border-b-2 border-slate-300 pb-4 mb-6">
                   <h3 className="text-xl font-bold text-slate-900">My Travel Requests</h3>
@@ -712,7 +712,7 @@ export default function TravelPage() {
             )}
 
             {/* Other Travel Requests Section */}
-            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role) || user.positionTitle === 'Administration') && (
+            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role) || (user.positionTitle && user.positionTitle.toLowerCase().includes('administration'))) && (
               <div className="border-b-2 border-slate-300 pb-4 mb-6">
                 <h3 className="text-xl font-bold text-slate-900">Other Travel Requests</h3>
                 <p className="text-sm text-slate-500">Travel requests from other staff members</p>
