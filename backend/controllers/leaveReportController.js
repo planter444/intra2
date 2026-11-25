@@ -446,11 +446,10 @@ const buildLeaveReportPdf = async (payload) => {
       // Table header
       page2.drawText('Employee', { x: 50, y: y2, size: 9, font: fontBold, color: primaryColor });
       page2.drawText('Dept', { x: 130, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Type', { x: 180, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Entitlement', { x: 220, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Taken', { x: 290, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Remaining', { x: 350, y: y2, size: 9, font: fontBold, color: primaryColor });
-      page2.drawText('Status', { x: 420, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Leave Type', { x: 180, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Taken', { x: 280, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Remaining', { x: 330, y: y2, size: 9, font: fontBold, color: primaryColor });
+      page2.drawText('Status', { x: 400, y: y2, size: 9, font: fontBold, color: primaryColor });
 
       y2 -= 15;
 
@@ -458,8 +457,6 @@ const buildLeaveReportPdf = async (payload) => {
         const empName = (emp.employee_name || 'N/A').substring(0, 15);
         const department = (emp.department || 'N/A').substring(0, 8);
         const leaveType = emp.leave_type || 'N/A';
-        const typeAbbrev = leaveType.substring(0, 2).toUpperCase();
-        const entitlement = Math.round(parseFloat(emp.leave_entitlement) || 0);
         const daysTaken = Math.round(parseFloat(emp.days_taken) || 0);
         const remaining = Math.round(parseFloat(emp.remaining_days) || 0);
         const status = emp.current_status || 'N/A';
@@ -476,11 +473,10 @@ const buildLeaveReportPdf = async (payload) => {
 
         page2.drawText(empName, { x: 50, y: y2, size: 8, font: font, color: textColor });
         page2.drawText(department, { x: 130, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(typeAbbrev, { x: 180, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(entitlement), { x: 220, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(daysTaken), { x: 290, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(String(remaining), { x: 350, y: y2, size: 8, font: font, color: textColor });
-        page2.drawText(status, { x: 420, y: y2, size: 8, font: font, color: statusColor });
+        page2.drawText(leaveType.substring(0, 12), { x: 180, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(String(daysTaken), { x: 280, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(String(remaining), { x: 330, y: y2, size: 8, font: font, color: textColor });
+        page2.drawText(status, { x: 400, y: y2, size: 8, font: font, color: statusColor });
 
         y2 -= 12;
 
@@ -533,122 +529,68 @@ const buildLeaveReportPdf = async (payload) => {
 
     y3 -= 40;
 
-    // Pivot employee leave summary by employee
+    // Pivot employee leave summary by employee - only Annual leave
     const employeeMap = new Map();
-    const leaveTypes = new Set();
 
     employeeLeaveSummary.forEach((emp) => {
       const empId = emp.employee_id;
       const empName = emp.employee_name || 'N/A';
-      const empGender = emp.gender?.toLowerCase() || '';
       const department = emp.department || 'N/A';
       const leaveType = emp.leave_type || 'N/A';
       const leaveTypeLower = leaveType.toLowerCase();
-      
-      // Skip gender-inappropriate leave types
-      if (empGender === 'male' && leaveTypeLower.includes('maternity')) return;
-      if (empGender === 'female' && leaveTypeLower.includes('paternity')) return;
 
       const entitlement = parseFloat(emp.leave_entitlement) || 0;
       const daysTaken = parseFloat(emp.days_taken) || 0;
-
-      leaveTypes.add(leaveType);
+      const remaining = Math.max(0, entitlement - daysTaken);
 
       if (!employeeMap.has(empId)) {
         employeeMap.set(empId, {
           name: empName,
-          gender: emp.gender,
           department: department,
-          leaveTypes: {},
-          totalEntitlement: 0,
-          totalTaken: 0,
-          totalRemaining: 0
+          annual: { taken: 0, remaining: 0, entitlement: 0 }
         });
       }
 
       const empData = employeeMap.get(empId);
-      const calculatedRemaining = Math.max(0, entitlement - daysTaken);
-      empData.leaveTypes[leaveType] = {
-        entitlement: entitlement,
-        taken: daysTaken,
-        remaining: calculatedRemaining,
-        percentage: entitlement > 0 ? Math.round((daysTaken / entitlement) * 100) : 0
-      };
-      empData.totalEntitlement += entitlement;
-      empData.totalTaken += daysTaken;
-      empData.totalRemaining += calculatedRemaining;
+
+      if (leaveTypeLower.includes('annual')) {
+        empData.annual.taken = daysTaken;
+        empData.annual.remaining = remaining;
+        empData.annual.entitlement = entitlement;
+      }
     });
 
-    const leaveTypesArray = Array.from(leaveTypes).sort();
     const employeesArray = Array.from(employeeMap.values());
 
-    // Table header
-    const colWidths = {
-      name: 70,
-      department: 60,
-      leaveType: 55,
-      remaining: 45,
-      percentage: 45
-    };
+    // Table header with Annual spanning two columns
+    page3.drawText('Employee', { x: 50, y: y3, size: 8, font: fontBold, color: primaryColor });
+    page3.drawText('Department', { x: 120, y: y3, size: 8, font: fontBold, color: primaryColor });
+    page3.drawText('Annual', { x: 200, y: y3, size: 8, font: fontBold, color: primaryColor });
+    page3.drawText('Annual %', { x: 330, y: y3, size: 8, font: fontBold, color: primaryColor });
 
-    let headerX = 50;
-    page3.drawText('Employee', { x: headerX, y: y3, size: 8, font: fontBold, color: primaryColor });
-    headerX += colWidths.name;
-    page3.drawText('Department', { x: headerX, y: y3, size: 8, font: fontBold, color: primaryColor });
-    headerX += colWidths.department;
+    y3 -= 12;
 
-    leaveTypesArray.forEach((lt) => {
-      const label = lt.substring(0, 10);
-      page3.drawText(label, { x: headerX, y: y3, size: 8, font: fontBold, color: primaryColor });
-      headerX += colWidths.leaveType;
-    });
+    page3.drawText('Taken', { x: 200, y: y3, size: 7, font: font, color: textColor });
+    page3.drawText('Remaining', { x: 260, y: y3, size: 7, font: font, color: textColor });
+    page3.drawText('Taken', { x: 330, y: y3, size: 7, font: font, color: textColor });
 
-    page3.drawText('Remaining', { x: headerX, y: y3, size: 8, font: fontBold, color: primaryColor });
-    headerX += colWidths.remaining;
-    page3.drawText('% Taken', { x: headerX, y: y3, size: 8, font: fontBold, color: primaryColor });
-
-    y3 -= 15;
+    y3 -= 12;
 
     // Table rows (first 30 employees)
     employeesArray.slice(0, 30).forEach((emp) => {
-      let rowX = 50;
-      const empName = emp.name.substring(0, 12);
-      const dept = emp.department.substring(0, 10);
-
-      page3.drawText(empName, { x: rowX, y: y3, size: 7, font: font, color: textColor });
-      rowX += colWidths.name;
-      page3.drawText(dept, { x: rowX, y: y3, size: 7, font: font, color: textColor });
-      rowX += colWidths.department;
-
-      leaveTypesArray.forEach((lt) => {
-        const empGender = emp.gender?.toLowerCase() || '';
-        const leaveTypeLower = lt.toLowerCase();
-        
-        // Show dash for gender-inappropriate leave types
-        if (empGender === 'male' && leaveTypeLower.includes('maternity')) {
-          page3.drawText('—', { x: rowX, y: y3, size: 7, font: font, color: textColor });
-        } else if (empGender === 'female' && leaveTypeLower.includes('paternity')) {
-          page3.drawText('—', { x: rowX, y: y3, size: 7, font: font, color: textColor });
-        } else {
-          const ltData = emp.leaveTypes[lt];
-          if (ltData) {
-            const taken = Math.round(ltData.taken);
-            const entitlement = Math.round(ltData.entitlement);
-            const label = `${taken}/${entitlement}`;
-            page3.drawText(label, { x: rowX, y: y3, size: 7, font: font, color: textColor });
-          } else {
-            page3.drawText('-', { x: rowX, y: y3, size: 7, font: font, color: textColor });
-          }
-        }
-        rowX += colWidths.leaveType;
-      });
-
-      page3.drawText(String(Math.round(emp.totalRemaining)), { x: rowX, y: y3, size: 7, font: font, color: textColor });
-      rowX += colWidths.remaining;
-      const totalPercentage = (emp.totalEntitlement > 0 && !isNaN(emp.totalEntitlement)) 
-        ? Math.round((emp.totalTaken / emp.totalEntitlement) * 100) 
+      const empName = emp.name.substring(0, 15);
+      const dept = emp.department.substring(0, 15);
+      const annualTaken = Math.round(emp.annual.taken);
+      const annualRemaining = Math.round(emp.annual.remaining);
+      const annualPercentage = (emp.annual.entitlement > 0 && !isNaN(emp.annual.entitlement))
+        ? Math.round((emp.annual.taken / emp.annual.entitlement) * 100)
         : 0;
-      page3.drawText(`${totalPercentage}%`, { x: rowX, y: y3, size: 7, font: font, color: textColor });
+
+      page3.drawText(empName, { x: 50, y: y3, size: 7, font: font, color: textColor });
+      page3.drawText(dept, { x: 120, y: y3, size: 7, font: font, color: textColor });
+      page3.drawText(String(annualTaken), { x: 200, y: y3, size: 7, font: font, color: textColor });
+      page3.drawText(String(annualRemaining), { x: 260, y: y3, size: 7, font: font, color: textColor });
+      page3.drawText(`${annualPercentage}%`, { x: 330, y: y3, size: 7, font: font, color: textColor });
 
       y3 -= 12;
     });

@@ -446,15 +446,14 @@ export default function LeaveReportPage() {
             </SectionCard>
           )}
 
-          <SectionCard title="Employee Leave Summary" subtitle="Summary of annual and sick leave balances for each employee.">
+          <SectionCard title="Employee Leave Summary" subtitle="Summary of annual leave balances for each employee.">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-sm">
+              <table className="w-full min-w-[600px] text-sm">
                 <thead>
                   <tr className="border-b border-slate-200">
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Employee</th>
                     <th className="px-4 py-3 text-left font-medium text-slate-700">Department</th>
                     <th className="px-4 py-3 text-center font-medium text-slate-700" colSpan="2">Annual</th>
-                    <th className="px-4 py-3 text-center font-medium text-slate-700">Sick</th>
                     <th className="px-4 py-3 text-right font-medium text-slate-700">Annual %</th>
                   </tr>
                   <tr className="border-b border-slate-100">
@@ -462,7 +461,6 @@ export default function LeaveReportPage() {
                     <th className="px-4 py-2"></th>
                     <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Taken</th>
                     <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Remaining</th>
-                    <th className="px-4 py-2 text-center text-xs font-medium text-slate-500">Taken</th>
                     <th className="px-4 py-2 text-right text-xs font-medium text-slate-500">Taken</th>
                   </tr>
                 </thead>
@@ -478,8 +476,7 @@ export default function LeaveReportPage() {
                         employeeMap.set(empId, {
                           name: emp.employee_name,
                           department: emp.department,
-                          annual: { taken: 0, remaining: 0, entitlement: 0 },
-                          sick: { taken: 0 }
+                          annual: { taken: 0, remaining: 0, entitlement: 0 }
                         });
                       }
 
@@ -492,8 +489,6 @@ export default function LeaveReportPage() {
                         empData.annual.taken = daysTaken;
                         empData.annual.remaining = remaining;
                         empData.annual.entitlement = entitlement;
-                      } else if (leaveType.includes('sick')) {
-                        empData.sick.taken = daysTaken;
                       }
                     });
 
@@ -507,7 +502,6 @@ export default function LeaveReportPage() {
                           <td className="px-4 py-3 text-slate-600">{emp.department}</td>
                           <td className="px-4 py-3 text-center text-slate-900">{Math.round(emp.annual.taken)}</td>
                           <td className="px-4 py-3 text-center text-slate-900">{Math.round(emp.annual.remaining)}</td>
-                          <td className="px-4 py-3 text-center text-slate-900">{Math.round(emp.sick.taken)}</td>
                           <td className="px-4 py-3 text-right text-slate-900">{annualPercentage}%</td>
                         </tr>
                       );
