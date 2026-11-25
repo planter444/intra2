@@ -442,11 +442,7 @@ export default function TravelReportPage() {
                   <tbody>
                     {['Within Kenya', 'East Africa', 'International', 'Local Movement'].map((category, index) => {
                       const catData = reportData.travelSummary.byCategory[category] || { dsa: {}, accommodation: {}, other: {} };
-                      const totalDSA = Object.values(catData.dsa || {}).reduce((sum, amt) => sum + amt, 0);
-                      const totalAccommodation = Object.values(catData.accommodation || {}).reduce((sum, amt) => sum + amt, 0);
-                      const totalOther = Object.values(catData.other || {}).reduce((sum, amt) => sum + amt, 0);
-                      const grandTotal = totalDSA + totalAccommodation + totalOther;
-
+                      
                       const formatCurrency = (amounts) => {
                         if (!amounts || Object.keys(amounts).length === 0) return '-';
                         return Object.entries(amounts).map(([currency, amount]) => 
@@ -454,13 +450,36 @@ export default function TravelReportPage() {
                         ).join(' + ');
                       };
 
+                      const calculateTotalByCurrency = (dsa, accommodation, other) => {
+                        const totalsByCurrency = {};
+                        Object.entries(dsa || {}).forEach(([currency, amount]) => {
+                          totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+                        });
+                        Object.entries(accommodation || {}).forEach(([currency, amount]) => {
+                          totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+                        });
+                        Object.entries(other || {}).forEach(([currency, amount]) => {
+                          totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+                        });
+                        return totalsByCurrency;
+                      };
+
+                      const formatTotalByCurrency = (totalsByCurrency) => {
+                        if (!totalsByCurrency || Object.keys(totalsByCurrency).length === 0) return '-';
+                        return Object.entries(totalsByCurrency).map(([currency, amount]) => 
+                          `${Math.round(amount).toLocaleString()} ${currency}`
+                        ).join(' + ');
+                      };
+
+                      const totalByCurrency = calculateTotalByCurrency(catData.dsa, catData.accommodation, catData.other);
+
                       return (
                         <tr key={category} className={`border-b border-slate-100 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}>
                           <td className="px-4 py-3 font-medium text-slate-900">{category}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.dsa)}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{category === 'Within Kenya' || category === 'Local Movement' ? '-' : formatCurrency(catData.accommodation)}</td>
                           <td className="px-4 py-3 text-right text-slate-700">{formatCurrency(catData.other)}</td>
-                          <td className="px-4 py-3 text-right font-bold text-slate-900">{grandTotal > 0 ? `${Math.round(grandTotal).toLocaleString()} KES` : '-'}</td>
+                          <td className="px-4 py-3 text-right font-bold text-slate-900">{formatTotalByCurrency(totalByCurrency)}</td>
                         </tr>
                       );
                     })}
@@ -469,27 +488,53 @@ export default function TravelReportPage() {
                     <tr className="border-t-2 border-slate-300 bg-emerald-50">
                       <td className="px-4 py-3 font-bold text-slate-900">Total Money Spent on Travels</td>
                       <td className="px-4 py-3 text-right font-bold text-slate-900">
-                        {Object.values(reportData.travelSummary.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0) > 0 
-                          ? `${Math.round(Object.values(reportData.travelSummary.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0)).toLocaleString()} KES` 
-                          : '-'}
+                        {(() => {
+                          const totals = reportData.travelSummary.totals?.dsa || {};
+                          if (!totals || Object.keys(totals).length === 0) return '-';
+                          return Object.entries(totals).map(([currency, amount]) => 
+                            `${Math.round(amount).toLocaleString()} ${currency}`
+                          ).join(' + ');
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-900">
-                        {Object.values(reportData.travelSummary.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0) > 0 
-                          ? `${Math.round(Object.values(reportData.travelSummary.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0)).toLocaleString()} KES` 
-                          : '-'}
+                        {(() => {
+                          const totals = reportData.travelSummary.totals?.accommodation || {};
+                          if (!totals || Object.keys(totals).length === 0) return '-';
+                          return Object.entries(totals).map(([currency, amount]) => 
+                            `${Math.round(amount).toLocaleString()} ${currency}`
+                          ).join(' + ');
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-900">
-                        {Object.values(reportData.travelSummary.totals?.other || {}).reduce((sum, amt) => sum + amt, 0) > 0 
-                          ? `${Math.round(Object.values(reportData.travelSummary.totals?.other || {}).reduce((sum, amt) => sum + amt, 0)).toLocaleString()} KES` 
-                          : '-'}
+                        {(() => {
+                          const totals = reportData.travelSummary.totals?.other || {};
+                          if (!totals || Object.keys(totals).length === 0) return '-';
+                          return Object.entries(totals).map(([currency, amount]) => 
+                            `${Math.round(amount).toLocaleString()} ${currency}`
+                          ).join(' + ');
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-700 text-lg">
                         {(() => {
-                          const totalDSA = Object.values(reportData.travelSummary.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0);
-                          const totalAccommodation = Object.values(reportData.travelSummary.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0);
-                          const totalOther = Object.values(reportData.travelSummary.totals?.other || {}).reduce((sum, amt) => sum + amt, 0);
-                          const grandTotal = totalDSA + totalAccommodation + totalOther;
-                          return grandTotal > 0 ? `${Math.round(grandTotal).toLocaleString()} KES` : '0 KES';
+                          const totalDSA = reportData.travelSummary.totals?.dsa || {};
+                          const totalAccommodation = reportData.travelSummary.totals?.accommodation || {};
+                          const totalOther = reportData.travelSummary.totals?.other || {};
+                          
+                          const grandTotalByCurrency = {};
+                          Object.entries(totalDSA).forEach(([currency, amount]) => {
+                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
+                          });
+                          Object.entries(totalAccommodation).forEach(([currency, amount]) => {
+                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
+                          });
+                          Object.entries(totalOther).forEach(([currency, amount]) => {
+                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
+                          });
+                          
+                          if (!grandTotalByCurrency || Object.keys(grandTotalByCurrency).length === 0) return '0 KES';
+                          return Object.entries(grandTotalByCurrency).map(([currency, amount]) => 
+                            `${Math.round(amount).toLocaleString()} ${currency}`
+                          ).join(' + ');
                         })()}
                       </td>
                     </tr>

@@ -527,16 +527,16 @@ const buildTravelReportPdf = async (payload) => {
 
     y3 -= 40;
 
-    // Table header
+    // Table header with better spacing
     page3.drawText('Category', { x: 50, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('DSA', { x: 180, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Accommodation', { x: 300, y: y3, size: 10, font: fontBold, color: primaryColor });
-    page3.drawText('Other Costs', { x: 420, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('DSA', { x: 170, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Accommodation', { x: 290, y: y3, size: 10, font: fontBold, color: primaryColor });
+    page3.drawText('Other Costs', { x: 410, y: y3, size: 10, font: fontBold, color: primaryColor });
     page3.drawText('Total', { x: 530, y: y3, size: 10, font: fontBold, color: primaryColor });
 
     y3 -= 15;
 
-    // Function to format currency amounts
+    // Function to format currency amounts - show multiple currencies
     const formatCurrencyAmounts = (amounts) => {
       if (!amounts || Object.keys(amounts).length === 0) return '-';
       return Object.entries(amounts).map(([currency, amount]) => 
@@ -544,19 +544,36 @@ const buildTravelReportPdf = async (payload) => {
       ).join(' + ');
     };
 
-    // Function to calculate total
-    const calculateTotal = (dsa, accommodation, other) => {
-      const dsaTotal = Object.values(dsa || {}).reduce((sum, amt) => sum + amt, 0);
-      const accommodationTotal = Object.values(accommodation || {}).reduce((sum, amt) => sum + amt, 0);
-      const otherTotal = Object.values(other || {}).reduce((sum, amt) => sum + amt, 0);
-      return dsaTotal + accommodationTotal + otherTotal;
+    // Function to calculate total by currency
+    const calculateTotalByCurrency = (dsa, accommodation, other) => {
+      const totalsByCurrency = {};
+      
+      Object.entries(dsa || {}).forEach(([currency, amount]) => {
+        totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+      });
+      Object.entries(accommodation || {}).forEach(([currency, amount]) => {
+        totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+      });
+      Object.entries(other || {}).forEach(([currency, amount]) => {
+        totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + amount;
+      });
+      
+      return totalsByCurrency;
+    };
+
+    // Function to format total with multiple currencies
+    const formatTotalByCurrency = (totalsByCurrency) => {
+      if (!totalsByCurrency || Object.keys(totalsByCurrency).length === 0) return '-';
+      return Object.entries(totalsByCurrency).map(([currency, amount]) => 
+        `${Math.round(amount).toLocaleString()} ${currency}`
+      ).join(' + ');
     };
 
     const categories = ['Within Kenya', 'East Africa', 'International', 'Local Movement'];
 
     categories.forEach((category, index) => {
       const catData = travelSummary?.byCategory?.[category] || { dsa: {}, accommodation: {}, other: {} };
-      const total = calculateTotal(catData.dsa, catData.accommodation, catData.other);
+      const totalByCurrency = calculateTotalByCurrency(catData.dsa, catData.accommodation, catData.other);
 
       // Alternating row highlight
       if (index % 2 === 0) {
@@ -570,10 +587,10 @@ const buildTravelReportPdf = async (payload) => {
       }
 
       page3.drawText(category, { x: 50, y: y3, size: 9, font: font, color: textColor });
-      page3.drawText(formatCurrencyAmounts(catData.dsa), { x: 180, y: y3, size: 9, font: font, color: textColor });
-      page3.drawText((category === 'Within Kenya' || category === 'Local Movement') ? '-' : formatCurrencyAmounts(catData.accommodation), { x: 300, y: y3, size: 9, font: font, color: textColor });
-      page3.drawText(formatCurrencyAmounts(catData.other), { x: 420, y: y3, size: 9, font: font, color: textColor });
-      page3.drawText(total > 0 ? `${Math.round(total).toLocaleString()} KES` : '-', { x: 530, y: y3, size: 9, font: fontBold, color: textColor });
+      page3.drawText(formatCurrencyAmounts(catData.dsa), { x: 170, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText((category === 'Within Kenya' || category === 'Local Movement') ? '-' : formatCurrencyAmounts(catData.accommodation), { x: 290, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText(formatCurrencyAmounts(catData.other), { x: 410, y: y3, size: 8, font: font, color: textColor });
+      page3.drawText(formatTotalByCurrency(totalByCurrency), { x: 530, y: y3, size: 8, font: fontBold, color: textColor });
 
       y3 -= 14;
     });
@@ -589,16 +606,16 @@ const buildTravelReportPdf = async (payload) => {
       color: emeraldColor,
     });
 
-    const totalDSA = Object.values(travelSummary?.totals?.dsa || {}).reduce((sum, amt) => sum + amt, 0);
-    const totalAccommodation = Object.values(travelSummary?.totals?.accommodation || {}).reduce((sum, amt) => sum + amt, 0);
-    const totalOther = Object.values(travelSummary?.totals?.other || {}).reduce((sum, amt) => sum + amt, 0);
-    const grandTotal = totalDSA + totalAccommodation + totalOther;
+    const totalDSA = travelSummary?.totals?.dsa || {};
+    const totalAccommodation = travelSummary?.totals?.accommodation || {};
+    const totalOther = travelSummary?.totals?.other || {};
+    const grandTotalByCurrency = calculateTotalByCurrency(totalDSA, totalAccommodation, totalOther);
 
     page3.drawText('Total Money Spent on Travels', { x: 50, y: y3, size: 10, font: fontBold, color: white });
-    page3.drawText(totalDSA > 0 ? `${Math.round(totalDSA).toLocaleString()} KES` : '-', { x: 180, y: y3, size: 10, font: fontBold, color: white });
-    page3.drawText(totalAccommodation > 0 ? `${Math.round(totalAccommodation).toLocaleString()} KES` : '-', { x: 300, y: y3, size: 10, font: fontBold, color: white });
-    page3.drawText(totalOther > 0 ? `${Math.round(totalOther).toLocaleString()} KES` : '-', { x: 420, y: y3, size: 10, font: fontBold, color: white });
-    page3.drawText(grandTotal > 0 ? `${Math.round(grandTotal).toLocaleString()} KES` : '0 KES', { x: 530, y: y3, size: 12, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalDSA), { x: 170, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalAccommodation), { x: 290, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalOther), { x: 410, y: y3, size: 9, font: fontBold, color: white });
+    page3.drawText(formatTotalByCurrency(grandTotalByCurrency), { x: 530, y: y3, size: 10, font: fontBold, color: white });
 
     // Footer for page 3
     page3.drawText('KEREA HRMS - Confidential Document', {
@@ -835,7 +852,7 @@ const getTravelReportData = async (req, res, next) => {
       ORDER BY tr.end_date ASC
     `);
 
-    // Get travel summary statistics by category and currency
+    // Get travel summary statistics by category and currency (all approved requests)
     const travelSummaryResult = await query(`
       SELECT
         tr.travel_category,
@@ -846,10 +863,10 @@ const getTravelReportData = async (req, res, next) => {
         0 as total_reimbursement
       FROM travel_requests tr
       INNER JOIN users u ON u.id = tr.user_id AND u.is_deleted = FALSE
-      ${whereClause}
+      WHERE tr.status = 'approved'
       GROUP BY tr.travel_category, tr.currency
       ORDER BY tr.travel_category, tr.currency
-    `, params);
+    `);
 
     // Group summary by trip type
     const summaryByCategory = {
