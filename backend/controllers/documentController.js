@@ -41,7 +41,7 @@ const getRestrictedFolderTypeCodes = async () => {
 
 const listDocuments = async (req, res, next) => {
   try {
-    const targetUserId = req.params.userId || req.query.userId || (req.user.role === 'ceo' ? undefined : req.user.id);
+    const targetUserId = req.params.userId || req.query.userId || (['ceo', 'admin', 'it_officer'].includes(req.user.role) ? undefined : req.user.id);
 
     if (targetUserId && !canAccessUserDocuments(req.user, targetUserId)) {
       return res.status(403).json({ message: 'You do not have permission to access these documents.' });
