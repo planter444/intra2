@@ -507,11 +507,25 @@ export default function TravelReportPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-900">
                         {(() => {
-                          const totals = reportData.travelSummary.totals?.dsa || {};
-                          if (!totals || Object.keys(totals).length === 0) return '-';
-                          return Object.entries(totals).map(([currency, amount]) => 
-                            `${Math.round(amount).toLocaleString()} ${currency}`
-                          ).join(' + ');
+                          const eastAfricaDSA = reportData.travelSummary.byCategory?.['East Africa']?.dsa || {};
+                          const internationalDSA = reportData.travelSummary.byCategory?.['International']?.dsa || {};
+                          const withinKenyaDSA = reportData.travelSummary.byCategory?.['Within Kenya']?.dsa || {};
+                          const localMovementDSA = reportData.travelSummary.byCategory?.['Local Movement']?.dsa || {};
+                          
+                          const forcedUSDTotal = Object.values(eastAfricaDSA).reduce((sum, amt) => sum + amt, 0) + 
+                                                Object.values(internationalDSA).reduce((sum, amt) => sum + amt, 0);
+                          const kesDSATotal = Object.values(withinKenyaDSA).reduce((sum, amt) => sum + amt, 0) + 
+                                             Object.values(localMovementDSA).reduce((sum, amt) => sum + amt, 0);
+                          
+                          let result = '';
+                          if (kesDSATotal > 0) {
+                            result += `${Math.round(kesDSATotal).toLocaleString()} KES`;
+                          }
+                          if (forcedUSDTotal > 0) {
+                            if (result) result += ' + ';
+                            result += `${Math.round(forcedUSDTotal).toLocaleString()} USD`;
+                          }
+                          return result || '-';
                         })()}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-slate-900">
@@ -548,43 +562,28 @@ export default function TravelReportPage() {
                           const totalOther = reportData.travelSummary.totals?.other || {};
                           const totalReimbursement = reportData.travelSummary.totals?.reimbursement || {};
                           
-                          const grandTotalByCurrency = {};
-                          Object.entries(totalDSA).forEach(([currency, amount]) => {
-                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
-                          });
-                          Object.entries(totalAccommodation).forEach(([currency, amount]) => {
-                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
-                          });
-                          Object.entries(totalOther).forEach(([currency, amount]) => {
-                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
-                          });
-                          Object.entries(totalReimbursement).forEach(([currency, amount]) => {
-                            grandTotalByCurrency[currency] = (grandTotalByCurrency[currency] || 0) + amount;
-                          });
+                          // Calculate USD-forced DSA from East Africa and International
+                          const eastAfricaDSA = reportData.travelSummary.byCategory?.['East Africa']?.dsa || {};
+                          const internationalDSA = reportData.travelSummary.byCategory?.['International']?.dsa || {};
+                          const forcedUSDTotal = Object.values(eastAfricaDSA).reduce((sum, amt) => sum + amt, 0) + 
+                                                Object.values(internationalDSA).reduce((sum, amt) => sum + amt, 0);
                           
-                          if (!grandTotalByCurrency || Object.keys(grandTotalByCurrency).length === 0) return '0 KES';
+                          // Calculate KES total (excluding USD-forced DSA)
+                          const kesTotal = (totalDSA['KES'] || 0) + (totalAccommodation['KES'] || 0) + 
+                                           (totalOther['KES'] || 0) + (totalReimbursement['KES'] || 0);
                           
-                          // Show KES first, then USD with "plus" format
-                          const kesAmount = grandTotalByCurrency['KES'] || 0;
-                          const usdAmount = grandTotalByCurrency['USD'] || 0;
-                          const otherCurrencies = Object.entries(grandTotalByCurrency)
-                            .filter(([currency]) => currency !== 'KES' && currency !== 'USD')
-                            .map(([currency, amount]) => `${Math.round(amount).toLocaleString()} ${currency}`)
-                            .join(' + ');
+                          // Calculate USD total (including USD-forced DSA)
+                          const usdTotal = forcedUSDTotal + (totalAccommodation['USD'] || 0) + 
+                                           (totalOther['USD'] || 0) + (totalReimbursement['USD'] || 0);
                           
                           let result = '';
-                          if (kesAmount > 0) {
-                            result += `${Math.round(kesAmount).toLocaleString()} KES`;
+                          if (kesTotal > 0) {
+                            result += `${Math.round(kesTotal).toLocaleString()} KES`;
                           }
-                          if (usdAmount > 0) {
+                          if (usdTotal > 0) {
                             if (result) result += ' + ';
-                            result += `${Math.round(usdAmount).toLocaleString()} USD`;
+                            result += `${Math.round(usdTotal).toLocaleString()} USD`;
                           }
-                          if (otherCurrencies) {
-                            if (result) result += ' + ';
-                            result += otherCurrencies;
-                          }
-                          
                           return result || '0 KES';
                         })()}
                       </td>

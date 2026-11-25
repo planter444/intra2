@@ -637,13 +637,52 @@ const buildTravelReportPdf = async (payload) => {
     const totalReimbursement = travelSummary?.totals?.reimbursement || {};
     const grandTotalByCurrency = calculateTotalByCurrency(totalDSA, totalAccommodation, totalOther, totalReimbursement);
 
-    page3.drawText('Total Money Spent', { x: 50, y: y3 + 12, size: 8, font: fontBold, color: white });
-    page3.drawText('on Travels', { x: 50, y: y3 + 2, size: 8, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalDSA, 'total', 'dsa'), { x: 140, y: y3 + 7, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalAccommodation, 'total', 'accommodation'), { x: 240, y: y3 + 7, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalOther, 'total', 'other'), { x: 340, y: y3 + 7, size: 7, font: fontBold, color: white });
-    page3.drawText(formatCurrencyAmounts(totalReimbursement, 'total', 'reimbursement'), { x: 440, y: y3 + 7, size: 7, font: fontBold, color: white });
-    page3.drawText(formatTotalByCurrency(grandTotalByCurrency), { x: 540, y: y3 + 7, size: 8, font: fontBold, color: white });
+    // Calculate USD-forced DSA totals from East Africa and International
+    const eastAfricaDSA = travelSummary?.byCategory?.['East Africa']?.dsa || {};
+    const internationalDSA = travelSummary?.byCategory?.['International']?.dsa || {};
+    const forcedUSDTotal = Object.values(eastAfricaDSA).reduce((sum, amt) => sum + amt, 0) + 
+                          Object.values(internationalDSA).reduce((sum, amt) => sum + amt, 0);
+    
+    // Calculate KES DSA (excluding East Africa and International)
+    const withinKenyaDSA = travelSummary?.byCategory?.['Within Kenya']?.dsa || {};
+    const localMovementDSA = travelSummary?.byCategory?.['Local Movement']?.dsa || {};
+    const kesDSATotal = Object.values(withinKenyaDSA).reduce((sum, amt) => sum + amt, 0) + 
+                       Object.values(localMovementDSA).reduce((sum, amt) => sum + amt, 0);
+
+    // Format DSA total with KES first, then USD
+    let dsaTotalText = '';
+    if (kesDSATotal > 0) {
+      dsaTotalText += `${Math.round(kesDSATotal).toLocaleString()} KES`;
+    }
+    if (forcedUSDTotal > 0) {
+      if (dsaTotalText) dsaTotalText += ' + ';
+      dsaTotalText += `${Math.round(forcedUSDTotal).toLocaleString()} USD`;
+    }
+    if (!dsaTotalText) dsaTotalText = '-';
+
+    // Calculate grand total with KES first, then USD
+    const kesTotal = (totalDSA['KES'] || 0) + (totalAccommodation['KES'] || 0) + 
+                     (totalOther['KES'] || 0) + (totalReimbursement['KES'] || 0);
+    const usdTotal = forcedUSDTotal + (totalAccommodation['USD'] || 0) + 
+                     (totalOther['USD'] || 0) + (totalReimbursement['USD'] || 0);
+    
+    let grandTotalText = '';
+    if (kesTotal > 0) {
+      grandTotalText += `${Math.round(kesTotal).toLocaleString()} KES`;
+    }
+    if (usdTotal > 0) {
+      if (grandTotalText) grandTotalText += ' + ';
+      grandTotalText += `${Math.round(usdTotal).toLocaleString()} USD`;
+    }
+    if (!grandTotalText) grandTotalText = '0 KES';
+
+    page3.drawText('Total Money Spent', { x: 50, y: y3 + 5, size: 8, font: fontBold, color: white });
+    page3.drawText('on Travels', { x: 50, y: y3 - 5, size: 8, font: fontBold, color: white });
+    page3.drawText(dsaTotalText, { x: 140, y: y3, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalAccommodation, 'total', 'accommodation'), { x: 240, y: y3, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalOther, 'total', 'other'), { x: 340, y: y3, size: 7, font: fontBold, color: white });
+    page3.drawText(formatCurrencyAmounts(totalReimbursement, 'total', 'reimbursement'), { x: 440, y: y3, size: 7, font: fontBold, color: white });
+    page3.drawText(grandTotalText, { x: 540, y: y3, size: 8, font: fontBold, color: white });
 
     // Footer for page 3
     page3.drawText('KEREA HRMS - Confidential Document', {
