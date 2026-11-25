@@ -149,7 +149,7 @@ export default function AppLayout({ children }) {
   }, [settings, user]);
 
   useEffect(() => {
-    if (!['supervisor', 'admin'].includes(user?.role)) {
+    if (!['supervisor', 'admin', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user?.role)) {
       setPendingReviewCount(0);
       return;
     }
