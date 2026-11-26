@@ -5,7 +5,7 @@ import BrandLogo from '../components/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { fetchDocuments, getDocumentUrl } from '../services/documentService';
 import { fetchLeaveRequests } from '../services/leaveService';
-import { getPendingTravelRequestCount, getUnsettledTravelRequestCount } from '../services/travelService';
+import { fetchTravelRequests, getPendingTravelRequestCount, getUnsettledTravelRequestCount } from '../services/travelService';
 import { getPendingReviewCount } from '../utils/leave';
 import { getRedesignedTheme, isRedesignedActive, resolvePagePresentationKey, withOpacity } from '../hooks/usePagePresentation';
 import { getPendingTimesheetCount } from '../services/timesheetService';
