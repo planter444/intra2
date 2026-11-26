@@ -726,7 +726,7 @@ export default function TravelPage() {
                   <p className="text-sm text-slate-500">Travel requests from your team members</p>
                 </div>
                 <div className="space-y-4 mb-6">
-                  {teamRequests.slice(0, 5).map((request) => {
+                  {teamRequests.map((request) => {
                     const config = getStatusConfig(request, user);
                     const StatusIcon = config.icon;
                     const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && String(request.userId) !== String(user.id);
@@ -763,15 +763,6 @@ export default function TravelPage() {
                     );
                   })}
                 </div>
-                {teamRequests.length > 5 && (
-                  <button
-                    type="button"
-                    onClick={() => navigate('/travel')}
-                    className="text-sm font-medium text-blue-600 hover:text-blue-700 mb-6"
-                  >
-                    View All ({teamRequests.length} total)
-                  </button>
-                )}
               </>
             )}
 
@@ -1026,192 +1017,6 @@ export default function TravelPage() {
         )}
       </SectionCard>
 
-      {showTeamSection && (
-        <SectionCard
-          title="Team Travel Requests"
-          subtitle="Manage travel requests from your team members."
-          actions={[
-            <button key="view-all" type="button" onClick={() => navigate('/travel')} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">
-              View All
-            </button>
-          ]}
-        >
-          <div className="space-y-4">
-            {teamRequests.slice(0, 5).map((request) => {
-              const config = getStatusConfig(request, user);
-              const StatusIcon = config.icon;
-              return (
-                <div
-                  key={request.id}
-                  className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${config.borderColor} ${config.bgColor}`}
-                  onClick={() => navigate(`/travel/${request.id}`)}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
-                          <StatusIcon size={14} />
-                          {config.label}
-                        </span>
-                        <span className="text-sm text-slate-400">{request.employeeName}</span>
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${
-                          isLocalMovement(request)
-                            ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                            : request.travelType === 'booking'
-                              ? 'bg-blue-50 text-blue-600 border-blue-200'
-                              : 'bg-purple-50 text-purple-600 border-purple-200'
-                        } border`}>
-                          {isLocalMovement(request)
-                            ? (request.travelType === 'booking' ? 'Local Booking' : 'Local Reimbursement')
-                            : request.travelType === 'booking' ? 'Official Booking' : 'Official Reimbursement'}
-                        </span>
-                      </div>
-                      <h3 className="mt-2 text-lg font-semibold text-slate-900">
-                        {request.origin} → {request.destination}
-                      </h3>
-                      <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-600">
-                        <span className="flex items-center gap-1.5">
-                          <Calendar size={16} />
-                          {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
-                        </span>
-                        {request.travelType === 'reimbursement' ? (
-                          <span className="flex items-center gap-1.5">
-                            <DollarSign size={16} />
-                            {(() => {
-                              // Calculate total grouped by currency
-                              const amountsByCurrency = {};
-
-                              // Add DSA with correct currency from settings
-                              const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                              if (dsa > 0) {
-                                const dsaCurrency = getCorrectDSACurrency(request.dsaCurrency, request.travelCategory, settings);
-                                amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
-                              }
-
-                              // Add accommodation (NOT for local movement)
-                              if (!isLocalMovement(request)) {
-                                const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                                if (accommodation > 0) {
-                                  const accommodationCurrency = request.accommodationCurrency || 'KES';
-                                  amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
-                                }
-                              }
-
-                              // Add transportation
-                              const transportation = request.transportationCost || 0;
-                              if (transportation > 0) {
-                                const currency = request.currency || 'KES';
-                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportation;
-                              }
-
-                              // Add other costs (NOT for local movement)
-                              if (!isLocalMovement(request)) {
-                                const other = request.estimatedCost || 0;
-                                if (other > 0) {
-                                  const currency = request.currency || 'KES';
-                                  amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
-                                }
-                              }
-
-                              // Display as "180 USD + 6,000 KES"
-                              return Object.entries(amountsByCurrency)
-                                .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
-                                .join(' + ');
-                            })()}
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1.5">
-                            <DollarSign size={16} />
-                            {(() => {
-                              // Calculate total grouped by currency
-                              const amountsByCurrency = {};
-
-                              // Add DSA with correct currency from settings
-                              const dsa = request.dsaProvided ? 0 : (request.dsaAmount || 0);
-                              if (dsa > 0) {
-                                const dsaCurrency = getCorrectDSACurrency(request.dsaCurrency, request.travelCategory, settings);
-                                amountsByCurrency[dsaCurrency] = (amountsByCurrency[dsaCurrency] || 0) + dsa;
-                              }
-
-                              // Add accommodation (NOT for local movement)
-                              if (!isLocalMovement(request)) {
-                                const accommodation = request.accommodationProvided ? 0 : (request.accommodationAmount || 0);
-                                if (accommodation > 0) {
-                                  const accommodationCurrency = request.accommodationCurrency || 'KES';
-                                  amountsByCurrency[accommodationCurrency] = (amountsByCurrency[accommodationCurrency] || 0) + accommodation;
-                                }
-                              }
-
-                              // Add transportation
-                              const transportation = request.transportationCost || 0;
-                              if (transportation > 0) {
-                                const currency = request.currency || 'KES';
-                                amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + transportation;
-                              }
-
-                              // Add other costs (NOT for local movement)
-                              if (!isLocalMovement(request)) {
-                                const other = request.estimatedCost || 0;
-                                if (other > 0) {
-                                  const currency = request.currency || 'KES';
-                                  amountsByCurrency[currency] = (amountsByCurrency[currency] || 0) + other;
-                                }
-                              }
-
-                              // Display as "180 USD + 6,000 KES"
-                              return Object.entries(amountsByCurrency)
-                                .map(([curr, amount]) => `${Number(amount).toLocaleString()} ${curr}`)
-                                .join(' + ');
-                            })()}
-                          </span>
-                        )}
-                      </div>
-                      {request.reason && (
-                        <p className="mt-2 line-clamp-2 text-sm text-slate-500">{request.reason}</p>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {(canDecideTravel(user, request, employeeApprovers) || canChairmanApprove(user, request)) && (
-                        <div className="flex w-full sm:w-auto gap-2">
-                          <button
-                            type="button"
-                            className="flex-1 sm:flex-none rounded-xl bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActionModal({ open: true, request, action: 'approve', comment: '' });
-                            }}
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            className="flex-1 sm:flex-none rounded-xl bg-rose-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-rose-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActionModal({ open: true, request, action: 'reject', comment: '' });
-                            }}
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            {teamRequests.length > 5 && (
-              <button
-                type="button"
-                onClick={() => navigate('/travel')}
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                View {teamRequests.length - 5} more team requests
-              </button>
-            )}
-          </div>
-        </SectionCard>
-      )}
 
       <Modal
         open={notice.open}
