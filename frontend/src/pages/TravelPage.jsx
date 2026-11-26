@@ -492,8 +492,8 @@ export default function TravelPage() {
           />
         ) : (
           <>
-            {/* My Travel Requests Section - for finance, admin, administrator, administrator_and_membership_officer, CEO, and chairman */}
-            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role) || user.positionTitle === 'Administration') && (
+            {/* My Travel Requests Section - for finance, admin, administrator, administrator_and_membership_officer, CEO, chairman, and regular employees */}
+            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair', 'employee'].includes(user.role) || user.positionTitle === 'Administration') && (
               <>
                 <div className="border-b-2 border-slate-300 pb-4 mb-6">
                   <h3 className="text-xl font-bold text-slate-900">My Travel Requests</h3>
@@ -711,22 +711,22 @@ export default function TravelPage() {
               </>
             )}
 
-            {/* Other Travel Requests Section */}
+            {/* Other Travel Requests Section - only for admin, finance, administrator, CEO, and chairman */}
             {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair'].includes(user.role) || user.positionTitle === 'Administration') && (
-              <div className="border-b-2 border-slate-300 pb-4 mb-6">
-                <h3 className="text-xl font-bold text-slate-900">Other Travel Requests</h3>
-                <p className="text-sm text-slate-500">Travel requests from other staff members</p>
-              </div>
-            )}
+              <>
+                <div className="border-b-2 border-slate-300 pb-4 mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">Other Travel Requests</h3>
+                  <p className="text-sm text-slate-500">Travel requests from other staff members</p>
+                </div>
 
-            {sortedOtherRequests.length === 0 ? (
-              <EmptyState
-                title="No travel requests found"
-                description={user.role === 'employee' ? 'You have not submitted any travel requests yet.' : 'No travel requests have been submitted yet.'}
-              />
-            ) : (
-              <div className="space-y-4">
-                {sortedOtherRequests.map((request) => {
+                {sortedOtherRequests.length === 0 ? (
+                  <EmptyState
+                    title="No travel requests found"
+                    description="No travel requests have been submitted yet."
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {sortedOtherRequests.map((request) => {
                   const config = getStatusConfig(request, user);
                   const StatusIcon = config.icon;
                   // Highlight pending requests for supervisors (not for staff's own requests) - keep highlighting until approved/rejected (not when opened)
@@ -954,7 +954,9 @@ export default function TravelPage() {
                 </div>
               );
             })}
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
