@@ -492,8 +492,8 @@ export default function TravelPage() {
           />
         ) : (
           <>
-            {/* My Travel Requests Section - for finance, admin, administrator, administrator_and_membership_officer, CEO, chairman, and regular employees */}
-            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair', 'employee'].includes(user.role) || user.positionTitle === 'Administration') && (
+            {/* My Travel Requests Section - for finance, admin, administrator, administrator_and_membership_officer, CEO, chairman, supervisor, and regular employees */}
+            {(['admin', 'finance', 'administrator', 'administrator_and_membership_officer', 'ceo', 'chairman', 'chairperson', 'chair', 'supervisor', 'employee'].includes(user.role) || user.positionTitle === 'Administration') && (
               <>
                 <div className="border-b-2 border-slate-300 pb-4 mb-6">
                   <h3 className="text-xl font-bold text-slate-900">My Travel Requests</h3>
@@ -659,7 +659,7 @@ export default function TravelPage() {
                                   Cancel
                                 </button>
                               )}
-                              {/* Settle toggle for own approved requests */}
+                              {/* Settle toggle for own approved requests - only for users with edit permission */}
                               {String(request.userId) === String(user.id) && request.status === 'approved' && canEditSettled && (
                                 <button
                                   type="button"
@@ -677,6 +677,13 @@ export default function TravelPage() {
                                   <CheckCircle size={12} />
                                   {request.settled ? 'Settled' : 'Settle'}
                                 </button>
+                              )}
+                              {/* View-only settled indicator for regular employees - only show if settled */}
+                              {String(request.userId) === String(user.id) && request.status === 'approved' && !canEditSettled && request.settled && (
+                                <span className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium bg-emerald-50 text-emerald-600 border-emerald-200 border">
+                                  <CheckCircle size={12} />
+                                  Settled
+                                </span>
                               )}
                               {/* IT Officer (admin) can delete any travel request */}
                               {user.role === 'admin' && (
@@ -706,6 +713,63 @@ export default function TravelPage() {
                     className="text-sm font-medium text-blue-600 hover:text-blue-700 mb-6"
                   >
                     {showMoreOwnRequests ? 'Show Less' : `Show More (${ownRequests.length - 2} more)`}
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Team Travel Requests Section - for supervisors */}
+            {user.role === 'supervisor' && teamRequests.length > 0 && (
+              <>
+                <div className="border-b-2 border-slate-300 pb-4 mb-6">
+                  <h3 className="text-xl font-bold text-slate-900">Team Travel Requests</h3>
+                  <p className="text-sm text-slate-500">Travel requests from your team members</p>
+                </div>
+                <div className="space-y-4 mb-6">
+                  {teamRequests.slice(0, 5).map((request) => {
+                    const config = getStatusConfig(request, user);
+                    const StatusIcon = config.icon;
+                    const shouldHighlightForSupervisor = config.highlight && request.status === 'pending' && String(request.userId) !== String(user.id);
+                    const statusLabel = request.status === 'pending' ? 'Pending Supervisor Approval' : config.label;
+                    return (
+                      <div
+                        key={request.id}
+                        className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
+                          shouldHighlightForSupervisor ? 'border-amber-400 bg-amber-50' : `${config.borderColor} ${config.bgColor}`
+                        }`}
+                        onClick={() => navigate(`/travel/${request.id}`)}
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-xs font-medium ${config.bgColor} ${config.color} ${config.borderColor} border`}>
+                                <StatusIcon size={12} />
+                                {statusLabel}
+                              </span>
+                              <span className="text-sm text-slate-400">{request.employeeName}</span>
+                            </div>
+                            <h3 className="mt-2 text-base sm:text-lg font-semibold text-slate-900 truncate">
+                              {request.origin} → {request.destination}
+                            </h3>
+                            <div className="mt-2 flex flex-wrap gap-3 text-xs sm:text-sm text-slate-600">
+                              <span className="flex items-center gap-1.5">
+                                <Calendar size={10} className="sm:size-10" />
+                                {request.startDate} {request.endDate !== request.startDate ? `- ${request.endDate}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {teamRequests.length > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/travel')}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-700 mb-6"
+                  >
+                    View All ({teamRequests.length} total)
                   </button>
                 )}
               </>

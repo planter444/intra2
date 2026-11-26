@@ -98,6 +98,7 @@ export default function AppLayout({ children }) {
   const [pendingReviewCount, setPendingReviewCount] = useState(0);
   const [pendingTravelCount, setPendingTravelCount] = useState(0);
   const [unsettledTravelCount, setUnsettledTravelCount] = useState(0);
+  const [pendingSupervisorTravelCount, setPendingSupervisorTravelCount] = useState(0);
   const [pendingTimesheetCount, setPendingTimesheetCount] = useState(0);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('');
   const [isMobile, setIsMobile] = useState(false);
@@ -215,18 +216,45 @@ export default function AppLayout({ children }) {
 
     refreshPendingTravelCount();
     refreshUnsettledTravelCount();
+
+    // Supervisor pending travel count
+    const refreshPendingSupervisorTravelCount = () => {
+      if (user.role !== 'supervisor') {
+        setPendingSupervisorTravelCount(0);
+        return;
+      }
+      fetchTravelRequests()
+        .then((requests) => {
+          // Count pending requests from the supervisor's direct reports
+          const pendingCount = requests.filter(r => 
+            r.status === 'pending' && 
+            String(r.userId) !== String(user.id)
+          ).length;
+          setPendingSupervisorTravelCount(pendingCount);
+        })
+        .catch((error) => {
+          if (error.response?.status !== 429) {
+            setPendingSupervisorTravelCount(0);
+          }
+        });
+    };
+
+    refreshPendingSupervisorTravelCount();
     const intervalId = window.setInterval(() => {
       refreshPendingTravelCount();
       refreshUnsettledTravelCount();
+      refreshPendingSupervisorTravelCount();
     }, 60000);
     window.addEventListener('focus', () => {
       refreshPendingTravelCount();
       refreshUnsettledTravelCount();
+      refreshPendingSupervisorTravelCount();
     });
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', refreshPendingTravelCount);
       window.removeEventListener('focus', refreshUnsettledTravelCount);
+      window.removeEventListener('focus', refreshPendingSupervisorTravelCount);
     };
   }, [user]);
 
@@ -469,6 +497,8 @@ export default function AppLayout({ children }) {
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTravelCount}</span>
                         ) : item.key === 'travel' && (['admin', 'finance', 'it_officer', 'administrator', 'administrator_and_membership_officer'].includes(user.role) || user.positionTitle === 'Administration') && unsettledTravelCount > 0 ? (
                           <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{unsettledTravelCount}</span>
+                        ) : item.key === 'travel' && user.role === 'supervisor' && pendingSupervisorTravelCount > 0 ? (
+                          <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingSupervisorTravelCount}</span>
                         ) : item.key === 'timesheets' && pendingTimesheetCount > 0 ? (
                           <span className="rounded-full bg-rose-500 px-2 py-0.5 text-xs font-semibold text-white">+{pendingTimesheetCount}</span>
                         ) : null}
