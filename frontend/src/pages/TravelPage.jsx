@@ -509,7 +509,8 @@ export default function TravelPage() {
                     {displayedOwnRequests.map((request) => {
                       const config = getStatusConfig(request, user);
                       const StatusIcon = config.icon;
-                      const shouldHighlightForRequester = !request.viewedByUser && ['pending', 'pending_ceo', 'approved', 'in_progress', 'completed'].includes(request.status);
+                      // Don't highlight own requests - always use white background
+                      const shouldHighlightForRequester = false;
                       // For requester: if status is pending_ceo, it means CEO is the approver, so show "Pending CEO Approval"
                       // If status is pending, show "Pending Supervisor Approval"
                       const statusLabel = request.status === 'pending_ceo' ? 'Pending CEO Approval' : config.label;
@@ -517,9 +518,7 @@ export default function TravelPage() {
                       return (
                         <div
                           key={request.id}
-                          className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${
-                            shouldHighlightForRequester ? 'border-amber-400 bg-amber-50' : `${config.borderColor} ${config.bgColor}`
-                          }`}
+                          className={`cursor-pointer rounded-2xl border p-5 transition-shadow hover:shadow-md ${config.borderColor} ${config.bgColor}`}
                           onClick={() => navigate(`/travel/${request.id}`)}
                         >
                           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
